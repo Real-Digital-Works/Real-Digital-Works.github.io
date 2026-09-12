@@ -67,6 +67,14 @@ body {
   color: var(--tech);
 }
 
+.accent-wash {
+  background-image: linear-gradient(90deg, #1a98fb 0%, #19dbfd 48%, #1857ec 100%);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .grain {
   pointer-events: none;
   position: fixed;

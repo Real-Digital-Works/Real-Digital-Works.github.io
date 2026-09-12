@@ -84,7 +84,7 @@ export function OfferBoard() {
 
   return (
     <>
-      <div className="hero-board rise-3 relative rounded-[22px] border border-white/10 bg-[#151c27]/80 p-3 shadow-[0_30px_80px_rgba(0,0,0,.35)] sm:p-4">
+      <div className="hero-board rise-3 relative rounded-[22px] border border-white/10 bg-[#151c27]/88 p-3 shadow-[0_30px_80px_rgba(0,0,0,.35)] backdrop-blur-md sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
           <p className="font-mono text-[10px] tracking-[0.18em] text-white/40 uppercase">
             Click a tile · watch it run

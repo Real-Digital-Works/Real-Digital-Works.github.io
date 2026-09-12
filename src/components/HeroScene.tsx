@@ -2,120 +2,143 @@
 
 import { useEffect, useRef } from "react";
 
-type NodeP = { x: number; y: number; vx: number; vy: number };
+const FADE_MS = 500;
+const HOLD_MS = 12000;
+const GAP_MS = 100;
+const CYCLE_MS = FADE_MS + HOLD_MS + FADE_MS + GAP_MS;
+
+function fadeAt(elapsed: number) {
+  const t = elapsed % CYCLE_MS;
+  if (t < FADE_MS) return t / FADE_MS;
+  if (t < FADE_MS + HOLD_MS) return 1;
+  if (t < FADE_MS + HOLD_MS + FADE_MS) {
+    return 1 - (t - FADE_MS - HOLD_MS) / FADE_MS;
+  }
+  return 0;
+}
 
 export function HeroScene() {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const canvas = canvasRef.current;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
-    const pointer = { x: 0.72, y: 0.28 };
-    const nodes: NodeP[] = [];
+    let start = performance.now();
+    let visible = true;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const { width, height } = canvas.getBoundingClientRect();
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = Math.max(1, width * dpr);
+      canvas.height = Math.max(1, height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (!nodes.length) {
-        const count = Math.round((width * height) / 18000);
-        for (let i = 0; i < count; i++) {
-          nodes.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            vx: (Math.random() - 0.5) * 0.28,
-            vy: (Math.random() - 0.5) * 0.28,
-          });
-        }
-      }
     };
 
-    const onMove = (e: PointerEvent) => {
-      const r = canvas.getBoundingClientRect();
-      pointer.x = (e.clientX - r.left) / r.width;
-      pointer.y = (e.clientY - r.top) / r.height;
-    };
-
-    const draw = () => {
+    const paint = (now: number) => {
       const { width, height } = canvas.getBoundingClientRect();
-      ctx.clearRect(0, 0, width, height);
+      const t = (now - start) / 1000;
 
-      const gx = pointer.x * width;
-      const gy = pointer.y * height;
-      const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, 420);
-      glow.addColorStop(0, "rgba(26,152,251,0.22)");
-      glow.addColorStop(0.45, "rgba(24,87,236,0.08)");
-      glow.addColorStop(1, "rgba(24,87,236,0)");
-      ctx.fillStyle = glow;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#121820";
       ctx.fillRect(0, 0, width, height);
 
-      nodes.forEach((n) => {
-        if (!reduce) {
-          n.x += n.vx;
-          n.y += n.vy;
-          n.vx += (gx - n.x) * 0.000012;
-          n.vy += (gy - n.y) * 0.000012;
-          if (n.x < 0 || n.x > width) n.vx *= -1;
-          if (n.y < 0 || n.y > height) n.vy *= -1;
-        }
-      });
+      const x1 = (0.78 + Math.sin(t * 0.18) * 0.06) * width;
+      const y1 = (0.16 + Math.cos(t * 0.13) * 0.05) * height;
+      const key = ctx.createRadialGradient(x1, y1, 0, x1, y1, Math.max(width, height) * 0.55);
+      key.addColorStop(0, "rgba(26,152,251,0.42)");
+      key.addColorStop(0.35, "rgba(24,87,236,0.16)");
+      key.addColorStop(1, "rgba(24,87,236,0)");
+      ctx.fillStyle = key;
+      ctx.fillRect(0, 0, width, height);
 
-      ctx.lineWidth = 1;
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i];
-          const b = nodes[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const d = Math.hypot(dx, dy);
-          if (d < 140) {
-            ctx.strokeStyle = `rgba(25,219,253,${(1 - d / 140) * 0.18})`;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
+      const x2 = (0.22 + Math.cos(t * 0.11) * 0.08) * width;
+      const y2 = (0.72 + Math.sin(t * 0.09) * 0.07) * height;
+      const fill = ctx.createRadialGradient(x2, y2, 0, x2, y2, width * 0.42);
+      fill.addColorStop(0, "rgba(25,219,253,0.14)");
+      fill.addColorStop(1, "rgba(25,219,253,0)");
+      ctx.fillStyle = fill;
+      ctx.fillRect(0, 0, width, height);
 
-      nodes.forEach((n, i) => {
-        if (i % 7 === 0) {
-          ctx.fillStyle = "rgba(24,87,236,0.55)";
-          ctx.fillRect(n.x - 2, n.y - 2, 4, 4);
-        } else {
-          ctx.fillStyle = i % 3 === 0 ? "rgba(25,219,253,0.9)" : "rgba(255,255,255,0.72)";
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, 1.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(width * 0.55, height * 0.4);
+      ctx.rotate(-0.18 + Math.sin(t * 0.07) * 0.04);
+      const leak = ctx.createLinearGradient(-width, 0, width, 0);
+      leak.addColorStop(0, "rgba(24,87,236,0)");
+      leak.addColorStop(0.5, `rgba(26,152,251,${0.07 + Math.sin(t * 0.4) * 0.03})`);
+      leak.addColorStop(1, "rgba(24,87,236,0)");
+      ctx.fillStyle = leak;
+      ctx.fillRect(-width, -height * 0.08, width * 2, height * 0.16);
+      ctx.restore();
+    };
 
-      raf = requestAnimationFrame(draw);
+    const tick = (now: number) => {
+      if (!visible) return;
+      paint(now);
+      wrap.style.opacity = String(fadeAt(now - start));
+      raf = requestAnimationFrame(tick);
     };
 
     resize();
-    draw();
+
+    if (reduce) {
+      paint(start);
+      wrap.style.opacity = "1";
+      return;
+    }
+
+    wrap.style.opacity = "0";
+    raf = requestAnimationFrame(tick);
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible) {
+          start = performance.now() - ((performance.now() - start) % CYCLE_MS);
+          cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(tick);
+        } else {
+          cancelAnimationFrame(raf);
+        }
+      },
+      { threshold: 0.05 },
+    );
+    io.observe(wrap);
+
+    const onVis = () => {
+      if (document.hidden) {
+        visible = false;
+        cancelAnimationFrame(raf);
+      } else {
+        visible = true;
+        raf = requestAnimationFrame(tick);
+      }
+    };
+
     window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 
   return (
-    <canvas
-      ref={ref}
-      className="absolute inset-0 h-full w-full"
+    <div
+      ref={wrapRef}
+      className="hero-plate pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden="true"
-    />
+    >
+      <canvas ref={canvasRef} className="h-full w-full" />
+    </div>
   );
 }

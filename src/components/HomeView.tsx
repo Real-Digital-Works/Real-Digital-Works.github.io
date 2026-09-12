@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useRef } from "react";
 import { Faq } from "@/components/Faq";
+import { HeroScene } from "@/components/HeroScene";
 import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
 import { StudioChat } from "@/components/StudioChat";
@@ -159,8 +160,10 @@ export function HomeView() {
   return (
     <div ref={root}>
       <section className="hero-block relative z-20 flex min-h-[calc(100svh-64px)] flex-col overflow-hidden">
+        <HeroScene />
+        <div className="hero-blob pointer-events-none absolute top-1/2 left-1/2 z-[1] h-[527px] w-[min(984px,92vw)] -translate-x-1/2 -translate-y-1/2 bg-[#0d121a] opacity-90 blur-[82px]" />
         <div
-          className="hero-grid pointer-events-none absolute inset-0 opacity-30"
+          className="hero-grid pointer-events-none absolute inset-0 z-[2] opacity-[0.22]"
           style={{
             backgroundImage:
               "linear-gradient(rgba(26,152,251,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(26,152,251,.1) 1px, transparent 1px)",
@@ -169,7 +172,6 @@ export function HomeView() {
               "radial-gradient(ellipse 80% 70% at 70% 20%, #000 20%, transparent 75%)",
           }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(720px_380px_at_92%_-10%,rgba(26,152,251,.32),transparent_58%)]" />
 
         <div className="hero-stage wrap relative z-10 grid flex-1 items-center gap-10 py-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-12">
           <div>
@@ -180,7 +182,7 @@ export function HomeView() {
             <h1 className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-white">
               Websites, software,
               <br />
-              <span className="accent">AI and motion.</span>
+              <span className="accent accent-wash">AI and motion.</span>
             </h1>
             <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-white/62">
               One London studio. Scroll and the offer unpacks — site, software,

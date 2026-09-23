@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
 
-const raw = process.env.NEXT_BASE_PATH ?? "";
-const basePath = raw.replace(/\/$/, "") || undefined;
-
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
-  images: { unoptimized: true },
-  ...(basePath ? { basePath, assetPrefix: basePath } : {}),
+  // Vercel handles the build — no static export needed.
+  // images.unoptimized and trailingSlash were GitHub Pages workarounds only.
+  images: {
+    // Vercel's image optimisation works on the free tier.
+    // Remove unoptimized so Next.js can serve properly sized images.
+  },
 };
 
 export default nextConfig;

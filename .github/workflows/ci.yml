@@ -1,0 +1,74 @@
+name: CI
+
+# ─────────────────────────────────────────────────────────────────────────────
+# What this does:
+#   • Every push and PR: type-check + lint (fast quality gate, ~60s)
+#   • Every push to main: full build (Vercel also builds, but this catches
+#     regressions before they reach production)
+#
+# What Vercel does (separately, automatically):
+#   • Detects the push, runs `npm run build` (which includes fetch-content.js)
+#   • Publishes to the custom domain
+#
+# Manual rebuild (e.g. after saving content in /admin):
+#   • Admin "Save & Deploy" button POSTs to the Vercel deploy hook
+#   • Vercel reruns `npm run build` → fetches latest Firestore content → live
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Type-check + lint ───────────────────────────────────────────────────────
+  check:
+    name: Type-check & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+  # ── Full build (main branch only) ──────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # npm run build already calls scripts/fetch-content.js first.
+      # The Firebase secrets below are set in:
+      #   GitHub repo → Settings → Secrets and variables → Actions
+      # If the secrets are absent the fetch step exits gracefully and
+      # the committed content.json seed is used instead.
+      - name: Build (includes Firestore content fetch)
+        run: npm run build
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}

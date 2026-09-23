@@ -28,7 +28,14 @@ const OUTPUT = path.join(__dirname, "../src/data/content.json");
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+// Normalise the private key:
+//  • Strip surrounding quotes if the value was pasted with them
+//  • Replace literal \n sequences with real newlines
+const rawKey = process.env.FIREBASE_PRIVATE_KEY ?? "";
+const privateKey = rawKey
+  .replace(/^["']|["']$/g, "")   // remove surrounding quotes
+  .replace(/\\n/g, "\n");         // convert escaped newlines to real ones
 
 if (!projectId || !clientEmail || !privateKey) {
   console.log(

@@ -32,7 +32,7 @@ export function Logo({ className = "", variant = "nav" }: LogoProps) {
           priority
         />
       </span>
-      <span className="hidden text-[16.5px] font-medium tracking-[-0.03em] whitespace-nowrap text-white sm:inline">
+      <span className="hidden text-[16.5px] font-medium tracking-[-0.03em] whitespace-nowrap text-fg sm:inline">
         Real <span className="font-semibold text-tech">Digital</span> Works
       </span>
     </span>

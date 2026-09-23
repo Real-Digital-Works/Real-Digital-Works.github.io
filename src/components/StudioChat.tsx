@@ -69,11 +69,11 @@ export function StudioChat({
 
   const windowUi = (
     <div className="glass flex h-full min-h-[380px] flex-col overflow-hidden rounded-[22px]">
-      <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        <p className="ml-3 font-mono text-[11px] tracking-[0.16em] text-white/45 uppercase">
+        <p className="ml-3 font-mono text-[11px] tracking-[0.16em] text-fg/45 uppercase">
           rdw / enquire-desk
         </p>
         <span className="ml-auto font-mono text-[11px] text-cyan">live</span>
@@ -85,7 +85,7 @@ export function StudioChat({
             className={`max-w-[92%] rounded-2xl px-3.5 py-2.5 text-[14.5px] leading-relaxed ${
               msg.from === "you"
                 ? "ml-auto bg-beam text-white"
-                : "bg-white/6 text-white/82"
+                : "bg-fg/6 text-fg/82"
             }`}
           >
             {msg.text}
@@ -96,7 +96,7 @@ export function StudioChat({
         ) : null}
       </div>
       <form
-        className="flex gap-2 border-t border-white/10 p-3"
+        className="flex gap-2 border-t border-line p-3"
         onSubmit={(e) => {
           e.preventDefault();
           send(input);
@@ -112,7 +112,7 @@ export function StudioChat({
           Send
         </button>
       </form>
-      <p className="px-4 pb-3 text-[11px] text-white/35">
+      <p className="px-4 pb-3 text-[11px] text-fg/35">
         Demo logic on this machine.{" "}
         <Link href="/contact" className="text-tech">
           Talk to a person →

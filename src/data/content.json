@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "lastUpdated": "2026-09-23T00:00:00Z",
+
+  "site": {
+    "name": "Real Digital Works",
+    "parent": "Real Animation Works",
+    "tagline": "Websites, software, AI and motion — from one London studio.",
+    "description": "Real Digital Works delivers websites, custom software, AI automation, SEO and motion from its Kennington, London studio. A Real Animation Works company.",
+    "phone": "020 7720 2581",
+    "phoneHref": "tel:+442077202581",
+    "whatsapp": "07970 325184",
+    "whatsappHref": "https://wa.me/447970325184",
+    "email": "hello@realdigitalworks.com",
+    "emailHref": "mailto:hello@realdigitalworks.com",
+    "address": ["Kennington Business Park", "Lincoln House LG-02", "London SW9 6DE"],
+    "hours": "Monday to Saturday, 9am – 7pm",
+    "url": "https://realdigitalworks.com"
+  },
+
+  "seo": {
+    "home": {
+      "title": "Real Digital Works — Web Design, Software & AI · London",
+      "description": "Websites from £1,450, custom software, AI automation, SEO and motion from a Kennington, London studio. Fixed prices, no retainers. A Real Animation Works company.",
+      "keywords": ["web design London", "website design Kennington London", "digital agency London", "custom software London", "AI automation London", "SEO agency London", "web developer London", "motion design London", "website design south London"]
+    },
+    "services": {
+      "title": "Services — Web Design, Software, AI, SEO & Motion · Real Digital Works",
+      "description": "Websites from £1,450. Custom applications, AI workflows, search & SEO, and 3D motion — one London studio, fixed prices, in-house delivery.",
+      "keywords": ["website design London prices", "custom software development London", "AI workflow automation UK", "SEO services London", "motion design studio London", "web agency Kennington", "brochure website London", "ecommerce website London"]
+    },
+    "pricing": {
+      "title": "Pricing — Fixed Prices for Websites, Apps & SEO · Real Digital Works",
+      "description": "Transparent pricing: websites from £1,450, e-commerce from £5,500, custom applications and monthly SEO from £550. No retainers, no surprises.",
+      "keywords": ["website cost London", "web design prices UK", "how much does a website cost London", "SEO pricing London", "web development cost UK", "website package prices"]
+    },
+    "about": {
+      "title": "About — Motion Studio Behind the Digital Work · Real Digital Works",
+      "description": "Real Digital Works is the digital arm of Real Animation Works — a Kennington studio teaching and producing animation, 3D and visualisation since 2009.",
+      "keywords": ["digital agency Kennington London", "animation studio London", "web design studio London", "Real Animation Works digital", "Kennington studio London"]
+    },
+    "contact": {
+      "title": "Contact — Start a Brief · Real Digital Works",
+      "description": "Get in touch at our Kennington studio. Free 20-minute consultation, fixed written quote before work starts. Call, WhatsApp or use the form — we reply the same day.",
+      "keywords": ["contact web design agency London", "digital agency Kennington", "web design quote London", "free web design consultation London"]
+    },
+    "work": {
+      "title": "Work — Portfolio · Real Digital Works London",
+      "description": "Websites, applications and AI products from the Real Digital Works studio in Kennington, London. Live samples and indicative builds.",
+      "keywords": ["web design portfolio London", "digital agency work London", "website examples UK", "web developer portfolio London"]
+    }
+  },
+
+  "hero": {
+    "eyebrow": "Real Digital Works",
+    "headline": "Websites.\nSoftware.\nAI & motion.",
+    "sub": "From a Kennington studio that has been building and teaching the craft since 2009.",
+    "primaryCta": "Start a brief",
+    "primaryHref": "/contact",
+    "secondaryCta": "See our work",
+    "secondaryHref": "/work"
+  },
+
+  "proof": [
+    { "value": "£1,450", "label": "Typical website start" },
+    { "value": "Six", "label": "Services, one studio" },
+    { "value": "In-house", "label": "Build, motion and QA" },
+    { "value": "1 day", "label": "Reply on every enquiry" }
+  ],
+
+  "services": [
+    {
+      "id": "websites",
+      "title": "Websites & brands",
+      "from": "From £1,450",
+      "summary": "Sites that look expensive and are easy to run. Brochure, booking, or a full shop — designed so your team can update them without calling us.",
+      "detail": "Information architecture, visual design, build, CMS, forms, analytics, accessibility pass, and a live review loop until launch."
+    },
+    {
+      "id": "apps",
+      "title": "Custom applications",
+      "from": "Scoped",
+      "summary": "The thing that is not a template: client portals, internal tools, booking engines, training ops, dashboards. Cloud-native, owned by you.",
+      "detail": "Fixed written scope, then weekly slices you can click. Cloud-native, owned by you."
+    },
+    {
+      "id": "ai",
+      "title": "AI & automation",
+      "from": "From £900",
+      "summary": "Enquiry chats that book into a diary, follow-ups that actually send, admin that stops living in someone's head. Practical, not theatre.",
+      "detail": "We start with one workflow that saves hours. If it works, we add the next. No mystery black box on a retainer."
+    },
+    {
+      "id": "seo",
+      "title": "Search & SEO",
+      "from": "From £550 / month",
+      "summary": "Get found by people already looking. Technical health, local listings, and pages built around real search demand.",
+      "detail": "Most sites fail search because the foundations were never set. We fix that first, then grow content that can rank."
+    },
+    {
+      "id": "motion",
+      "title": "3D, video & animation",
+      "from": "From £450",
+      "summary": "Product renders, explainers, and motion produced in-house by a studio that has taught this craft for over a decade.",
+      "detail": "Maya, 3ds Max, Unreal, Blender, After Effects — taught and used daily at Real Animation Works. Same people, now on client work for this brand."
+    },
+    {
+      "id": "care",
+      "title": "Care & launch support",
+      "from": "From £95 / month",
+      "summary": "Hosting, updates, backups, monitoring, and an hour of changes. You are not left with a login and a prayer.",
+      "detail": "Every build includes 30 days of post-launch support. After that, stay on a care plan or take the keys. You own the source either way."
+    }
+  ],
+
+  "process": [
+    {
+      "n": "01",
+      "title": "Free consultation",
+      "body": "Twenty minutes on the phone or at the Kennington studio. We find out what is actually costing you money."
+    },
+    {
+      "n": "02",
+      "title": "Fixed written scope",
+      "body": "The work, the price, the date. Signed before anything starts. No sliding retainers in disguise."
+    },
+    {
+      "n": "03",
+      "title": "Build in the open",
+      "body": "You get a live link each week and comment on it. Project management and QA sit inside the team, not as an afterthought."
+    },
+    {
+      "n": "04",
+      "title": "Launch and train",
+      "body": "Handover, training for whoever will run it, and optional care. Source files and ownership stay with you."
+    }
+  ],
+
+  "disciplines": [
+    {
+      "title": "Motion",
+      "body": "Animation, 3D and visualisation taught and produced in Kennington since 2009. Not a freelancer we call when a site needs a render."
+    },
+    {
+      "title": "Engineering",
+      "body": "Websites, applications, AI workflows and cloud systems. The work is scoped in writing and shipped in weekly slices you can click."
+    },
+    {
+      "title": "Delivery",
+      "body": "Project management and QA inside the studio, so design and code do not drift. Names go on this page when the founding team is ready."
+    }
+  ],
+
+  "faq": [
+    {
+      "q": "How much does this actually cost?",
+      "a": "Most small business websites land between £1,450 and £3,200. Online shops start around £5,500. Custom software is scoped after a call. Search work from £550 a month. Use the quote builder for a starting range — then you get a fixed written price before work starts."
+    },
+    {
+      "q": "How long does it take?",
+      "a": "Two to three weeks for a simple site, four to six for a larger custom build, six to ten for e-commerce. Applications follow the scope. The usual delay is waiting on content from your side, so we agree those dates at the start."
+    },
+    {
+      "q": "Am I locked into a contract?",
+      "a": "Build work is a one-off project. Monthly plans have a three-month minimum, then roll month to month with 30 days' notice. You own your domain, your site, your data and your source files throughout."
+    },
+    {
+      "q": "Who actually does the work?",
+      "a": "The Kennington studio. Motion and 3D in-house. Software and cloud in-house. Delivery and QA in the same room. Nothing is offshored without telling you first."
+    },
+    {
+      "q": "Do you only work with London businesses?",
+      "a": "Most clients will be in London and we will happily meet in Kennington. Everything we build also works remotely, across the UK and further."
+    }
+  ],
+
+  "packages": [
+    {
+      "name": "Starter",
+      "amount": "£1,450",
+      "per": "one-off · 2–3 weeks",
+      "featured": false,
+      "items": [
+        "Up to 5 pages",
+        "Mobile and tablet ready",
+        "Contact forms",
+        "Basic SEO setup",
+        "One hour of training"
+      ]
+    },
+    {
+      "name": "Business",
+      "amount": "£3,200",
+      "per": "one-off · 4–6 weeks",
+      "featured": true,
+      "items": [
+        "Up to 15 pages, custom design",
+        "Content management system",
+        "Booking or enquiry system",
+        "Full technical SEO setup",
+        "Speed and accessibility pass",
+        "Half-day team training"
+      ]
+    },
+    {
+      "name": "Commerce",
+      "amount": "£5,500",
+      "per": "one-off · 6–10 weeks",
+      "featured": false,
+      "items": [
+        "Full e-commerce build",
+        "Payments and shipping",
+        "Stock and order management",
+        "Product page SEO",
+        "Full day of training"
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "slug": "plot-atelier",
+      "title": "Plot Atelier",
+      "client": "Sample — interior landscape studio",
+      "kind": "Brand website",
+      "year": "2026",
+      "status": "Live sample",
+      "summary": "A cinematic site for a landscape and interior practice. Built to show what a distinctive brand experience looks like when motion, type and space are treated as the product, not decoration.",
+      "problem": "Most interior and architecture sites look like property portals: grids of beige photos and a contact form. The work is better than the website.",
+      "work": "Art direction, interaction, and a full marketing site: home, work, method, studio, contact. Smooth scrolling, a living hero field, and a tone that feels like a practice rather than a template.",
+      "outcome": "A piece we can put in front of design, architecture and training clients as proof we do not ship generic agency skins. Built in Cursor as a working sample for this new brand.",
+      "tags": ["Next-adjacent React", "Motion", "Brand"],
+      "accent": "#c45d3a"
+    },
+    {
+      "slug": "enquiry-desk",
+      "title": "Enquiry desk",
+      "client": "Indicative — training & services",
+      "kind": "AI + operations",
+      "year": "Draft",
+      "status": "Indicative",
+      "summary": "An assistant that answers the questions a studio is asked fifty times a week, then books a call instead of dumping another unread email on the floor.",
+      "problem": "High volume of small enquiries (courses, software, quotes) sitting in inboxes. Big clients and tiny individual contributors all arrive through the same door.",
+      "work": "Scoped conversation flows, calendar booking, handoff to a human when the question is real. Built on the actual questions the Kennington studio already hears.",
+      "outcome": "A product shape we will refine with stakeholders. Shown here so the offer is visible, not just 'we do AI'.",
+      "tags": ["AI", "Automation", "Product"],
+      "accent": "#1857EC"
+    },
+    {
+      "slug": "atlas-portal",
+      "title": "Atlas",
+      "client": "Indicative — growing firm",
+      "kind": "Custom application",
+      "year": "Draft",
+      "status": "Indicative",
+      "summary": "A client portal: jobs, files, invoices, and status in one place so nobody is hunting WhatsApp for the latest PDF.",
+      "problem": "Work lives in email threads. Clients ask 'where are we?' and the answer is a screenshot of a spreadsheet.",
+      "work": "Authenticated app, roles, document store, simple status. Cloud hosted, owned by the client, designed so a project manager can run it without an engineer on every click.",
+      "outcome": "Placeholder for the software side of the practice. Real case study to replace this after the first paid build.",
+      "tags": ["App", "Cloud", "QA"],
+      "accent": "#7c6cff"
+    }
+  ],
+
+  "sectors": [
+    "Trades & construction",
+    "Architecture & interior",
+    "Retail & e-commerce",
+    "Clinics & care",
+    "Hospitality",
+    "Training & education",
+    "Solicitors & accountants",
+    "Studios & makers",
+    "Charities",
+    "Property",
+    "Recruitment",
+    "Independent specialists"
+  ],
+
+  "stack": [
+    "Next.js", "React", "TypeScript", "Cloud",
+    "Python", "OpenAI", "Unreal", "Maya",
+    "Blender", "After Effects", "SEO", "Postgres"
+  ]
+}

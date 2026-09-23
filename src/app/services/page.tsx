@@ -1,20 +1,56 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { services } from "@/lib/site";
+import { services, seo, faq } from "@/lib/content";
 
-export const metadata: Metadata = { title: "Services" };
+export const metadata: Metadata = {
+  title: seo.services.title,
+  description: seo.services.description,
+  keywords: seo.services.keywords,
+  alternates: { canonical: "/services" },
+  openGraph: {
+    title: seo.services.title,
+    description: seo.services.description,
+    url: "/services",
+  },
+};
+
+// Service structured data (shown in Google)
+const serviceJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Real Digital Works Services",
+  itemListElement: services.map((s, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "Service",
+      name: s.title,
+      description: s.summary,
+      offers: {
+        "@type": "Offer",
+        description: s.from,
+        priceCurrency: "GBP",
+        seller: { "@type": "Organization", name: "Real Digital Works" },
+      },
+    },
+  })),
+};
 
 export default function ServicesPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       <section className="page-intro">
         <div className="wrap">
           <span className="tag on-dark">Services</span>
           <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
             Everything, or just the bit you are missing.
           </h1>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-white/62">
+          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62">
             Take one service or the lot. Most clients start with a website and
             add software, search or motion as they grow.
           </p>
@@ -35,8 +71,8 @@ export default function ServicesPage() {
                 <p className="mt-2 font-semibold text-beam">{service.from}</p>
               </div>
               <div>
-                <p className="text-white/58">{service.summary}</p>
-                <p className="mt-3 text-[15px] text-white/40">{service.detail}</p>
+                <p className="text-fg/58">{service.summary}</p>
+                <p className="mt-3 text-[15px] text-fg/40">{service.detail}</p>
               </div>
               <Link href="/contact" className="btn btn-ghost w-fit">
                 Enquire
@@ -64,12 +100,26 @@ export default function ServicesPage() {
             ].map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-[14.5px]"
+                className="rounded-full border border-line bg-fg/5 px-4 py-2 text-[14.5px]"
               >
                 {item}
               </span>
             ))}
           </div>
+        </div>
+
+        {/* FAQ section with structured data already injected in layout */}
+        <div className="wrap mt-20">
+          <span className="tag">Questions</span>
+          <h2 className="display mt-3 text-[clamp(28px,3.5vw,44px)]">Common questions</h2>
+          <dl className="mt-8 grid gap-4 md:grid-cols-2">
+            {faq.slice(0, 4).map((item) => (
+              <div key={item.q} className="glass rounded-2xl p-6">
+                <dt className="font-semibold text-fg">{item.q}</dt>
+                <dd className="mt-2 text-[15px] text-fg/55">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
     </>

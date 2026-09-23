@@ -84,9 +84,9 @@ export function OfferBoard() {
 
   return (
     <>
-      <div className="hero-board rise-3 relative rounded-[22px] border border-white/10 bg-[#151c27]/88 p-3 shadow-[0_30px_80px_rgba(0,0,0,.35)] backdrop-blur-md sm:p-4">
+      <div className="hero-board rise-3 relative rounded-[22px] border border-line p-3 shadow-[0_30px_80px_rgba(0,0,0,.35)] backdrop-blur-md sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <p className="font-mono text-[10px] tracking-[0.18em] text-white/40 uppercase">
+          <p className="font-mono text-[10px] tracking-[0.18em] text-fg/40 uppercase">
             Click a tile · watch it run
           </p>
           <p className="font-mono text-[10px] tracking-[0.12em] text-cyan uppercase">
@@ -100,7 +100,7 @@ export function OfferBoard() {
               <button
                 key={slot.id}
                 type="button"
-                className="hero-tile group rounded-[16px] border border-white/8 bg-white/[0.035] p-3 text-left transition-[border-color,background] duration-200 hover:border-tech/50 hover:bg-white/[0.06]"
+                className="hero-tile group rounded-[16px] border border-line p-3 text-left transition-[border-color,background] duration-200 hover:border-tech/50"
                 onClick={() => setOpen(slot.id)}
               >
                 <div aria-hidden="true">
@@ -108,14 +108,14 @@ export function OfferBoard() {
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-2">
                   <div>
-                    <p className="font-mono text-[10px] text-white/35">{slot.n}</p>
+                    <p className="font-mono text-[10px] text-fg/35">{slot.n}</p>
                     <p className="text-[15px] leading-tight font-semibold tracking-[-0.03em] sm:text-[17px]">
                       {slot.title}
                     </p>
                   </div>
                   <p className="font-mono text-[10px] text-cyan sm:text-[11px]">{slot.from}</p>
                 </div>
-                <p className="mt-2 font-mono text-[9px] tracking-[0.14em] text-white/30 uppercase group-hover:text-cyan">
+                <p className="mt-2 font-mono text-[9px] tracking-[0.14em] text-fg/30 uppercase group-hover:text-cyan">
                   Play workflow →
                 </p>
               </button>

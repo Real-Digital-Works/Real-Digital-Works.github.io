@@ -161,7 +161,7 @@ export function HomeView() {
     <div ref={root}>
       <section className="hero-block relative z-20 flex min-h-[calc(100svh-64px)] flex-col overflow-hidden">
         <HeroScene />
-        <div className="hero-blob pointer-events-none absolute top-1/2 left-1/2 z-[1] h-[527px] w-[min(984px,92vw)] -translate-x-1/2 -translate-y-1/2 bg-[#0d121a] opacity-90 blur-[82px]" />
+        <div className="hero-blob pointer-events-none absolute top-1/2 left-1/2 z-[1] h-[527px] w-[min(984px,92vw)] -translate-x-1/2 -translate-y-1/2 bg-[var(--hero-blob)] opacity-90 blur-[82px]" />
         <div
           className="hero-grid pointer-events-none absolute inset-0 z-[2] opacity-[0.22]"
           style={{
@@ -179,12 +179,12 @@ export function HomeView() {
               <span className="h-1.5 w-1.5 rounded-full bg-cyan" />
               Kennington · in-house
             </p>
-            <h1 className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-white">
+            <h1 className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-fg">
               Websites, software,
               <br />
               <span className="accent accent-wash">AI and motion.</span>
             </h1>
-            <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-white/62">
+            <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-fg/62">
               One London studio. Scroll and the offer unpacks — site, software,
               desk, motion. Not six suppliers in a slide deck.
             </p>
@@ -200,23 +200,23 @@ export function HomeView() {
           <OfferBoard />
         </div>
 
-        <div className="relative z-10 border-t border-white/8">
+        <div className="relative z-10 border-t border-line">
           <div className="wrap grid grid-cols-2 md:grid-cols-4">
             {proof.map((item) => (
               <div
                 key={item.label}
-                className="border-b border-white/8 px-0 py-4 even:pl-6 md:border-b-0 md:border-r md:px-6 md:even:pl-6 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
+                className="border-b border-line px-0 py-4 even:pl-6 md:border-b-0 md:border-r md:px-6 md:even:pl-6 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
               >
                 <strong className="display block text-[22px] sm:text-[26px]">
                   {item.value}
                 </strong>
-                <span className="mt-1 block text-[12.5px] text-white/42">
+                <span className="mt-1 block text-[12.5px] text-fg/42">
                   {item.label}
                 </span>
               </div>
             ))}
           </div>
-          <p className="scroll-cue pb-4 text-center font-mono text-[11px] tracking-[0.18em] text-white/45 uppercase">
+          <p className="scroll-cue pb-4 text-center font-mono text-[11px] tracking-[0.18em] text-fg/45 uppercase">
             Scroll — the offer is below
           </p>
         </div>
@@ -235,9 +235,9 @@ export function HomeView() {
                 One line at a time.
               </h2>
             </div>
-            <p className="font-mono text-[13px] text-white/40">
+            <p className="font-mono text-[13px] text-fg/40">
               <span ref={indexEl}>01</span>
-              <span className="text-white/20"> / 06</span>
+              <span className="text-fg/20"> / 06</span>
             </p>
           </div>
           <div ref={track} className="flex w-max items-center gap-6 px-6 will-change-transform md:px-16">
@@ -248,7 +248,7 @@ export function HomeView() {
                 className="glass offer-card flex h-[min(420px,56vh)] w-[min(84vw,540px)] shrink-0 flex-col justify-between rounded-[28px] p-8 md:p-10"
               >
                 <div className="flex items-baseline justify-between">
-                  <p className="font-mono text-[12px] text-white/30">
+                  <p className="font-mono text-[12px] text-fg/30">
                     {String(i + 1).padStart(2, "0")}
                   </p>
                   <p className="font-mono text-[12px] text-cyan">{service.from}</p>
@@ -257,7 +257,7 @@ export function HomeView() {
                   <h3 className="text-[clamp(32px,4vw,48px)] leading-[0.98] font-semibold tracking-[-0.045em]">
                     {service.title}
                   </h3>
-                  <p className="mt-5 max-w-[36ch] text-[16px] leading-relaxed text-white/55">
+                  <p className="mt-5 max-w-[36ch] text-[16px] leading-relaxed text-fg/55">
                     {service.summary}
                   </p>
                   <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase">
@@ -272,7 +272,7 @@ export function HomeView() {
               <span ref={barEl} />
             </div>
             <div className="mt-3 flex justify-between text-[12px]">
-              <span className="font-mono text-white/30 uppercase">Unpack</span>
+              <span className="font-mono text-fg/30 uppercase">Unpack</span>
               <Link href="/services" className="font-semibold tracking-[0.08em] text-cyan uppercase">
                 All services →
               </Link>
@@ -281,7 +281,7 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="desk-block border-t border-white/8 py-20 md:py-24">
+      <section className="desk-block border-t border-line py-20 md:py-24">
         <div className="wrap grid items-start gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
           <div>
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
@@ -290,7 +290,7 @@ export function HomeView() {
             <h2 className="display mt-3 max-w-[12ch] text-[clamp(28px,4vw,48px)]">
               The enquiry desk.
             </h2>
-            <p className="mt-4 max-w-[46ch] text-[15.5px] text-white/55">
+            <p className="mt-4 max-w-[46ch] text-[15.5px] text-fg/55">
               This is the pattern we ship: answers first, then a human. Ask it
               about a website, an app, search, or motion.
             </p>
@@ -315,7 +315,7 @@ export function HomeView() {
             </Link>
           </div>
           <Link href={`/work/${featured.slug}`} className="work-stage group block">
-            <div className="overflow-hidden rounded-[24px] border border-white/10">
+            <div className="overflow-hidden rounded-[24px] border border-line">
               <div className="grid md:grid-cols-[1.15fr_0.85fr]">
                 <div className="relative min-h-[280px] bg-[linear-gradient(160deg,#2c211b,#6b4a38_42%,#d7c4a8)] p-8 md:min-h-[340px] md:p-10">
                   <p className="font-mono text-[11px] tracking-[0.22em] text-white/55 uppercase">
@@ -325,11 +325,11 @@ export function HomeView() {
                     Plot
                   </p>
                 </div>
-                <div className="flex flex-col justify-between bg-white/[0.03] p-8 md:p-10">
-                  <p className="text-[16.5px] leading-relaxed text-white/68">
+                <div className="flex flex-col justify-between bg-fg/[0.03] p-8 md:p-10">
+                  <p className="text-[16.5px] leading-relaxed text-fg/68">
                     {featured.summary}
                   </p>
-                  <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-white">
+                  <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
                     Open the case →
                   </p>
                 </div>
@@ -339,7 +339,7 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="ship-block border-y border-white/10 py-20 md:py-24">
+      <section className="ship-block border-y border-line py-20 md:py-24">
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
             How it ships
@@ -349,14 +349,14 @@ export function HomeView() {
               <div
                 key={step.n}
                 className={`step-item md:pr-8 ${
-                  i < process.length - 1 ? "md:border-r md:border-white/10" : ""
+                  i < process.length - 1 ? "md:border-r md:border-line" : ""
                 } ${i > 0 ? "md:pl-8" : ""}`}
               >
                 <p className="font-mono text-[12px] text-tech">{step.n}</p>
                 <h3 className="mt-3 text-[17px] font-semibold tracking-[-0.03em]">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-[14.5px] leading-relaxed text-white/48">
+                <p className="mt-2 text-[14.5px] leading-relaxed text-fg/48">
                   {step.body}
                 </p>
               </div>

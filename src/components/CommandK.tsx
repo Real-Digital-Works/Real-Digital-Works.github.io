@@ -53,14 +53,14 @@ export function CommandK() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Jump to a page…"
-          className="w-full border-b border-white/10 bg-transparent px-5 py-4 text-lg outline-none"
+          className="w-full border-b border-line bg-transparent px-5 py-4 text-lg outline-none"
         />
         <ul className="p-2">
           {items.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="block rounded-xl px-4 py-3 text-white/80 hover:bg-white/8"
+                className="block rounded-xl px-4 py-3 text-fg/80 hover:bg-fg/8"
                 onClick={() => setOpen(false)}
               >
                 {item.label}
@@ -70,7 +70,7 @@ export function CommandK() {
           <li>
             <button
               type="button"
-              className="block w-full rounded-xl px-4 py-3 text-left text-white/80 hover:bg-white/8"
+              className="block w-full rounded-xl px-4 py-3 text-left text-fg/80 hover:bg-fg/8"
               onClick={() => {
                 setOpen(false);
                 router.push("/contact");
@@ -80,7 +80,7 @@ export function CommandK() {
             </button>
           </li>
         </ul>
-        <p className="px-5 py-3 font-mono text-[11px] text-white/35">esc to close</p>
+        <p className="px-5 py-3 font-mono text-[11px] text-fg/35">esc to close</p>
       </div>
     </div>
   );

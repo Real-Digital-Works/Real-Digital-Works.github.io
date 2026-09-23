@@ -266,11 +266,11 @@ export function WorkflowPlay({
             <h2 id="wf-title" className="display mt-2 text-[clamp(28px,4vw,44px)]">
               {flow.title}
             </h2>
-            <p className="mt-3 max-w-[54ch] text-[15px] text-white/58">{flow.promise}</p>
+            <p className="mt-3 max-w-[54ch] text-[15px] text-fg/58">{flow.promise}</p>
           </div>
           <button
             type="button"
-            className="rounded-full border border-white/15 px-3 py-1.5 text-[13px] text-white/70"
+            className="rounded-full border border-line px-3 py-1.5 text-[13px] text-fg/70"
             onClick={onClose}
           >
             Close
@@ -284,20 +284,20 @@ export function WorkflowPlay({
                 <button
                   type="button"
                   className={`flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left ${
-                    i === step ? "bg-white/8" : "hover:bg-white/4"
+                    i === step ? "bg-fg/8" : "hover:bg-fg/4"
                   }`}
                   onClick={() => setStep(i)}
                 >
                   <span
                     className={`mt-0.5 font-mono text-[11px] ${
-                      i === step ? "text-cyan" : "text-white/30"
+                      i === step ? "text-cyan" : "text-fg/30"
                     }`}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span>
                     <span className="block text-[15px] font-semibold">{beat.label}</span>
-                    <span className="mt-0.5 block text-[13px] text-white/45">{beat.line}</span>
+                    <span className="mt-0.5 block text-[13px] text-fg/45">{beat.line}</span>
                   </span>
                 </button>
               </li>
@@ -305,7 +305,7 @@ export function WorkflowPlay({
           </ol>
           <div>
             {scenes[flow.id](step)}
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-fg/10">
               <div
                 className="h-full bg-tech transition-[width] duration-300"
                 style={{ width: `${((step + 1) / flow.beats.length) * 100}%` }}
@@ -321,7 +321,7 @@ export function WorkflowPlay({
           <Link href="/pricing" className="btn btn-outline-light" onClick={onClose}>
             Scope a number
           </Link>
-          <p className="ml-auto font-mono text-[11px] text-white/35">
+          <p className="ml-auto font-mono text-[11px] text-fg/35">
             {flow.from} · loops until you close
           </p>
         </div>

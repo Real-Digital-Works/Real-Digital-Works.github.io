@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { disciplines } from "@/lib/site";
+import { disciplines, seo } from "@/lib/content";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = {
+  title: seo.about.title,
+  description: seo.about.description,
+  keywords: seo.about.keywords,
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: seo.about.title,
+    description: seo.about.description,
+    url: "/about",
+  },
+};
 
 export default function AboutPage() {
   return (
@@ -17,7 +27,7 @@ export default function AboutPage() {
           <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
             A motion house that learned to ship software.
           </h1>
-          <p className="mt-4 max-w-[60ch] text-[16.5px] text-white/58">
+          <p className="mt-4 max-w-[60ch] text-[16.5px] text-fg/58">
             Real Digital Works is the build arm of Real Animation Works — the
             Kennington studio that has taught animation, CAD and visualisation
             since 2009. Same address. A new product: websites, AI desks,
@@ -33,11 +43,11 @@ export default function AboutPage() {
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">
                 {item.title}
               </h2>
-              <p className="mt-3 text-white/55">{item.body}</p>
+              <p className="mt-3 text-fg/55">{item.body}</p>
             </Reveal>
           ))}
         </div>
-        <div className="wrap mt-16 max-w-[68ch] text-white/55">
+        <div className="wrap mt-16 max-w-[68ch] text-fg/55">
           <p>
             Students from the parent studio have gone on to film and games.
             Industry people also come in to train. We do not put individual

@@ -76,11 +76,11 @@ export function ContactForm() {
 
   if (status === "ok") {
     return (
-      <div className="rounded-[14px] bg-void p-7 text-white">
+      <div className="rounded-[14px] bg-ink p-7 text-bone">
         <h3 className="text-xl font-semibold tracking-[-0.03em]">
           Thanks — that is with us.
         </h3>
-        <p className="mt-2 text-[15.5px] text-white/66">
+        <p className="mt-2 text-[15.5px] text-bone/66">
           Your mail app should have opened a message to the studio. If it did
           not, write to {site.email} or call {site.phone}.
         </p>

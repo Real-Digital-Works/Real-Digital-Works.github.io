@@ -26,8 +26,8 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 backdrop-blur-2xl ${
         stuck || open
-          ? "border-b border-white/10 bg-[#1a2230]/80"
-          : "border-b border-transparent bg-[#1a2230]/40"
+          ? "border-b border-line bg-[var(--header)]"
+          : "border-b border-transparent bg-[var(--header)]"
       }`}
     >
       <div className="wrap flex h-16 items-center gap-4">
@@ -46,8 +46,8 @@ export function Header() {
                 href={item.href}
                 className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium ${
                   current
-                    ? "bg-white/10 text-white"
-                    : "text-white/55 hover:bg-white/6 hover:text-white"
+                    ? "bg-fg/10 text-fg"
+                    : "text-fg/55 hover:bg-fg/6 hover:text-fg"
                 }`}
               >
                 {item.label}
@@ -57,7 +57,7 @@ export function Header() {
         </nav>
         <button
           type="button"
-          className="hidden rounded-md border border-white/10 px-2 py-1 font-mono text-[11px] text-white/45 hover:border-white/25 hover:text-white lg:block"
+          className="hidden rounded-md border border-line px-2 py-1 font-mono text-[11px] text-fg/45 hover:border-fg/25 hover:text-fg lg:block"
           onClick={() => window.dispatchEvent(new Event("rdw:commandk"))}
         >
           ⌘K
@@ -67,23 +67,23 @@ export function Header() {
         </Link>
         <button
           type="button"
-          className="rounded-lg border border-white/15 p-2.5 lg:hidden"
+          className="rounded-lg border border-line p-2.5 text-fg lg:hidden"
           aria-expanded={open}
           aria-label="Menu"
           onClick={() => setOpen((v) => !v)}
         >
           <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true">
-            <path d="M0 1h20M0 7h20M0 13h20" stroke="#fff" strokeWidth="1.8" />
+            <path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" strokeWidth="1.8" />
           </svg>
         </button>
       </div>
       {open ? (
-        <div className="wrap border-t border-white/10 pb-5 lg:hidden">
+        <div className="wrap border-t border-line pb-5 lg:hidden">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="block border-b border-white/10 py-3.5 text-lg text-white"
+              className="block border-b border-line py-3.5 text-lg text-fg"
             >
               {item.label}
             </Link>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { projects } from "@/lib/site";
+import { projects, site } from "@/lib/content";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -12,7 +12,18 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = projects.find((item) => item.slug === slug);
-  return { title: project?.title ?? "Work" };
+  if (!project) return { title: "Work" };
+  return {
+    title: `${project.title} — ${project.kind}`,
+    description: project.summary,
+    keywords: [...project.tags, "web design London", "digital agency London"],
+    alternates: { canonical: `/work/${slug}` },
+    openGraph: {
+      title: `${project.title} — ${project.kind} · Real Digital Works`,
+      description: project.summary,
+      url: `/work/${slug}`,
+    },
+  };
 }
 
 export default async function WorkDetailPage({ params }: Props) {
@@ -20,8 +31,23 @@ export default async function WorkDetailPage({ params }: Props) {
   const project = projects.find((item) => item.slug === slug);
   if (!project) notFound();
 
+  const projectJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: project.title,
+    description: project.summary,
+    creator: { "@type": "Organization", name: site.name, url: site.url },
+    genre: project.kind,
+    dateCreated: project.year,
+    keywords: project.tags.join(", "),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }}
+      />
       <section className="page-intro">
         <div className="wrap">
           <Link href="/work" className="text-sm text-tech">
@@ -33,13 +59,13 @@ export default async function WorkDetailPage({ params }: Props) {
           <h1 className="display mt-3 max-w-[14ch] text-[clamp(36px,5.5vw,64px)]">
             {project.title}
           </h1>
-          <p className="mt-2 text-white/50">{project.client}</p>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-white/68">{project.summary}</p>
+          <p className="mt-2 text-fg/50">{project.client}</p>
+          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/68">{project.summary}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-white/15 px-3 py-1 text-sm text-white/70"
+                className="rounded-full border border-line px-3 py-1 text-sm text-fg/70"
               >
                 {tag}
               </span>

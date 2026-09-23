@@ -125,9 +125,9 @@ export function QuoteBuilder() {
       </div>
 
       <aside className="glass sticky top-24 overflow-hidden rounded-[22px] p-7">
-        <p className="text-sm text-white/55">Your estimate</p>
+        <p className="text-sm text-fg/55">Your estimate</p>
         <p className="display mt-2 text-[42px]">{estimate.total}</p>
-        <p className="mt-2 border-b border-white/12 pb-5 text-[14.5px] text-white/55">
+        <p className="mt-2 border-b border-line pb-5 text-[14.5px] text-fg/55">
           {estimate.sub}
         </p>
         <ul className="my-4 max-h-[240px] overflow-y-auto text-[14.5px]">
@@ -135,14 +135,14 @@ export function QuoteBuilder() {
             estimate.lines.map((line) => (
               <li
                 key={line.label}
-                className="flex justify-between gap-3 border-b border-white/8 py-2 text-white/70"
+                className="flex justify-between gap-3 border-b border-line py-2 text-fg/70"
               >
                 <span>{line.label}</span>
-                <b className="font-semibold text-white">{line.value}</b>
+                <b className="font-semibold text-fg">{line.value}</b>
               </li>
             ))
           ) : (
-            <li className="py-3 text-white/40">Nothing selected yet.</li>
+            <li className="py-3 text-fg/40">Nothing selected yet.</li>
           )}
         </ul>
         <Link
@@ -151,7 +151,7 @@ export function QuoteBuilder() {
         >
           Send this to us
         </Link>
-        <p className="mt-3.5 text-[12.5px] leading-5 text-white/42">
+        <p className="mt-3.5 text-[12.5px] leading-5 text-fg/42">
           Indicative range for this draft. Final price is fixed in writing after
           a free consultation.
         </p>
@@ -194,7 +194,7 @@ function Option({
   return (
     <label
       className={`flex cursor-pointer items-start gap-3 rounded-[11px] border-[1.5px] px-3.5 py-3.5 ${
-        checked ? "border-beam bg-beam/15" : "border-white/12 bg-white/4"
+        checked ? "border-beam bg-beam/15" : "border-line bg-fg/4"
       }`}
     >
       <input
@@ -231,7 +231,7 @@ function Seg({
           className={`rounded-[9px] border-[1.5px] px-4 py-2.5 text-[14.5px] ${
             value === item.id
               ? "border-beam bg-beam font-semibold text-white"
-              : "border-white/12 bg-white/4"
+              : "border-line bg-fg/4"
           }`}
         >
           {item.label}

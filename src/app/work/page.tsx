@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { projects } from "@/lib/site";
+import { projects, seo } from "@/lib/content";
 
-export const metadata: Metadata = { title: "Work" };
+export const metadata: Metadata = {
+  title: seo.work.title,
+  description: seo.work.description,
+  keywords: seo.work.keywords,
+  alternates: { canonical: "/work" },
+  openGraph: {
+    title: seo.work.title,
+    description: seo.work.description,
+    url: "/work",
+  },
+};
 
 export default function WorkPage() {
   return (
@@ -15,7 +25,7 @@ export default function WorkPage() {
           <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,6vw,68px)]">
             Proof before claims.
           </h1>
-          <p className="mt-4 max-w-[54ch] text-[16.5px] text-white/55">
+          <p className="mt-4 max-w-[54ch] text-[16.5px] text-fg/55">
             One live sample. Two product shapes labelled honestly until a paid
             case replaces them.
           </p>
@@ -42,7 +52,7 @@ export default function WorkPage() {
                 <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em] group-hover:text-tech">
                   {project.title}
                 </h2>
-                <p className="mt-2 max-w-[54ch] text-[15px] text-white/52">
+                <p className="mt-2 max-w-[54ch] text-[15px] text-fg/52">
                   {project.summary}
                 </p>
               </div>

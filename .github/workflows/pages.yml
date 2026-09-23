@@ -24,6 +24,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      # ── Fetch latest content from Firestore ──────────────────────────────
+      # Secrets are set in: GitHub repo → Settings → Secrets → Actions
+      # If secrets are absent (e.g. local forks), the script skips gracefully
+      # and the committed seed content.json is used instead.
+      - name: Fetch CMS content from Firestore
+        run: node scripts/fetch-content.js
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
       - name: Set Pages base path
         run: |
           OWNER="${{ github.repository_owner }}"

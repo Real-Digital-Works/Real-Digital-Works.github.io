@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PublicChrome } from "@/components/PublicChrome";
 import { site, seo } from "@/lib/content";
 import "./globals.css";
@@ -109,6 +111,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
       >
         <PublicChrome>{children}</PublicChrome>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

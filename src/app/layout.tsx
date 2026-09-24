@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
-import { CommandK } from "@/components/CommandK";
-import { Cursor } from "@/components/Cursor";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
-import { StudioChat } from "@/components/StudioChat";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { PublicChrome } from "@/components/PublicChrome";
 import { site, seo } from "@/lib/content";
 import "./globals.css";
 
@@ -113,14 +108,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         className="flex min-h-full flex-col bg-void font-sans text-fg"
         suppressHydrationWarning
       >
-        <div className="grain" aria-hidden="true" />
-        <Cursor />
-        <CommandK />
-        <ThemeToggle />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <StudioChat variant="dock" />
+        <PublicChrome>{children}</PublicChrome>
       </body>
     </html>
   );

@@ -179,7 +179,7 @@ export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
 
 /** Default nav — used when no CMS nav has been saved yet */
-const DEFAULT_NAV_ITEMS: NavItem[] = [
+export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: "home",     label: "Home",     href: "/" },
   { id: "work",     label: "Work",     href: "/work" },
   { id: "services", label: "Services", href: "/services" },
@@ -189,7 +189,10 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: "contact",  label: "Contact",  href: "/contact" },
 ];
 
-export const navItems: NavItem[] = content.navItems ?? DEFAULT_NAV_ITEMS;
+export const navItems: NavItem[] =
+  content.navItems && content.navItems.length > 0
+    ? content.navItems
+    : DEFAULT_NAV_ITEMS;
 
 /** Legacy flat nav — kept for backward compat with any remaining consumers */
 export const nav = navItems

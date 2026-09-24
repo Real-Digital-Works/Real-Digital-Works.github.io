@@ -24,7 +24,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import content from "@/lib/content";
+import content, { DEFAULT_NAV_ITEMS } from "@/lib/content";
 import type {
   SiteInfo,
   PageSeo,
@@ -37,6 +37,7 @@ import type {
   DynamicPage,
   ProcessStep,
   Discipline,
+  NavItem,
 } from "@/lib/content";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor } from "@/components/NavEditor";
@@ -154,7 +155,11 @@ export default function AdminDashboard() {
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
   const [processData, setProcessData] = useState<ProcessStep[]>(content.process);
   const [disciplinesData, setDisciplinesData] = useState<Discipline[]>(content.disciplines);
-  const [navData, setNavData] = useState<import("@/lib/content").NavItem[]>(content.navItems ?? []);
+  const [navData, setNavData] = useState<NavItem[]>(
+    content.navItems && content.navItems.length > 0
+      ? content.navItems
+      : DEFAULT_NAV_ITEMS
+  );
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
@@ -195,7 +200,9 @@ export default function AdminDashboard() {
           if (d.projects) setProjectsData(d.projects);
           if (d.process) setProcessData(d.process);
           if (d.disciplines) setDisciplinesData(d.disciplines);
-          if (d.navItems) setNavData(d.navItems);
+          if (Array.isArray(d.navItems) && d.navItems.length > 0) {
+            setNavData(d.navItems);
+          }
         }
         // Load blogs collection
         const blogsSnap = await getDocs(collection(db(), "blogs"));

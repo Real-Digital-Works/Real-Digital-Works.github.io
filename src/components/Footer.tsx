@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
-import { site } from "@/lib/site";
+import { site } from "@/lib/content";
 
 export function Footer() {
   return (

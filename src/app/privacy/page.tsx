@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { site } from "@/lib/site";
+import { site } from "@/lib/content";
 
 export const metadata: Metadata = { title: "Privacy" };
 

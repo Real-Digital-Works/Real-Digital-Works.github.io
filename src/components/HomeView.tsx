@@ -10,7 +10,7 @@ import { HeroScene } from "@/components/HeroScene";
 import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
 import { StudioChat } from "@/components/StudioChat";
-import { process, projects, proof, services, stack } from "@/lib/site";
+import { process, projects, proof, services, stack, hero } from "@/lib/content";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -177,23 +177,24 @@ export function HomeView() {
           <div>
             <p className="rise inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-cyan uppercase">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan" />
-              Kennington · in-house
+              {hero.eyebrow}
             </p>
             <h1 className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-fg">
-              Websites, software,
+              {hero.headline.split("\n").slice(0, -1).join(" ")}
               <br />
-              <span className="accent accent-wash">AI and motion.</span>
+              <span className="accent accent-wash">
+                {hero.headline.split("\n").slice(-1)[0]}
+              </span>
             </h1>
             <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-fg/62">
-              One London studio. Scroll and the offer unpacks — site, software,
-              desk, motion. Not six suppliers in a slide deck.
+              {hero.sub}
             </p>
             <div className="rise-4 relative z-30 mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/work" className="btn btn-beam">
-                See the work
+              <Link href={hero.primaryHref} className="btn btn-beam">
+                {hero.primaryCta}
               </Link>
-              <Link href="/pricing" className="btn btn-outline-light">
-                Scope a number
+              <Link href={hero.secondaryHref} className="btn btn-outline-light">
+                {hero.secondaryCta}
               </Link>
             </div>
           </div>

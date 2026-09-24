@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { faq } from "@/lib/site";
+import { faq } from "@/lib/content";
 
 export function Faq({ items = faq }: { items?: { q: string; a: string }[] }) {
   const [open, setOpen] = useState<number | null>(0);

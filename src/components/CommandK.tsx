@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { nav } from "@/lib/site";
+import { nav } from "@/lib/content";
 
 export function CommandK() {
   const [open, setOpen] = useState(false);

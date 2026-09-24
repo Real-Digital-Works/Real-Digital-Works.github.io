@@ -7,7 +7,7 @@ import {
   quoteServices,
   quoteSizes,
   quoteSpeeds,
-} from "@/lib/site";
+} from "@/lib/content";
 
 function money(n: number) {
   const rounded = n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 10) * 10;

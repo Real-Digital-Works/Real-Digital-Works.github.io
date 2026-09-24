@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { site } from "@/lib/site";
+import { site } from "@/lib/content";
 
 const needs = [
   "A new website",

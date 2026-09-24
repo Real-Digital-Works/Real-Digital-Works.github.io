@@ -52,13 +52,13 @@
   },
 
   "hero": {
-    "eyebrow": "Real Digital Works",
-    "headline": "Websites.\nSoftware.\nAI & motion.",
-    "sub": "From a Kennington studio that has been building and teaching the craft since 2009.",
-    "primaryCta": "Start a brief",
-    "primaryHref": "/contact",
-    "secondaryCta": "See our work",
-    "secondaryHref": "/work"
+    "eyebrow": "Kennington · in-house",
+    "headline": "Websites, software,\nAI and motion.",
+    "sub": "One London studio. Scroll and the offer unpacks — site, software, desk, motion. Not six suppliers in a slide deck.",
+    "primaryCta": "See the work",
+    "primaryHref": "/work",
+    "secondaryCta": "Scope a number",
+    "secondaryHref": "/pricing"
   },
 
   "proof": [

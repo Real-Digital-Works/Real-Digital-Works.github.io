@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
-import { nav } from "@/lib/site";
+import { nav } from "@/lib/content";
 
 export function Header() {
   const pathname = usePathname();

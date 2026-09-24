@@ -104,6 +104,33 @@ export interface Project {
   accent: string;
 }
 
+export type BlogStatus = "published" | "draft";
+
+export interface BlogPost {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;       // HTML from rich text editor
+  coverImage?: string;   // URL
+  publishedAt: string;   // ISO date string
+  status: BlogStatus;
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+}
+
+export type PageStatus = "published" | "draft";
+
+export interface DynamicPage {
+  slug: string;
+  title: string;
+  content: string;       // HTML from rich text editor
+  status: PageStatus;
+  showInNav: boolean;
+  seoTitle: string;
+  seoDescription: string;
+}
+
 export interface Content {
   version: number;
   lastUpdated: string;
@@ -119,6 +146,8 @@ export interface Content {
   projects: Project[];
   sectors: string[];
   stack: string[];
+  blogs: BlogPost[];
+  pages: DynamicPage[];
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -137,6 +166,8 @@ export const packages = content.packages;
 export const projects = content.projects;
 export const sectors = content.sectors;
 export const stack = content.stack;
+export const blogs: BlogPost[] = content.blogs ?? [];
+export const pages: DynamicPage[] = content.pages ?? [];
 
 /** Nav stays in code — no reason to make it CMS-editable */
 export const nav = [
@@ -144,6 +175,7 @@ export const nav = [
   { href: "/work", label: "Work" },
   { href: "/services", label: "Services" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/blog", label: "Blog" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];

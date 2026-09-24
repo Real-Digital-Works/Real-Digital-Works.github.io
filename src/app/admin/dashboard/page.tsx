@@ -4,14 +4,7 @@
  * Admin dashboard — content editor.
  *
  * Tabs:
- *   Site Info | SEO | Hero | Services | FAQ | Pricing | Projects | Deploy
- *
- * Data flow:
- *   1. On mount: load content from Firestore (falls back to content.json values)
- *   2. User edits fields → local React state (shows "Unsaved" badge)
- *   3. "Save" → writes to Firestore (shows "Saved")
- *   4. "Save & Deploy" → saves to Firestore, then POSTs to the Vercel deploy hook
- *      (URL stored in Firestore settings/deploy document)
+ *   Site Info | SEO | Hero | Services | FAQ | Pricing | Projects | Blog | Pages | Deploy
  */
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
@@ -25,6 +18,9 @@ import {
   doc,
   getDoc,
   setDoc,
+  collection,
+  getDocs,
+  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -37,7 +33,10 @@ import type {
   FaqItem,
   Package,
   Project,
+  BlogPost,
+  DynamicPage,
 } from "@/lib/content";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +48,8 @@ type Tab =
   | "faq"
   | "pricing"
   | "projects"
+  | "blog"
+  | "pages"
   | "deploy";
 
 type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
@@ -145,6 +146,10 @@ export default function AdminDashboard() {
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
   const [packagesData, setPackagesData] = useState<Package[]>(content.packages);
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
+  const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
+  const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
+  const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
+  const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
 
   // ── Auth guard ──
@@ -173,6 +178,16 @@ export default function AdminDashboard() {
           if (d.packages) setPackagesData(d.packages);
           if (d.projects) setProjectsData(d.projects);
         }
+        // Load blogs collection
+        const blogsSnap = await getDocs(collection(db(), "blogs"));
+        const blogs = blogsSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as BlogPost));
+        setBlogsData(blogs.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
+
+        // Load pages collection
+        const pagesSnap = await getDocs(collection(db(), "pages"));
+        const pages = pagesSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as DynamicPage));
+        setPagesData(pages);
+
         const settingsSnap = await getDoc(doc(db(), "cms", "settings"));
         if (settingsSnap.exists()) {
           setDeployHook(settingsSnap.data().deployHook ?? "");
@@ -246,6 +261,8 @@ export default function AdminDashboard() {
     { id: "faq", label: "FAQ" },
     { id: "pricing", label: "Pricing" },
     { id: "projects", label: "Projects" },
+    { id: "blog", label: "✍ Blog" },
+    { id: "pages", label: "📄 Pages" },
     { id: "deploy", label: "⚡ Deploy" },
   ];
 
@@ -536,6 +553,306 @@ export default function AdminDashboard() {
                     <Field label="The outcome" value={proj.outcome} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], outcome: v }; setProjectsData(p); markUnsaved(); }} />
                   </Card>
                 ))}
+              </>
+            )}
+
+            {/* ── BLOG ── */}
+            {tab === "blog" && (
+              <>
+                {!editingBlog ? (
+                  <>
+                    <SectionTitle
+                      title="Blog"
+                      sub="Write and publish blog posts. Each post gets its own page with full SEO."
+                    />
+                    <button
+                      onClick={() => setEditingBlog({
+                        slug: "",
+                        title: "",
+                        excerpt: "",
+                        content: "",
+                        publishedAt: new Date().toISOString().split("T")[0],
+                        status: "draft",
+                        tags: [],
+                        seoTitle: "",
+                        seoDescription: "",
+                      })}
+                      className="mb-6 rounded-xl bg-[#1857EC] px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600"
+                    >
+                      + New post
+                    </button>
+
+                    {blogsData.length === 0 ? (
+                      <Card><p className="text-sm text-white/40">No blog posts yet. Click "New post" to get started.</p></Card>
+                    ) : (
+                      <div className="space-y-3">
+                        {blogsData.map((post) => (
+                          <Card key={post.slug} className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="font-medium text-white">{post.title || "(untitled)"}</p>
+                              <p className="text-xs text-white/40 mt-0.5">
+                                /{post.slug} · {post.status} · {post.publishedAt?.split("T")[0] ?? "no date"}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              <button
+                                onClick={() => setEditingBlog(post)}
+                                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Delete "${post.title}"?`)) return;
+                                  await deleteDoc(doc(db(), "blogs", post.slug));
+                                  setBlogsData((b) => b.filter((p) => p.slug !== post.slug));
+                                  markUnsaved();
+                                }}
+                                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-6 flex items-center justify-between">
+                      <SectionTitle
+                        title={editingBlog.slug ? `Edit: ${editingBlog.title || "Untitled"}` : "New blog post"}
+                      />
+                      <button
+                        onClick={() => setEditingBlog(null)}
+                        className="text-sm text-white/40 hover:text-white"
+                      >
+                        ← Back to list
+                      </button>
+                    </div>
+
+                    <Card className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field
+                          label="Title"
+                          value={editingBlog.title}
+                          onChange={(v) => setEditingBlog((p) => p ? { ...p, title: v } : p)}
+                        />
+                        <Field
+                          label="Slug (URL)"
+                          value={editingBlog.slug}
+                          onChange={(v) => setEditingBlog((p) => p ? { ...p, slug: v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") } : p)}
+                          hint="/blog/your-slug"
+                        />
+                      </div>
+                      <Field
+                        label="Excerpt (shown on listing page)"
+                        value={editingBlog.excerpt}
+                        textarea
+                        onChange={(v) => setEditingBlog((p) => p ? { ...p, excerpt: v } : p)}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field
+                          label="Publish date"
+                          value={editingBlog.publishedAt?.split("T")[0] ?? ""}
+                          onChange={(v) => setEditingBlog((p) => p ? { ...p, publishedAt: v } : p)}
+                          hint="YYYY-MM-DD"
+                        />
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Status</label>
+                          <select
+                            value={editingBlog.status}
+                            onChange={(e) => setEditingBlog((p) => p ? { ...p, status: e.target.value as "published" | "draft" } : p)}
+                            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC]"
+                          >
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                          </select>
+                        </div>
+                      </div>
+                      <Field
+                        label="Tags (comma separated)"
+                        value={editingBlog.tags?.join(", ") ?? ""}
+                        onChange={(v) => setEditingBlog((p) => p ? { ...p, tags: v.split(",").map((t) => t.trim()).filter(Boolean) } : p)}
+                      />
+                    </Card>
+
+                    <Card className="space-y-3">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Content</label>
+                      <RichTextEditor
+                        content={editingBlog.content}
+                        onChange={(html) => setEditingBlog((p) => p ? { ...p, content: html } : p)}
+                        placeholder="Write your blog post here…"
+                        minHeight="400px"
+                      />
+                    </Card>
+
+                    <Card className="space-y-4">
+                      <h3 className="text-sm font-semibold text-white/70">SEO</h3>
+                      <Field label="SEO title" value={editingBlog.seoTitle ?? ""} onChange={(v) => setEditingBlog((p) => p ? { ...p, seoTitle: v } : p)} hint="Leave blank to use the post title" />
+                      <Field label="SEO description" value={editingBlog.seoDescription ?? ""} textarea onChange={(v) => setEditingBlog((p) => p ? { ...p, seoDescription: v } : p)} />
+                    </Card>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={async () => {
+                          if (!editingBlog.slug) { alert("Add a URL slug first."); return; }
+                          setStatus("saving");
+                          try {
+                            await setDoc(doc(db(), "blogs", editingBlog.slug), {
+                              ...editingBlog,
+                              updatedAt: serverTimestamp(),
+                            });
+                            setBlogsData((prev) => {
+                              const idx = prev.findIndex((p) => p.slug === editingBlog.slug);
+                              if (idx >= 0) { const n = [...prev]; n[idx] = editingBlog; return n; }
+                              return [editingBlog, ...prev];
+                            });
+                            setStatus("saved");
+                            setTimeout(() => { setStatus("idle"); setEditingBlog(null); }, 1500);
+                          } catch (e) {
+                            console.error(e); setStatus("error");
+                          }
+                        }}
+                        className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600"
+                      >
+                        Save post
+                      </button>
+                      <button onClick={() => setEditingBlog(null)} className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white">
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ── PAGES ── */}
+            {tab === "pages" && (
+              <>
+                {!editingPage ? (
+                  <>
+                    <SectionTitle
+                      title="Custom Pages"
+                      sub="Create any page at any URL. Use for landing pages, terms, case studies, anything."
+                    />
+                    <button
+                      onClick={() => setEditingPage({
+                        slug: "",
+                        title: "",
+                        content: "",
+                        status: "draft",
+                        showInNav: false,
+                        seoTitle: "",
+                        seoDescription: "",
+                      })}
+                      className="mb-6 rounded-xl bg-[#1857EC] px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600"
+                    >
+                      + New page
+                    </button>
+
+                    {pagesData.length === 0 ? (
+                      <Card><p className="text-sm text-white/40">No custom pages yet. Click "New page" to get started.</p></Card>
+                    ) : (
+                      <div className="space-y-3">
+                        {pagesData.map((pg) => (
+                          <Card key={pg.slug} className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="font-medium text-white">{pg.title || "(untitled)"}</p>
+                              <p className="text-xs text-white/40 mt-0.5">/{pg.slug} · {pg.status}</p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              <button onClick={() => setEditingPage(pg)} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white">Edit</button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Delete "${pg.title}"?`)) return;
+                                  await deleteDoc(doc(db(), "pages", pg.slug));
+                                  setPagesData((p) => p.filter((x) => x.slug !== pg.slug));
+                                  markUnsaved();
+                                }}
+                                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-6 flex items-center justify-between">
+                      <SectionTitle title={editingPage.slug ? `Edit: ${editingPage.title || "Untitled"}` : "New page"} />
+                      <button onClick={() => setEditingPage(null)} className="text-sm text-white/40 hover:text-white">← Back</button>
+                    </div>
+
+                    <Card className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <Field label="Page title" value={editingPage.title} onChange={(v) => setEditingPage((p) => p ? { ...p, title: v } : p)} />
+                        <Field label="Slug (URL)" value={editingPage.slug} onChange={(v) => setEditingPage((p) => p ? { ...p, slug: v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") } : p)} hint="/your-page-slug" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="space-y-1.5 flex-1">
+                          <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Status</label>
+                          <select value={editingPage.status} onChange={(e) => setEditingPage((p) => p ? { ...p, status: e.target.value as "published" | "draft" } : p)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC]">
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                          </select>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm text-white/60 mt-5 cursor-pointer">
+                          <input type="checkbox" checked={editingPage.showInNav} onChange={(e) => setEditingPage((p) => p ? { ...p, showInNav: e.target.checked } : p)} className="rounded" />
+                          Show in nav
+                        </label>
+                      </div>
+                    </Card>
+
+                    <Card className="space-y-3">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Page content</label>
+                      <RichTextEditor
+                        content={editingPage.content}
+                        onChange={(html) => setEditingPage((p) => p ? { ...p, content: html } : p)}
+                        placeholder="Write your page content here…"
+                        minHeight="400px"
+                      />
+                    </Card>
+
+                    <Card className="space-y-4">
+                      <h3 className="text-sm font-semibold text-white/70">SEO</h3>
+                      <Field label="SEO title" value={editingPage.seoTitle ?? ""} onChange={(v) => setEditingPage((p) => p ? { ...p, seoTitle: v } : p)} />
+                      <Field label="SEO description" value={editingPage.seoDescription ?? ""} textarea onChange={(v) => setEditingPage((p) => p ? { ...p, seoDescription: v } : p)} />
+                    </Card>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={async () => {
+                          if (!editingPage.slug) { alert("Add a URL slug first."); return; }
+                          setStatus("saving");
+                          try {
+                            await setDoc(doc(db(), "pages", editingPage.slug), {
+                              ...editingPage,
+                              updatedAt: serverTimestamp(),
+                            });
+                            setPagesData((prev) => {
+                              const idx = prev.findIndex((p) => p.slug === editingPage.slug);
+                              if (idx >= 0) { const n = [...prev]; n[idx] = editingPage; return n; }
+                              return [...prev, editingPage];
+                            });
+                            setStatus("saved");
+                            setTimeout(() => { setStatus("idle"); setEditingPage(null); }, 1500);
+                          } catch (e) {
+                            console.error(e); setStatus("error");
+                          }
+                        }}
+                        className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600"
+                      >
+                        Save page
+                      </button>
+                      <button onClick={() => setEditingPage(null)} className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white">Cancel</button>
+                    </div>
+                  </>
+                )}
               </>
             )}
 

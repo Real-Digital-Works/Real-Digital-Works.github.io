@@ -59,6 +59,7 @@ const db = getFirestore();
 async function main() {
   console.log("[fetch-content] Fetching from Firestore…");
 
+  // ── Main CMS content doc ────────────────────────────────────────────────
   const snap = await db.doc("cms/content").get();
 
   if (!snap.exists) {
@@ -70,6 +71,16 @@ async function main() {
 
   const firestoreData = snap.data();
 
+  // ── Blogs collection ─────────────────────────────────────────────────────
+  const blogsSnap = await db.collection("blogs").orderBy("publishedAt", "desc").get();
+  const blogs = blogsSnap.docs.map((doc) => ({ slug: doc.id, ...doc.data() }));
+  console.log(`[fetch-content] Found ${blogs.length} blog post(s)`);
+
+  // ── Pages collection ─────────────────────────────────────────────────────
+  const pagesSnap = await db.collection("pages").get();
+  const pages = pagesSnap.docs.map((doc) => ({ slug: doc.id, ...doc.data() }));
+  console.log(`[fetch-content] Found ${pages.length} custom page(s)`);
+
   // Load the current seed file to use as defaults for any missing fields
   const existing = JSON.parse(fs.readFileSync(OUTPUT, "utf-8"));
 
@@ -77,6 +88,8 @@ async function main() {
   const merged = {
     ...existing,
     ...firestoreData,
+    blogs,
+    pages,
     version: (existing.version ?? 1),
     lastUpdated: new Date().toISOString(),
   };

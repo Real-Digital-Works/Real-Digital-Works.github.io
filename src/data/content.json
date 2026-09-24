@@ -281,5 +281,9 @@
     "Next.js", "React", "TypeScript", "Cloud",
     "Python", "OpenAI", "Unreal", "Maya",
     "Blender", "After Effects", "SEO", "Postgres"
-  ]
+  ],
+
+  "blogs": [],
+
+  "pages": []
 }

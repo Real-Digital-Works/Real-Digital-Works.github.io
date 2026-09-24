@@ -50,6 +50,7 @@ type Tab =
   | "projects"
   | "blog"
   | "pages"
+  | "users"
   | "deploy";
 
 type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
@@ -152,6 +153,13 @@ export default function AdminDashboard() {
   const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
 
+  // ── Users state ──
+  type AdminUser = { uid: string; email?: string; displayName: string | null; createdAt?: string; lastSignIn: string | null; emailVerified: boolean; };
+  const [usersData, setUsersData] = useState<AdminUser[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+
   // ── Auth guard ──
   useEffect(() => {
     const unsub = onAuthStateChanged(auth(), (u) => {
@@ -201,6 +209,27 @@ export default function AdminDashboard() {
 
   // ── Mark unsaved on any edit ──
   const markUnsaved = useCallback(() => setStatus("unsaved"), []);
+
+  // ── Auth token helper for API calls ──
+  async function getToken() {
+    const currentUser = auth().currentUser;
+    if (!currentUser) throw new Error("Not signed in");
+    return currentUser.getIdToken();
+  }
+
+  // ── Fetch users list ──
+  const fetchUsers = useCallback(async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.users) setUsersData(data.users);
+    } catch (e) {
+      console.error("Failed to fetch users:", e);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Save to Firestore ──
   async function save() {
@@ -263,6 +292,7 @@ export default function AdminDashboard() {
     { id: "projects", label: "Projects" },
     { id: "blog", label: "✍ Blog" },
     { id: "pages", label: "📄 Pages" },
+    { id: "users", label: "👥 Users" },
     { id: "deploy", label: "⚡ Deploy" },
   ];
 
@@ -853,6 +883,152 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )}
+              </>
+            )}
+
+            {/* ── USERS ── */}
+            {tab === "users" && (
+              <>
+                <SectionTitle
+                  title="Users & Access"
+                  sub="Invite team members. They receive a link to set their own password."
+                />
+
+                {/* Invite form */}
+                <Card className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white/70">Invite a new user</h3>
+                  <p className="text-xs text-white/40 leading-relaxed">
+                    Enter their email. We will generate a secure invite link — copy it and send it via email, WhatsApp, or Slack.
+                    When they click the link they will be taken to a branded page to set their own password.
+                  </p>
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => { setInviteEmail(e.target.value); setInviteLink(""); setInviteStatus("idle"); }}
+                      placeholder="colleague@example.com"
+                      className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#1857EC]"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!inviteEmail) return;
+                        setInviteStatus("sending");
+                        setInviteLink("");
+                        try {
+                          const token = await getToken();
+                          const res = await fetch("/api/admin/invite", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ email: inviteEmail }),
+                          });
+                          const data = await res.json();
+                          if (data.inviteLink) {
+                            setInviteLink(data.inviteLink);
+                            setInviteStatus("done");
+                            setInviteEmail("");
+                            // Refresh users list
+                            fetchUsers();
+                          } else {
+                            throw new Error(data.error);
+                          }
+                        } catch (e) {
+                          console.error(e);
+                          setInviteStatus("error");
+                        }
+                      }}
+                      disabled={inviteStatus === "sending" || !inviteEmail}
+                      className="rounded-xl bg-[#1857EC] px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-40 whitespace-nowrap"
+                    >
+                      {inviteStatus === "sending" ? "Generating…" : "Generate invite link"}
+                    </button>
+                  </div>
+
+                  {/* Generated link */}
+                  {inviteLink && (
+                    <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 space-y-3">
+                      <p className="text-sm font-medium text-green-300">✓ Invite link generated</p>
+                      <p className="text-xs text-green-200/70">Copy this link and send it to the user. It expires after 1 hour.</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-green-100/80">
+                          {inviteLink}
+                        </code>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(inviteLink); }}
+                          className="rounded-lg bg-green-500/20 px-3 py-2 text-xs text-green-300 hover:bg-green-500/30 whitespace-nowrap"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {inviteStatus === "error" && (
+                    <p className="text-sm text-red-400">Failed to generate link. Check that Firebase Admin credentials are set in Vercel.</p>
+                  )}
+                </Card>
+
+                {/* User list */}
+                <Card className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white/70">Current users</h3>
+                    <button onClick={fetchUsers} className="text-xs text-white/40 hover:text-white/70">
+                      Refresh
+                    </button>
+                  </div>
+                  {usersData.length === 0 ? (
+                    <div>
+                      <p className="text-sm text-white/40">Click "Refresh" to load the user list.</p>
+                      <button onClick={fetchUsers} className="mt-3 text-sm text-[#60a5fa] hover:underline">Load users</button>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-white/5">
+                      {usersData.map((u) => (
+                        <div key={u.uid} className="flex items-center justify-between gap-4 py-3">
+                          <div>
+                            <p className="text-sm text-white/80">{u.email}</p>
+                            <p className="text-xs text-white/30 mt-0.5">
+                              Joined {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB") : "—"}
+                              {" · "}
+                              Last active: {u.lastSignIn ? new Date(u.lastSignIn).toLocaleDateString("en-GB") : "Never"}
+                              {!u.emailVerified && <span className="ml-2 text-yellow-400/70">Invite pending</span>}
+                            </p>
+                          </div>
+                          {u.email !== user?.email && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Remove access for ${u.email}?`)) return;
+                                try {
+                                  const token = await getToken();
+                                  await fetch("/api/admin/users", {
+                                    method: "DELETE",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({ uid: u.uid }),
+                                  });
+                                  setUsersData((prev) => prev.filter((x) => x.uid !== u.uid));
+                                } catch (e) {
+                                  console.error(e);
+                                }
+                              }}
+                              className="rounded-lg border border-red-500/20 px-3 py-1.5 text-xs text-red-400/70 hover:text-red-400 shrink-0"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/60 leading-relaxed">
+                  <strong className="text-blue-300">How it works:</strong> The invite link opens <code className="rounded bg-white/10 px-1">realdigitalworks.com/auth/action</code> — a branded page where the user sets their own password. Once set, they can log in at <code className="rounded bg-white/10 px-1">/admin</code>. Links expire after 1 hour; generate a new one if it expires.
+                </div>
               </>
             )}
 

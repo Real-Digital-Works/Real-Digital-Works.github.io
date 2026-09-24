@@ -38,10 +38,16 @@ export async function POST(request: Request) {
     }
 
     // 3. Generate a password reset link (acts as the "set your password" invite link)
-    // The action URL points to our branded /auth/action page (set in Firebase Console)
-    const inviteLink = await auth.generatePasswordResetLink(email, {
+    const firebaseLink = await auth.generatePasswordResetLink(email, {
       url: `${site.url}/admin/login`,
     });
+
+    // Firebase generates a link pointing to its own domain (firebaseapp.com).
+    // We rewrite it to our branded /auth/action page — the oobCode works on any domain.
+    const inviteLink = firebaseLink.replace(
+      /https:\/\/[^/]+\/__\/auth\/action/,
+      `${site.url}/auth/action`
+    );
 
     void uid;
 

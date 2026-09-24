@@ -931,6 +931,12 @@ export default function AdminDashboard() {
                             setInviteEmail("");
                             // Refresh users list
                             fetchUsers();
+                            // Log email status
+                            if (data.emailSent) {
+                              console.log("[invite] Email sent successfully");
+                            } else if (data.emailError) {
+                              console.warn("[invite] Email failed:", data.emailError);
+                            }
                           } else {
                             throw new Error(data.error);
                           }
@@ -949,8 +955,8 @@ export default function AdminDashboard() {
                   {/* Generated link */}
                   {inviteLink && (
                     <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 space-y-3">
-                      <p className="text-sm font-medium text-green-300">✓ Invite link generated</p>
-                      <p className="text-xs text-green-200/70">Copy this link and send it to the user. It expires after 1 hour.</p>
+                      <p className="text-sm font-medium text-green-300">✓ Invite link generated — email sent to user</p>
+                      <p className="text-xs text-green-200/70">A copy of the link is below in case you need to resend it manually. It expires in 1 hour.</p>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-green-100/80">
                           {inviteLink}

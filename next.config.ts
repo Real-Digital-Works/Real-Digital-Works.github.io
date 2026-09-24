@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
 
   // firebase-admin uses native Node.js modules (crypto, http2, etc.)
   // that must NOT be bundled by webpack — mark them as server-side externals.
-  serverExternalPackages: ["firebase-admin"],
+  serverExternalPackages: ["firebase-admin", "nodemailer"],
 };
 
 export default nextConfig;

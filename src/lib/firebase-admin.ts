@@ -1,40 +1,39 @@
-/**
- * Firebase Admin SDK — server-side only.
- * Used in Next.js API routes (never imported in client components).
- *
- * Reads the same FIREBASE_* env vars that scripts/fetch-content.js uses.
- */
-import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import type { Auth } from "firebase-admin/auth";
 
-function initAdmin() {
-  if (getApps().length) return;
+// ── Singleton cache ─────────────────────────────────────────────────────────
+let _auth: Auth | null = null;
 
-  const privateKey = (process.env.FIREBASE_PRIVATE_KEY ?? "")
-    .replace(/^["']|["']$/g, "")
-    .replace(/\\n/g, "\n");
+// ── Init + auth getter (async — firebase-admin v14 is ESM-only) ─────────────
+export async function adminAuth(): Promise<Auth> {
+  if (_auth) return _auth;
 
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID!,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-      privateKey,
-    }),
-  });
+  const { getApps, initializeApp, cert } = await import("firebase-admin/app");
+  const { getAuth } = await import("firebase-admin/auth");
+
+  if (!getApps().length) {
+    const privateKey = (process.env.FIREBASE_PRIVATE_KEY ?? "")
+      .replace(/^["']|["']$/g, "")  // strip surrounding quotes
+      .replace(/\\n/g, "\n");        // convert escaped newlines
+
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        privateKey,
+      }),
+    });
+  }
+
+  _auth = getAuth();
+  return _auth;
 }
 
-export function adminAuth() {
-  initAdmin();
-  return getAuth();
-}
-
-/**
- * Verify the Firebase ID token from an Authorization: Bearer <token> header.
- * Returns the decoded token or throws if invalid.
- */
+// ── Verify the Firebase ID token from an Authorization: Bearer header ────────
 export async function verifyRequest(request: Request) {
-  const authHeader = request.headers.get("Authorization") ?? "";
-  const token = authHeader.replace("Bearer ", "").trim();
+  const token = (request.headers.get("Authorization") ?? "")
+    .replace("Bearer ", "")
+    .trim();
   if (!token) throw new Error("No token");
-  return adminAuth().verifyIdToken(token);
+  const auth = await adminAuth();
+  return auth.verifyIdToken(token);
 }

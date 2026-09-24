@@ -16,9 +16,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const auth = adminAuth();
+    const auth = await adminAuth();
 
-    // 2. Create the user with a random password they will never use
+    // 2. Create the user (they will set their own password via the invite link)
     let uid: string;
     try {
       const user = await auth.createUser({
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       url: `${site.url}/admin/login`,
     });
 
-    void uid; // uid created above, used if needed
+    void uid;
 
     return NextResponse.json({ inviteLink });
   } catch (err) {

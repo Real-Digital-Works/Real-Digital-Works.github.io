@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
-  const auth = adminAuth();
+  const auth = await adminAuth();
   const result = await auth.listUsers(100);
 
   const users = result.users.map((u) => ({
@@ -38,6 +38,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "uid is required" }, { status: 400 });
   }
 
-  await adminAuth().deleteUser(uid);
+  const auth = await adminAuth();
+  await auth.deleteUser(uid);
   return NextResponse.json({ success: true });
 }

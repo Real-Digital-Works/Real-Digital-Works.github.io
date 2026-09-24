@@ -9,6 +9,7 @@ import { Faq } from "@/components/Faq";
 import { HeroScene } from "@/components/HeroScene";
 import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
+import { RichContent } from "@/components/RichContent";
 import { StudioChat } from "@/components/StudioChat";
 import { process, projects, proof, services, stack, hero } from "@/lib/content";
 
@@ -187,7 +188,7 @@ export function HomeView() {
               </span>
             </h1>
             <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-fg/62">
-              {hero.sub}
+              <RichContent html={hero.sub} />
             </p>
             <div className="rise-4 relative z-30 mt-7 flex flex-wrap items-center gap-3">
               <Link href={hero.primaryHref} className="btn btn-beam">
@@ -386,7 +387,7 @@ export function HomeView() {
                   {step.title}
                 </h3>
                 <p className="mt-2 text-[14.5px] leading-relaxed text-fg/65">
-                  {step.body}
+                  <RichContent html={step.body} />
                 </p>
               </div>
             ))}

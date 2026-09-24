@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
+import { RichContent } from "@/components/RichContent";
 import { services, seo, faq } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -72,7 +73,7 @@ export default function ServicesPage() {
               </div>
               <div>
                 <p className="text-fg/58">{service.summary}</p>
-                <p className="mt-3 text-[15px] text-fg/40">{service.detail}</p>
+                <div className="mt-3 text-[15px] text-fg/60"><RichContent html={service.detail} /></div>
               </div>
               <Link href="/contact" className="btn btn-ghost w-fit">
                 Enquire

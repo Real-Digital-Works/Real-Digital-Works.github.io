@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { faq } from "@/lib/content";
+import { RichContent } from "@/components/RichContent";
 
 export function Faq({ items = faq }: { items?: { q: string; a: string }[] }) {
   const [open, setOpen] = useState<number | null>(0);
@@ -28,7 +29,9 @@ export function Faq({ items = faq }: { items?: { q: string; a: string }[] }) {
               </span>
             </button>
             {isOpen ? (
-              <p className="max-w-[70ch] pb-6 text-[16.5px] text-mid">{item.a}</p>
+              <div className="max-w-[70ch] pb-6 text-[16.5px] text-mid">
+                <RichContent html={item.a} />
+              </div>
             ) : null}
           </div>
         );

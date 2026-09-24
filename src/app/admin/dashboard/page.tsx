@@ -35,6 +35,8 @@ import type {
   Project,
   BlogPost,
   DynamicPage,
+  ProcessStep,
+  Discipline,
 } from "@/lib/content";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
@@ -48,6 +50,7 @@ type Tab =
   | "faq"
   | "pricing"
   | "projects"
+  | "about"
   | "blog"
   | "pages"
   | "users"
@@ -147,6 +150,8 @@ export default function AdminDashboard() {
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
   const [packagesData, setPackagesData] = useState<Package[]>(content.packages);
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
+  const [processData, setProcessData] = useState<ProcessStep[]>(content.process);
+  const [disciplinesData, setDisciplinesData] = useState<Discipline[]>(content.disciplines);
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
@@ -185,6 +190,8 @@ export default function AdminDashboard() {
           if (d.faq) setFaqData(d.faq);
           if (d.packages) setPackagesData(d.packages);
           if (d.projects) setProjectsData(d.projects);
+          if (d.process) setProcessData(d.process);
+          if (d.disciplines) setDisciplinesData(d.disciplines);
         }
         // Load blogs collection
         const blogsSnap = await getDocs(collection(db(), "blogs"));
@@ -243,6 +250,8 @@ export default function AdminDashboard() {
         faq: faqData,
         packages: packagesData,
         projects: projectsData,
+        process: processData,
+        disciplines: disciplinesData,
         updatedAt: serverTimestamp(),
       });
       await setDoc(doc(db(), "cms", "settings"), {
@@ -290,6 +299,7 @@ export default function AdminDashboard() {
     { id: "faq", label: "FAQ" },
     { id: "pricing", label: "Pricing" },
     { id: "projects", label: "Projects" },
+    { id: "about", label: "About / Process" },
     { id: "blog", label: "✍ Blog" },
     { id: "pages", label: "📄 Pages" },
     { id: "users", label: "👥 Users" },
@@ -435,7 +445,16 @@ export default function AdminDashboard() {
                 <Card className="space-y-4">
                   <Field label="Eyebrow text" value={heroData.eyebrow} onChange={(v) => { setHeroData((p) => ({ ...p, eyebrow: v })); markUnsaved(); }} />
                   <Field label="Headline" value={heroData.headline} textarea onChange={(v) => { setHeroData((p) => ({ ...p, headline: v })); markUnsaved(); }} hint="Use line breaks (\n) for word wrapping." />
-                  <Field label="Sub-headline" value={heroData.sub} textarea onChange={(v) => { setHeroData((p) => ({ ...p, sub: v })); markUnsaved(); }} />
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Intro paragraph</label>
+                    <p className="text-[11px] text-white/30">Supports bold, italic, links. Plain text also works.</p>
+                    <RichTextEditor
+                      content={heroData.sub}
+                      onChange={(html) => { setHeroData((p) => ({ ...p, sub: html })); markUnsaved(); }}
+                      placeholder="Write the hero intro paragraph…"
+                      minHeight="160px"
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Primary button label" value={heroData.primaryCta} onChange={(v) => { setHeroData((p) => ({ ...p, primaryCta: v })); markUnsaved(); }} />
                     <Field label="Primary button link" value={heroData.primaryHref} onChange={(v) => { setHeroData((p) => ({ ...p, primaryHref: v })); markUnsaved(); }} />
@@ -460,8 +479,16 @@ export default function AdminDashboard() {
                     </div>
                     <Field label="Service title" value={svc.title} onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], title: v }; setServicesData(s); markUnsaved(); }} />
                     <Field label="Starting from (price)" value={svc.from} onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], from: v }; setServicesData(s); markUnsaved(); }} />
-                    <Field label="Short summary" value={svc.summary} textarea onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }} />
-                    <Field label="Detail paragraph" value={svc.detail} textarea onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], detail: v }; setServicesData(s); markUnsaved(); }} />
+                    <Field label="Short summary (plain text)" value={svc.summary} textarea onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }} />
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Detail description</label>
+                      <RichTextEditor
+                        content={svc.detail}
+                        onChange={(html) => { const s = [...servicesData]; s[i] = { ...s[i], detail: html }; setServicesData(s); markUnsaved(); }}
+                        placeholder="Detailed description…"
+                        minHeight="140px"
+                      />
+                    </div>
                   </Card>
                 ))}
               </>
@@ -483,7 +510,15 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                     <Field label="Question" value={item.q} onChange={(v) => { const f = [...faqData]; f[i] = { ...f[i], q: v }; setFaqData(f); markUnsaved(); }} />
-                    <Field label="Answer" value={item.a} textarea onChange={(v) => { const f = [...faqData]; f[i] = { ...f[i], a: v }; setFaqData(f); markUnsaved(); }} />
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Answer</label>
+                      <RichTextEditor
+                        content={item.a}
+                        onChange={(html) => { const f = [...faqData]; f[i] = { ...f[i], a: html }; setFaqData(f); markUnsaved(); }}
+                        placeholder="Write the answer…"
+                        minHeight="140px"
+                      />
+                    </div>
                   </Card>
                 ))}
                 <button
@@ -578,11 +613,80 @@ export default function AdminDashboard() {
                       <Field label="Accent colour" value={proj.accent} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], accent: v }; setProjectsData(p); markUnsaved(); }} hint="#hex" />
                     </div>
                     <Field label="Summary (card text)" value={proj.summary} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], summary: v }; setProjectsData(p); markUnsaved(); }} />
-                    <Field label="The problem" value={proj.problem} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], problem: v }; setProjectsData(p); markUnsaved(); }} />
-                    <Field label="The work" value={proj.work} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], work: v }; setProjectsData(p); markUnsaved(); }} />
-                    <Field label="The outcome" value={proj.outcome} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], outcome: v }; setProjectsData(p); markUnsaved(); }} />
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
+                      <RichTextEditor content={proj.problem} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], problem: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe the challenge…" minHeight="120px" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The work</label>
+                      <RichTextEditor content={proj.work} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], work: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe what was done…" minHeight="120px" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The outcome</label>
+                      <RichTextEditor content={proj.outcome} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], outcome: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe the result…" minHeight="120px" />
+                    </div>
                   </Card>
                 ))}
+              </>
+            )}
+
+            {/* ── ABOUT / PROCESS ── */}
+            {tab === "about" && (
+              <>
+                <SectionTitle title="About — Disciplines" sub="The three discipline cards on the About page. Title is a plain heading; body is rich text." />
+                {disciplinesData.map((item, i) => (
+                  <Card key={i} className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="mt-1 text-xs text-white/30">#{i + 1}</span>
+                    </div>
+                    <Field label="Discipline title" value={item.title} onChange={(v) => { const d = [...disciplinesData]; d[i] = { ...d[i], title: v }; setDisciplinesData(d); markUnsaved(); }} />
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Description</label>
+                      <RichTextEditor
+                        content={item.body}
+                        onChange={(html) => { const d = [...disciplinesData]; d[i] = { ...d[i], body: html }; setDisciplinesData(d); markUnsaved(); }}
+                        placeholder="Describe this discipline…"
+                        minHeight="140px"
+                      />
+                    </div>
+                  </Card>
+                ))}
+
+                <SectionTitle title="Process Steps" sub="The numbered steps shown on the home page. Step number and title are plain; description is rich text." />
+                {processData.map((step, i) => (
+                  <Card key={i} className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="mt-1 text-xs text-white/30">Step {step.n}</span>
+                      <button
+                        onClick={() => { setProcessData((p) => p.filter((_, idx) => idx !== i)); markUnsaved(); }}
+                        className="text-xs text-red-400/60 hover:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                      <Field label="Step number" value={step.n} onChange={(v) => { const p = [...processData]; p[i] = { ...p[i], n: v }; setProcessData(p); markUnsaved(); }} />
+                      <div className="col-span-3">
+                        <Field label="Step title" value={step.title} onChange={(v) => { const p = [...processData]; p[i] = { ...p[i], title: v }; setProcessData(p); markUnsaved(); }} />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Description</label>
+                      <RichTextEditor
+                        content={step.body}
+                        onChange={(html) => { const p = [...processData]; p[i] = { ...p[i], body: html }; setProcessData(p); markUnsaved(); }}
+                        placeholder="Describe this step…"
+                        minHeight="120px"
+                      />
+                    </div>
+                  </Card>
+                ))}
+                <button
+                  onClick={() => { setProcessData((p) => [...p, { n: String(p.length + 1).padStart(2, "0"), title: "", body: "" }]); markUnsaved(); }}
+                  className="w-full rounded-2xl border border-dashed border-white/15 py-4 text-sm text-white/40 transition hover:border-white/30 hover:text-white/60"
+                >
+                  + Add process step
+                </button>
               </>
             )}
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
+import { RichContent } from "@/components/RichContent";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -79,19 +80,19 @@ export default async function WorkDetailPage({ params }: Props) {
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               Problem
             </h2>
-            <p className="mt-3 text-mid">{project.problem}</p>
+            <div className="mt-3 text-mid"><RichContent html={project.problem} /></div>
           </article>
           <article>
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               What we did
             </h2>
-            <p className="mt-3 text-mid">{project.work}</p>
+            <div className="mt-3 text-mid"><RichContent html={project.work} /></div>
           </article>
           <article>
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               Why it is here
             </h2>
-            <p className="mt-3 text-mid">{project.outcome}</p>
+            <div className="mt-3 text-mid"><RichContent html={project.outcome} /></div>
           </article>
         </div>
         <div className="wrap mt-16 flex flex-wrap gap-3">

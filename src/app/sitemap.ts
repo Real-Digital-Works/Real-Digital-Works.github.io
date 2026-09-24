@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { site, blogs, pages } from "@/lib/content";
+import { servicePages } from "@/lib/services-data";
 
 export const dynamic = "force-static";
 
@@ -16,6 +17,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/contact`, lastModified: now, changeFrequency: "yearly",  priority: 0.8 },
     { url: `${base}/blog`,    lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
   ];
+
+  // All 17 service pages — generated from services-data.ts
+  const serviceRoutes: MetadataRoute.Sitemap = servicePages.map((s) => ({
+    url: `${base}/services/${s.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
 
   const blogRoutes: MetadataRoute.Sitemap = blogs
     .filter((p) => p.status === "published")
@@ -35,5 +44,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.65,
     }));
 
-  return [...staticRoutes, ...blogRoutes, ...pageRoutes];
+  return [...staticRoutes, ...serviceRoutes, ...blogRoutes, ...pageRoutes];
 }

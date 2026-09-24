@@ -211,7 +211,7 @@ export function HomeView() {
                 <strong className="display block text-[22px] sm:text-[26px]">
                   {item.value}
                 </strong>
-                <span className="mt-1 block text-[12.5px] text-fg/42">
+                <span className="mt-1 block text-[12.5px] text-fg/60">
                   {item.label}
                 </span>
               </div>
@@ -225,7 +225,7 @@ export function HomeView() {
 
       <Marquee items={stack} />
 
-      <section ref={pin} className="relative z-0 overflow-x-clip">
+      <section ref={pin} className="relative z-0 hidden overflow-x-clip md:block">
         <div className="flex h-[calc(100svh-64px)] flex-col justify-center overflow-hidden">
           <div className="wrap mb-6 flex items-end justify-between gap-6">
             <div>
@@ -248,17 +248,17 @@ export function HomeView() {
                 href="/services"
                 className="glass offer-card flex h-[min(420px,56vh)] w-[min(84vw,540px)] shrink-0 flex-col justify-between rounded-[28px] p-8 md:p-10"
               >
-                <div className="flex items-baseline justify-between">
-                  <p className="font-mono text-[12px] text-fg/30">
-                    {String(i + 1).padStart(2, "0")}
-                  </p>
+                <div className="flex items-start justify-between">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-beam/15 text-[22px]">
+                    {["🌐","🛒","⚙️","🤖","⚡","👥","🔍","📣","📱","🔬","✦","🎬","📷","✍️","🖥️","🎓","🔒"][i] ?? "✦"}
+                  </span>
                   <p className="font-mono text-[12px] text-cyan">{service.from}</p>
                 </div>
                 <div>
-                  <h3 className="text-[clamp(32px,4vw,48px)] leading-[0.98] font-semibold tracking-[-0.045em]">
+                  <h3 className="text-[clamp(28px,3.6vw,44px)] leading-[1.0] font-semibold tracking-[-0.045em]">
                     {service.title}
                   </h3>
-                  <p className="mt-5 max-w-[36ch] text-[16px] leading-relaxed text-fg/55">
+                  <p className="mt-4 max-w-[36ch] text-[15px] leading-relaxed text-fg/60">
                     {service.summary}
                   </p>
                   <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase">
@@ -278,6 +278,34 @@ export function HomeView() {
                 All services →
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile vertical stack — replaces GSAP horizontal scroll on small screens */}
+      <section className="border-t border-line py-12 md:hidden">
+        <div className="wrap">
+          <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">What we do</p>
+          <h2 className="display mt-2 text-[28px]">One line at a time.</h2>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {services.map((service, i) => (
+              <Link
+                key={service.id}
+                href="/services"
+                className="glass flex flex-col gap-4 rounded-[20px] p-6"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-beam/15 text-[20px]">
+                    {["🌐","🛒","⚙️","🤖","⚡","👥","🔍","📣","📱","🔬","✦","🎬","📷","✍️","🖥️","🎓","🔒"][i] ?? "✦"}
+                  </span>
+                  <span className="font-mono text-[11px] text-cyan">{service.from}</span>
+                </div>
+                <div>
+                  <h3 className="text-[18px] font-semibold tracking-[-0.03em]">{service.title}</h3>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-fg/60">{service.summary}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -357,7 +385,7 @@ export function HomeView() {
                 <h3 className="mt-3 text-[17px] font-semibold tracking-[-0.03em]">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-[14.5px] leading-relaxed text-fg/48">
+                <p className="mt-2 text-[14.5px] leading-relaxed text-fg/65">
                   {step.body}
                 </p>
               </div>

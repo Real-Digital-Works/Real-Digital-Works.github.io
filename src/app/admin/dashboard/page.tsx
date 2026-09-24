@@ -39,6 +39,7 @@ import type {
   Discipline,
 } from "@/lib/content";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { NavEditor } from "@/components/NavEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ type Tab =
   | "pricing"
   | "projects"
   | "about"
+  | "nav"
   | "blog"
   | "pages"
   | "users"
@@ -152,6 +154,7 @@ export default function AdminDashboard() {
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
   const [processData, setProcessData] = useState<ProcessStep[]>(content.process);
   const [disciplinesData, setDisciplinesData] = useState<Discipline[]>(content.disciplines);
+  const [navData, setNavData] = useState<import("@/lib/content").NavItem[]>(content.navItems ?? []);
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
@@ -192,6 +195,7 @@ export default function AdminDashboard() {
           if (d.projects) setProjectsData(d.projects);
           if (d.process) setProcessData(d.process);
           if (d.disciplines) setDisciplinesData(d.disciplines);
+          if (d.navItems) setNavData(d.navItems);
         }
         // Load blogs collection
         const blogsSnap = await getDocs(collection(db(), "blogs"));
@@ -252,6 +256,7 @@ export default function AdminDashboard() {
         projects: projectsData,
         process: processData,
         disciplines: disciplinesData,
+        navItems: navData,
         updatedAt: serverTimestamp(),
       });
       await setDoc(doc(db(), "cms", "settings"), {
@@ -300,6 +305,7 @@ export default function AdminDashboard() {
     { id: "pricing", label: "Pricing" },
     { id: "projects", label: "Projects" },
     { id: "about", label: "About / Process" },
+    { id: "nav", label: "🧭 Navigation" },
     { id: "blog", label: "✍ Blog" },
     { id: "pages", label: "📄 Pages" },
     { id: "users", label: "👥 Users" },
@@ -687,6 +693,27 @@ export default function AdminDashboard() {
                 >
                   + Add process step
                 </button>
+              </>
+            )}
+
+            {/* ── NAVIGATION ── */}
+            {tab === "nav" && (
+              <>
+                <SectionTitle
+                  title="Navigation"
+                  sub="Drag to reorder. Toggle the eye to hide without deleting. Click ▶ on any item to add sub-links."
+                />
+                <Card>
+                  <NavEditor
+                    items={navData}
+                    onChange={(items) => { setNavData(items); markUnsaved(); }}
+                  />
+                </Card>
+                <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/60 leading-relaxed space-y-2">
+                  <p><strong className="text-blue-300">Services item</strong> — automatically uses the 4-column mega menu on desktop and an accordion on mobile. You don&apos;t need to add sub-links to it manually.</p>
+                  <p><strong className="text-blue-300">Any other item with sub-links</strong> — shows a dropdown on desktop and an indented list on mobile.</p>
+                  <p><strong className="text-blue-300">Changes go live</strong> on the next "Save &amp; Deploy" — the header rebuilds with the new structure.</p>
+                </div>
               </>
             )}
 

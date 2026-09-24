@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Logo } from "./Logo";
-import { nav } from "@/lib/content";
+import { navItems } from "@/lib/content";
 import { serviceCategories, servicePages } from "@/lib/services-data";
 
 // Lookup for service entries keyed by slug
@@ -16,8 +16,13 @@ export function Header() {
   const [stuck, setStuck] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [servicesAccordionOpen, setServicesAccordionOpen] = useState(false);
+  // Tracks which desktop sub-nav dropdown is open (by item id)
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const megaRef = useRef<HTMLDivElement>(null);
   const megaTriggerRef = useRef<HTMLButtonElement>(null);
+
+  // Only show non-hidden items
+  const visibleNav = navItems.filter((item) => !item.hidden);
 
   useEffect(() => {
     const onScroll = () => setStuck(window.scrollY > 8);
@@ -29,6 +34,7 @@ export function Header() {
   useEffect(() => {
     setOpen(false);
     setMegaOpen(false);
+    setDropdownOpen(null);
     setServicesAccordionOpen(false);
   }, [pathname]);
 
@@ -62,19 +68,24 @@ export function Header() {
           <Logo />
         </Link>
 
-        {/* Desktop nav — B1 */}
+        {/* ── Desktop nav ── */}
         <nav className="hidden items-center gap-0.5 lg:flex">
-          {nav.map((item) => {
-            if (item.href === "/services") {
-              const active = pathname.startsWith("/services");
+          {visibleNav.map((item) => {
+            const isMegaMenu = item.href === "/services";
+            const hasChildren = (item.children?.filter((c) => !c.hidden).length ?? 0) > 0;
+            const isActive =
+              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
+            // Services → mega menu
+            if (isMegaMenu) {
               return (
                 <button
-                  key="services"
+                  key={item.id}
                   ref={megaTriggerRef}
                   type="button"
                   onClick={() => setMegaOpen((v) => !v)}
                   className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
-                    active || megaOpen
+                    isActive || megaOpen
                       ? "bg-fg/10 text-fg"
                       : "text-fg/55 hover:bg-fg/6 hover:text-fg"
                   }`}
@@ -82,23 +93,69 @@ export function Header() {
                   {item.label}
                   <svg
                     className={`ml-1 inline-block h-3 w-3 transition-transform duration-200 ${megaOpen ? "rotate-180" : ""}`}
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    aria-hidden="true"
+                    viewBox="0 0 12 12" fill="none" aria-hidden="true"
                   >
                     <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </button>
               );
             }
-            const current =
-              item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+
+            // Items with sub-nav → dropdown
+            if (hasChildren) {
+              const isDropOpen = dropdownOpen === item.id;
+              const visibleChildren = (item.children ?? []).filter((c) => !c.hidden);
+              return (
+                <div key={item.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setDropdownOpen(isDropOpen ? null : item.id)}
+                    className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
+                      isActive || isDropOpen
+                        ? "bg-fg/10 text-fg"
+                        : "text-fg/55 hover:bg-fg/6 hover:text-fg"
+                    }`}
+                  >
+                    {item.label}
+                    <svg
+                      className={`ml-1 inline-block h-3 w-3 transition-transform duration-200 ${isDropOpen ? "rotate-180" : ""}`}
+                      viewBox="0 0 12 12" fill="none" aria-hidden="true"
+                    >
+                      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  {isDropOpen && (
+                    <div className="absolute left-0 top-full z-50 mt-2 min-w-[180px] rounded-2xl border border-line bg-[var(--header)] p-2 backdrop-blur-2xl shadow-xl">
+                      {/* Link to the parent item itself */}
+                      <Link
+                        href={item.href}
+                        className="block rounded-xl px-3 py-2 text-[13px] text-fg/60 hover:bg-fg/6 hover:text-fg"
+                      >
+                        {item.label} overview
+                      </Link>
+                      <div className="my-1 h-px bg-line" />
+                      {visibleChildren.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className="block rounded-xl px-3 py-2 text-[14px] text-fg/70 transition hover:bg-fg/6 hover:text-fg"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Plain link
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
-                  current ? "bg-fg/10 text-fg" : "text-fg/55 hover:bg-fg/6 hover:text-fg"
+                  isActive ? "bg-fg/10 text-fg" : "text-fg/55 hover:bg-fg/6 hover:text-fg"
                 }`}
               >
                 {item.label}
@@ -130,7 +187,7 @@ export function Header() {
         </button>
       </div>
 
-      {/* ── Mega menu — B1 ── */}
+      {/* ── Mega menu (Services) ── */}
       {megaOpen && (
         <div
           ref={megaRef}
@@ -180,23 +237,25 @@ export function Header() {
         </div>
       )}
 
-      {/* ── Mobile menu — B2 ── */}
+      {/* ── Mobile menu ── */}
       {open ? (
         <div className="wrap border-t border-line pb-5 lg:hidden">
-          {nav.map((item) => {
-            if (item.href === "/services") {
+          {visibleNav.map((item) => {
+            const isMegaMenu = item.href === "/services";
+            const hasChildren = (item.children?.filter((c) => !c.hidden).length ?? 0) > 0;
+
+            if (isMegaMenu) {
               return (
-                <div key="services">
+                <div key={item.id}>
                   <button
                     type="button"
                     onClick={() => setServicesAccordionOpen((v) => !v)}
                     className="flex w-full items-center justify-between border-b border-line py-3.5 text-lg text-fg"
                   >
-                    Services
+                    {item.label}
                     <svg
                       className={`h-4 w-4 transition-transform ${servicesAccordionOpen ? "rotate-180" : ""}`}
-                      viewBox="0 0 12 12"
-                      fill="none"
+                      viewBox="0 0 12 12" fill="none"
                     >
                       <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                     </svg>
@@ -228,9 +287,35 @@ export function Header() {
                 </div>
               );
             }
+
+            if (hasChildren) {
+              const visibleChildren = (item.children ?? []).filter((c) => !c.hidden);
+              return (
+                <div key={item.id}>
+                  <Link
+                    href={item.href}
+                    className="block border-b border-line py-3.5 text-lg text-fg"
+                  >
+                    {item.label}
+                  </Link>
+                  <div className="border-b border-line pb-2 pl-4">
+                    {visibleChildren.map((child) => (
+                      <Link
+                        key={child.id}
+                        href={child.href}
+                        className="block py-2 text-[15px] text-fg/65 hover:text-fg"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className="block border-b border-line py-3.5 text-lg text-fg"
               >

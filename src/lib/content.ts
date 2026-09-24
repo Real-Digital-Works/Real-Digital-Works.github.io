@@ -131,6 +131,14 @@ export interface DynamicPage {
   seoDescription: string;
 }
 
+export interface NavItem {
+  id: string;            // stable UUID for DnD key
+  label: string;
+  href: string;
+  hidden?: boolean;
+  children?: NavItem[];  // sub-navigation (max 1 level deep)
+}
+
 export interface Content {
   version: number;
   lastUpdated: string;
@@ -148,6 +156,7 @@ export interface Content {
   stack: string[];
   blogs: BlogPost[];
   pages: DynamicPage[];
+  navItems?: NavItem[];
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -169,16 +178,23 @@ export const stack = content.stack;
 export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
 
-/** Nav stays in code — no reason to make it CMS-editable */
-export const nav = [
-  { href: "/", label: "Home" },
-  { href: "/work", label: "Work" },
-  { href: "/services", label: "Services" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/blog", label: "Blog" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+/** Default nav — used when no CMS nav has been saved yet */
+const DEFAULT_NAV_ITEMS: NavItem[] = [
+  { id: "home",     label: "Home",     href: "/" },
+  { id: "work",     label: "Work",     href: "/work" },
+  { id: "services", label: "Services", href: "/services" },
+  { id: "pricing",  label: "Pricing",  href: "/pricing" },
+  { id: "blog",     label: "Blog",     href: "/blog" },
+  { id: "about",    label: "About",    href: "/about" },
+  { id: "contact",  label: "Contact",  href: "/contact" },
 ];
+
+export const navItems: NavItem[] = content.navItems ?? DEFAULT_NAV_ITEMS;
+
+/** Legacy flat nav — kept for backward compat with any remaining consumers */
+export const nav = navItems
+  .filter((item) => !item.hidden)
+  .map(({ label, href }) => ({ label, href }));
 
 /**
  * Quote builder data stays in code — pricing structure changes rarely

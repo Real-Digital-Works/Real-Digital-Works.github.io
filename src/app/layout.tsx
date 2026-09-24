@@ -27,11 +27,20 @@ export const metadata: Metadata = {
     siteName: site.name,
     title: seo.home.title,
     description: seo.home.description,
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: site.name,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: seo.home.title,
     description: seo.home.description,
+    images: ["/og.png"],
   },
   alternates: {
     canonical: "/",

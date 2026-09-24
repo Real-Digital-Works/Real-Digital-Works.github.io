@@ -10,7 +10,8 @@ import {
 } from "@/lib/content";
 
 function money(n: number) {
-  const rounded = n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 10) * 10;
+  // Round to nearest £50 for large amounts, £5 for small — keeps £95/mo accurate
+  const rounded = n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 5) * 5;
   return `£${rounded.toLocaleString("en-GB")}`;
 }
 
@@ -67,7 +68,7 @@ export function QuoteBuilder() {
     }
 
     const total = one
-      ? `${money(one * 0.9)} – ${money(one * 1.15)}`
+      ? `${money(one)} – ${money(one * 1.15)}`
       : `${money(month)}/mo`;
     const sub = one && month
       ? `Plus ${money(month)} per month ongoing`
@@ -197,9 +198,24 @@ function Option({
         checked ? "border-beam bg-beam/15" : "border-line bg-fg/4"
       }`}
     >
+      {/* Custom styled checkbox — replaces default white browser box */}
+      <span
+        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
+          checked
+            ? "border-beam bg-beam"
+            : "border-fg/25 bg-fg/5"
+        }`}
+        aria-hidden="true"
+      >
+        {checked && (
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
       <input
         type="checkbox"
-        className="mt-1 accent-beam"
+        className="sr-only"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />

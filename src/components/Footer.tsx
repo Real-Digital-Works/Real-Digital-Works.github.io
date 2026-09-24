@@ -69,8 +69,8 @@ export function Footer() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/35">
-          <span>© 2026 Real Digital Works · Draft for stakeholder review</span>
+        <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/45">
+          <span>© 2026 Real Digital Works</span>
           <span>A {site.parent} company</span>
         </div>
       </div>

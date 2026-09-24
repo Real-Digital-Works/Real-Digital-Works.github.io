@@ -48,6 +48,20 @@ export function StudioChat({
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const list = useRef<HTMLDivElement>(null);
+  // Hide the dock button when the enquiry desk section is already visible on screen
+  const [deskVisible, setDeskVisible] = useState(false);
+
+  useEffect(() => {
+    if (variant !== "dock") return;
+    const target = document.querySelector(".desk-block");
+    if (!target) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setDeskVisible(entry.isIntersecting),
+      { threshold: 0.2 }
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [variant]);
 
   useEffect(() => {
     const el = list.current;
@@ -132,7 +146,9 @@ export function StudioChat({
       ) : null}
       <button
         type="button"
-        className="fixed right-4 bottom-4 z-50 rounded-full bg-beam px-4 py-3 text-[13px] font-semibold tracking-[0.08em] text-white uppercase shadow-[0_0_40px_rgba(24,87,236,.45)]"
+        className={`fixed right-4 bottom-20 sm:bottom-4 z-50 rounded-full bg-beam px-4 py-3 text-[13px] font-semibold tracking-[0.08em] text-white uppercase shadow-[0_0_40px_rgba(24,87,236,.45)] transition-all duration-300 ${
+          deskVisible ? "opacity-0 pointer-events-none translate-y-2" : "opacity-100"
+        }`}
         onClick={() => setOpen((v) => !v)}
       >
         {open ? "Close desk" : "Ask RDW"}

@@ -17,7 +17,7 @@
   --faint: #7a8290;
   --line: rgba(255, 255, 255, 0.1);
   --line-dk: rgba(255, 255, 255, 0.12);
-  --header: rgba(26, 34, 48, 0.72);
+  --header: rgba(26, 34, 48, 0.92);
   --hero-blob: #0d121a;
   --glass: rgba(255, 255, 255, 0.045);
   --glass-border: rgba(255, 255, 255, 0.11);
@@ -36,7 +36,7 @@ html[data-theme="light"] {
   --line-dk: rgba(26, 34, 48, 0.16);
   --cyan: #0b7fa8;
   --tech: #0d74d1;
-  --header: rgba(246, 247, 249, 0.82);
+  --header: rgba(246, 247, 249, 0.95);
   --hero-blob: #d5deea;
   --glass: rgba(255, 255, 255, 0.78);
   --glass-border: rgba(26, 34, 48, 0.1);
@@ -485,11 +485,17 @@ html[data-theme="light"] .accent-wash {
 }
 
 .cursor-ring {
-  width: 36px;
-  height: 36px;
-  margin: -18px 0 0 -18px;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
   border: 1px solid rgba(26, 152, 251, 0.7);
   border-radius: 50%;
+}
+
+/* Hide cursor ring over paragraphs and plain text — less intrusive while reading */
+p:hover ~ .cursor-ring,
+.cursor-ring:has(+ *) {
+  opacity: 0.3;
 }
 
 .marquee {

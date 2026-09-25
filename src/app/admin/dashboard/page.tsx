@@ -1094,7 +1094,7 @@ export default function AdminDashboard() {
                   {inviteLink && (
                     <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 space-y-3">
                       <p className="text-sm font-medium text-green-300">✓ Invite link generated — email sent to user</p>
-                      <p className="text-xs text-green-200/70">A copy of the link is below in case you need to resend it manually. It expires in 1 hour.</p>
+                      <p className="text-xs text-green-200/70">A copy of the link is below in case you need to resend it manually. It expires in 7 days.</p>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-green-100/80">
                           {inviteLink}
@@ -1171,7 +1171,7 @@ export default function AdminDashboard() {
                 </Card>
 
                 <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/60 leading-relaxed">
-                  <strong className="text-blue-300">How it works:</strong> The invite link opens <code className="rounded bg-white/10 px-1">realdigitalworks.com/auth/action</code> — a branded page where the user sets their own password. Once set, they can log in at <code className="rounded bg-white/10 px-1">/admin</code>. Links expire after 1 hour; generate a new one if it expires.
+                  <strong className="text-blue-300">How it works:</strong> The invite link opens <code className="rounded bg-white/10 px-1">realdigitalworks.com/auth/invite</code> — a branded page where the user sets their own password. Once set, they can log in at <code className="rounded bg-white/10 px-1">/admin</code>. Links expire after 7 days; generate a new one if it expires.
                 </div>
               </>
             )}

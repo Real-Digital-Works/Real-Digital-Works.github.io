@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
-import { adminAuth, verifyRequest } from "@/lib/firebase-admin";
+import { adminAuth, adminDb, verifyRequest } from "@/lib/firebase-admin";
 import { site } from "@/lib/content";
+import {
+  INVITES_COLLECTION,
+  INVITE_TTL_MS,
+  createInviteToken,
+  logInviteError,
+} from "@/lib/invites";
 
 // ── Email sending via nodemailer + one.com SMTP ─────────────────────────────
 async function sendInviteEmail(to: string, inviteLink: string) {
@@ -63,7 +69,7 @@ async function sendInviteEmail(to: string, inviteLink: string) {
               </table>
 
               <p style="margin:0 0 8px;font-size:13px;color:#ffffff40;">
-                This link expires in 1 hour. If you weren't expecting this, you can ignore it.
+                This link expires in 7 days. If you weren't expecting this, you can ignore it.
               </p>
               <p style="margin:0;font-size:12px;color:#ffffff30;word-break:break-all;">
                 Or copy this URL: ${inviteLink}
@@ -93,7 +99,7 @@ async function sendInviteEmail(to: string, inviteLink: string) {
     to,
     subject: "You've been invited to Real Digital Works",
     html,
-    text: `You've been invited to access the Real Digital Works admin portal.\n\nSet your password here (link expires in 1 hour):\n${inviteLink}`,
+    text: `You've been invited to access the Real Digital Works admin portal.\n\nSet your password here (link expires in 7 days):\n${inviteLink}`,
   });
 }
 
@@ -128,16 +134,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Generate the invite link and rewrite to our branded /auth/action page
-    const firebaseLink = await auth.generatePasswordResetLink(email, {
-      url: `${site.url}/admin/login`,
+    // 3. Store a 7-day invite token (Firebase oobCodes expire in ~1 hour and are not configurable)
+    const token = createInviteToken();
+    const now = new Date();
+    const db = await adminDb();
+    await db.collection(INVITES_COLLECTION).doc(token).set({
+      email,
+      token,
+      uid,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + INVITE_TTL_MS).toISOString(),
+      usedAt: null,
     });
-    const inviteLink = firebaseLink.replace(
-      /https:\/\/[^/]+\/__\/auth\/action/,
-      `${site.url}/auth/action`
-    );
-
-    void uid;
+    const inviteLink = `${site.url}/auth/invite?token=${token}`;
 
     // 4. Send the invite email (non-blocking — we still return the link if email fails)
     let emailSent = false;
@@ -156,7 +165,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ inviteLink, emailSent, emailError });
   } catch (err) {
-    console.error("[invite] Error:", err);
+    logInviteError("[invite] Error", err);
     return NextResponse.json(
       { error: "Failed to create invite. Check server logs." },
       { status: 500 }

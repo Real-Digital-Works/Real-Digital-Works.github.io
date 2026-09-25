@@ -1,14 +1,15 @@
 import type { Auth } from "firebase-admin/auth";
+import type { Firestore } from "firebase-admin/firestore";
 
 // ── Singleton cache ─────────────────────────────────────────────────────────
 let _auth: Auth | null = null;
+let _db: Firestore | null = null;
+let _ready = false;
 
-// ── Init + auth getter (async — firebase-admin v14 is ESM-only) ─────────────
-export async function adminAuth(): Promise<Auth> {
-  if (_auth) return _auth;
+async function ensureApp() {
+  if (_ready) return;
 
   const { getApps, initializeApp, cert } = await import("firebase-admin/app");
-  const { getAuth } = await import("firebase-admin/auth");
 
   if (!getApps().length) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -39,8 +40,26 @@ export async function adminAuth(): Promise<Auth> {
     });
   }
 
+  _ready = true;
+}
+
+// ── Init + auth getter (async — firebase-admin v14 is ESM-only) ─────────────
+export async function adminAuth(): Promise<Auth> {
+  if (_auth) return _auth;
+
+  await ensureApp();
+  const { getAuth } = await import("firebase-admin/auth");
   _auth = getAuth();
   return _auth;
+}
+
+export async function adminDb(): Promise<Firestore> {
+  if (_db) return _db;
+
+  await ensureApp();
+  const { getFirestore } = await import("firebase-admin/firestore");
+  _db = getFirestore();
+  return _db;
 }
 
 // ── Verify the Firebase ID token from an Authorization: Bearer header ────────

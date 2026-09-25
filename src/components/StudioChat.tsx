@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { site } from "@/lib/content";
 
 type Msg = { from: "rdw" | "you"; text: string };
 
@@ -69,16 +70,32 @@ export function StudioChat({
     el.scrollTop = el.scrollHeight;
   }, [msgs, open]);
 
-  function send(text: string) {
+  async function send(text: string) {
     const q = text.trim();
     if (!q || busy) return;
     setInput("");
-    setMsgs((m) => [...m, { from: "you", text: q }]);
+    const pending: Msg[] = [...msgs, { from: "you", text: q }];
+    setMsgs(pending);
     setBusy(true);
-    window.setTimeout(() => {
-      setMsgs((m) => [...m, { from: "rdw", text: answer(q) }]);
-      setBusy(false);
-    }, 520);
+    let reply = "";
+    try {
+      const res = await fetch("/api/ask-rdw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: pending, message: q }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        reply?: unknown;
+        fallback?: unknown;
+      };
+      if (res.ok && !data.fallback && typeof data.reply === "string") {
+        reply = data.reply.trim();
+      }
+    } catch {
+      // Local keyword matcher keeps preview working without a key.
+    }
+    setMsgs((m) => [...m, { from: "rdw", text: reply || answer(q) }]);
+    setBusy(false);
   }
 
   const windowUi = (
@@ -127,10 +144,14 @@ export function StudioChat({
         </button>
       </form>
       <p className="px-4 pb-3 text-[11px] text-fg/35">
-        Demo logic on this machine.{" "}
+        Ranges only — not a quote.{" "}
         <Link href="/contact" className="text-tech">
-          Talk to a person →
+          Talk to a person
         </Link>
+        {" · "}
+        <a href={site.whatsappHref} className="text-tech" target="_blank" rel="noreferrer">
+          WhatsApp
+        </a>
       </p>
     </div>
   );

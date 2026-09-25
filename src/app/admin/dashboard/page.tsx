@@ -69,12 +69,14 @@ function Field({
   onChange,
   textarea,
   hint,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   textarea?: boolean;
   hint?: string;
+  placeholder?: string;
 }) {
   const base =
     "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#1857EC] focus:ring-1 focus:ring-[#1857EC] transition";
@@ -89,6 +91,7 @@ function Field({
           value={value}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
           rows={3}
+          placeholder={placeholder}
           className={`${base} resize-y`}
         />
       ) : (
@@ -96,6 +99,7 @@ function Field({
           type="text"
           value={value}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+          placeholder={placeholder}
           className={base}
         />
       )}
@@ -165,6 +169,9 @@ export default function AdminDashboard() {
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
+  const [hookConfigured, setHookConfigured] = useState(false);
+  const [hookSource, setHookSource] = useState<"firestore" | "env" | "none">("none");
+  const [hookDisplay, setHookDisplay] = useState("");
 
   // ── Users state ──
   type AdminUser = { uid: string; email?: string; displayName: string | null; createdAt?: string; lastSignIn: string | null; emailVerified: boolean; };
@@ -213,11 +220,6 @@ export default function AdminDashboard() {
         const pagesSnap = await getDocs(collection(db(), "pages"));
         const pages = pagesSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as DynamicPage));
         setPagesData(pages);
-
-        const settingsSnap = await getDoc(doc(db(), "cms", "settings"));
-        if (settingsSnap.exists()) {
-          setDeployHook(settingsSnap.data().deployHook ?? "");
-        }
       } catch (e) {
         console.error("Error loading content:", e);
       }
@@ -234,6 +236,39 @@ export default function AdminDashboard() {
     if (!currentUser) throw new Error("Not signed in");
     return currentUser.getIdToken();
   }
+
+  // ── Shared deploy hook (Firestore override or server env) ──
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    async function loadDeployHook() {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/admin/deploy-hook", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          configured?: boolean;
+          source?: "firestore" | "env" | "none";
+          override?: string;
+          displayUrl?: string;
+        };
+        if (cancelled) return;
+        setDeployHook(typeof data.override === "string" ? data.override : "");
+        setHookConfigured(!!data.configured);
+        setHookSource(data.source ?? "none");
+        setHookDisplay(typeof data.displayUrl === "string" ? data.displayUrl : "");
+      } catch (e) {
+        console.error("Failed to load deploy hook:", e);
+      }
+    }
+    loadDeployHook();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // ── Fetch users list ──
   const fetchUsers = useCallback(async () => {
@@ -266,10 +301,22 @@ export default function AdminDashboard() {
         navItems: navData,
         updatedAt: serverTimestamp(),
       });
-      await setDoc(doc(db(), "cms", "settings"), {
-        deployHook,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      // Persist a typed override only — never write an empty string over the shared hook
+      if (deployHook.trim()) {
+        const token = await getToken();
+        const hookRes = await fetch("/api/admin/deploy-hook", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ deployHook: deployHook.trim(), deploy: false }),
+        });
+        if (hookRes.ok) {
+          setHookConfigured(true);
+          setHookSource("firestore");
+        }
+      }
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 3000);
     } catch (e) {
@@ -281,16 +328,36 @@ export default function AdminDashboard() {
   // ── Save & Deploy ──
   async function saveAndDeploy() {
     await save();
-    if (!deployHook) {
-      alert("Add a Vercel deploy hook URL in the Deploy tab first.");
+    if (!hookConfigured && !deployHook.trim()) {
+      alert("No shared deploy hook is configured. Add DEPLOY_HOOK_URL in Vercel, or paste a hook URL in the Deploy tab.");
       return;
     }
     setDeployStatus("deploying");
     try {
-      await fetch(deployHook, { method: "POST" });
+      const token = await getToken();
+      const res = await fetch("/api/admin/deploy-hook", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          deployHook: deployHook.trim() || undefined,
+          deploy: true,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; source?: "firestore" | "env" | "none" };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Deploy failed");
+      }
+      if (data.source) {
+        setHookConfigured(true);
+        setHookSource(data.source);
+      }
       setDeployStatus("done");
       setTimeout(() => setDeployStatus("idle"), 5000);
-    } catch {
+    } catch (e) {
+      console.error(e);
       setDeployStatus("error");
     }
   }
@@ -1181,17 +1248,33 @@ export default function AdminDashboard() {
               <>
                 <SectionTitle
                   title="Deploy Settings"
-                  sub="Configure the Vercel deploy hook so Save & Deploy triggers a new build."
+                  sub="Save & Deploy uses one shared Vercel hook for the whole team. You usually do not need to set anything here."
                 />
                 <Card className="space-y-4">
                   <Field
-                    label="Vercel deploy hook URL"
+                    label="Vercel deploy hook URL (optional override)"
                     value={deployHook}
                     onChange={(v) => { setDeployHook(v); markUnsaved(); }}
-                    hint="Vercel → Project settings → Git → Deploy hooks. Create one called 'Admin deploy', copy the URL here."
+                    placeholder={hookDisplay || "https://api.vercel.com/v1/integrations/deploy/…"}
+                    hint="Leave blank to use the shared hook. Only paste a URL here if you need to override it."
                   />
+                  {hookConfigured && !deployHook && hookSource === "env" && (
+                    <p className="text-xs text-green-400/80">
+                      Using the shared server hook ({hookDisplay || "DEPLOY_HOOK_URL"}). Every admin deploys with this — nobody needs to paste it.
+                    </p>
+                  )}
+                  {hookConfigured && hookSource === "firestore" && (
+                    <p className="text-xs text-green-400/80">
+                      Using the shared hook saved in CMS settings. Every signed-in admin sees the same value.
+                    </p>
+                  )}
+                  {!hookConfigured && !deployHook && (
+                    <p className="text-xs text-yellow-400/70">
+                      No shared hook yet. Add <code className="rounded bg-white/10 px-1">DEPLOY_HOOK_URL</code> in Vercel, or paste a hook URL above once for the whole team.
+                    </p>
+                  )}
                   <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/70 leading-relaxed">
-                    <strong className="text-blue-300">How it works:</strong> When you click "Save &amp; Deploy", we save your content to Firestore and POST to this URL. Vercel starts a new build — GitHub Actions then runs <code className="rounded bg-white/10 px-1">scripts/fetch-content.js</code> which reads your saved content from Firestore and writes it into the static build. Your site rebuilds with the new copy in about 60–90 seconds.
+                    <strong className="text-blue-300">How it works:</strong> "Save &amp; Deploy" writes content to Firestore, then the server POSTs to the shared Vercel hook (from <code className="rounded bg-white/10 px-1">DEPLOY_HOOK_URL</code> or the optional override above). The hook is never called from your browser, so CORS and per-user paste are not an issue. Vercel starts a new build — GitHub Actions then runs <code className="rounded bg-white/10 px-1">scripts/fetch-content.js</code> and the public site updates in about 60–90 seconds.
                   </div>
                 </Card>
 
@@ -1202,7 +1285,7 @@ export default function AdminDashboard() {
                   </p>
                   <button
                     onClick={saveAndDeploy}
-                    disabled={!deployHook || deployStatus === "deploying"}
+                    disabled={(!hookConfigured && !deployHook.trim()) || deployStatus === "deploying"}
                     className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-40"
                   >
                     {deployStatus === "deploying"
@@ -1213,9 +1296,6 @@ export default function AdminDashboard() {
                       ? "Error — retry?"
                       : "Save & Deploy"}
                   </button>
-                  {!deployHook && (
-                    <p className="text-xs text-yellow-400/70">Add the deploy hook URL above first.</p>
-                  )}
                 </Card>
 
                 <Card>

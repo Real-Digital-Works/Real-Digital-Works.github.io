@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { projects, seo } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: seo.work.title,
+  title: brandedTitle(seo.work.title),
   description: seo.work.description,
   keywords: seo.work.keywords,
   alternates: { canonical: "/work" },

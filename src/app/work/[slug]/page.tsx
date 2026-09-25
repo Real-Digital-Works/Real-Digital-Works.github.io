@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 import { RichContent } from "@/components/RichContent";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -13,9 +14,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = projects.find((item) => item.slug === slug);
-  if (!project) return { title: "Work" };
+  if (!project) return { title: brandedTitle("Work") };
   return {
-    title: `${project.title} — ${project.kind}`,
+    title: brandedTitle(`${project.title} — ${project.kind}`),
     description: project.summary,
     keywords: [...project.tags, "web design London", "digital agency London"],
     alternates: { canonical: `/work/${slug}` },

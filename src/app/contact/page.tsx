@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { ContactForm } from "@/components/ContactForm";
 import { site, seo } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: seo.contact.title,
+  title: brandedTitle(seo.contact.title),
   description: seo.contact.description,
   keywords: seo.contact.keywords,
   alternates: { canonical: "/contact" },
@@ -15,7 +15,34 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ContactPage() {
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function quotePrefill(params: Record<string, string | string[] | undefined>) {
+  const estimate = first(params.estimate);
+  const need = first(params.need);
+  const size = first(params.size);
+  const speed = first(params.speed);
+  if (!estimate && !need) return "";
+  return [
+    need ? `Quote builder: ${need}` : null,
+    size ? `Size: ${size}` : null,
+    speed ? `Timing: ${speed}` : null,
+    estimate ? `Estimate shown: ${estimate}` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
+}
+
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const initialMessage = quotePrefill(params);
+
   return (
     <>
       <section className="page-intro">
@@ -26,15 +53,13 @@ export default function ContactPage() {
           </h1>
           <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62">
             One working day for a reply. If we are not right for the job we
-            will say so. The form opens an email to the studio.
+            will say so. The form goes to the studio.
           </p>
         </div>
       </section>
       <section className="pb-20">
         <div className="wrap grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
-          <Suspense fallback={<p className="text-mid">Loading form…</p>}>
-            <ContactForm />
-          </Suspense>
+          <ContactForm initialMessage={initialMessage} />
           <aside className="glass h-fit rounded-[22px] p-8">
             <dl className="space-y-5">
               <div>

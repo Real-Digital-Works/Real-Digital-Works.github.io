@@ -1,7 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { site } from "@/lib/content";
 
 const needs = [
@@ -13,29 +12,11 @@ const needs = [
   "Not sure yet",
 ];
 
-export function ContactForm() {
-  const params = useSearchParams();
+export function ContactForm({ initialMessage = "" }: { initialMessage?: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
+  const [viaMailto, setViaMailto] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const estimate = params.get("estimate");
-    const need = params.get("need");
-    const size = params.get("size");
-    const speed = params.get("speed");
-    if (!estimate && !need) return;
-    setMessage(
-      [
-        need ? `Quote builder: ${need}` : null,
-        size ? `Size: ${size}` : null,
-        speed ? `Timing: ${speed}` : null,
-        estimate ? `Estimate shown: ${estimate}` : null,
-      ]
-        .filter(Boolean)
-        .join(". "),
-    );
-  }, [params]);
+  const [message, setMessage] = useState(initialMessage);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,20 +39,45 @@ export function ContactForm() {
     if (Object.keys(next).length) return;
 
     setStatus("sending");
-    const lines = [
-      payload.business ? `Business: ${payload.business}` : null,
-      payload.phone ? `Phone: ${payload.phone}` : null,
-      payload.need ? `Need: ${payload.need}` : null,
-      "",
-      payload.message,
-    ]
-      .filter((line) => line !== null)
-      .join("\n");
-    const href = `${site.emailHref}?subject=${encodeURIComponent(
-      `Enquiry from ${payload.name}`,
-    )}&body=${encodeURIComponent(lines)}`;
-    window.location.href = href;
-    setStatus("ok");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: unknown;
+        mailto?: unknown;
+        error?: unknown;
+      };
+      if (res.ok && data.ok && typeof data.mailto === "string") {
+        window.location.href = data.mailto;
+        setViaMailto(true);
+        setStatus("ok");
+        return;
+      }
+      if (res.ok && data.ok) {
+        setViaMailto(false);
+        setStatus("ok");
+        return;
+      }
+      setStatus("err");
+    } catch {
+      const lines = [
+        payload.business ? `Business: ${payload.business}` : null,
+        payload.phone ? `Phone: ${payload.phone}` : null,
+        payload.need ? `Need: ${payload.need}` : null,
+        "",
+        payload.message,
+      ]
+        .filter((line) => line !== null)
+        .join("\n");
+      window.location.href = `${site.emailHref}?subject=${encodeURIComponent(
+        `Enquiry from ${payload.name}`
+      )}&body=${encodeURIComponent(lines)}`;
+      setViaMailto(true);
+      setStatus("ok");
+    }
   }
 
   if (status === "ok") {
@@ -81,8 +87,9 @@ export function ContactForm() {
           Thanks — that is with us.
         </h3>
         <p className="mt-2 text-[15.5px] text-bone/66">
-          Your mail app should have opened a message to the studio. If it did
-          not, write to {site.email} or call {site.phone}.
+          {viaMailto
+            ? `Your mail app should have opened a message to the studio. If it did not, write to ${site.email} or call ${site.phone}.`
+            : `A person replies within one working day. If you need us sooner, write to ${site.email} or call ${site.phone}.`}
         </p>
       </div>
     );
@@ -136,7 +143,7 @@ export function ContactForm() {
       </button>
       {status === "err" ? (
         <p className="text-[14px] text-[#c0392b]">
-          Could not save the enquiry locally. Check the terminal, then try again.
+          Could not send the enquiry. Write to {site.email} or call {site.phone}.
         </p>
       ) : null}
     </form>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogs, site } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -14,9 +15,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = blogs.find((p) => p.slug === slug);
-  if (!post) return { title: "Post not found" };
+  if (!post) return { title: brandedTitle("Post not found") };
   return {
-    title: post.seoTitle || post.title,
+    title: brandedTitle(post.seoTitle || post.title),
     description: post.seoDescription || post.excerpt,
     alternates: { canonical: `/blog/${slug}` },
     openGraph: {

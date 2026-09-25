@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Privacy" };
+export const metadata: Metadata = {
+  title: brandedTitle("Privacy"),
+  alternates: { canonical: "/privacy" },
+};
 
 export default function PrivacyPage() {
   return (

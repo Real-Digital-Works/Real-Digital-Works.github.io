@@ -16,9 +16,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/about`,   lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${base}/contact`, lastModified: now, changeFrequency: "yearly",  priority: 0.8 },
     { url: `${base}/blog`,    lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${base}/modern-slavery`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // All 17 service pages — generated from services-data.ts
+  // All 16 service pages — generated from services-data.ts
   const serviceRoutes: MetadataRoute.Sitemap = servicePages.map((s) => ({
     url: `${base}/services/${s.slug}`,
     lastModified: now,

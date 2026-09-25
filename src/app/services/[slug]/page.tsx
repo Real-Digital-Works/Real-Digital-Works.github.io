@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { site } from "@/lib/content";
+import { brandedTitle, serviceHeading } from "@/lib/seo";
 import { servicePages, getServiceBySlug } from "@/lib/services-data";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -14,8 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const service = getServiceBySlug(slug);
   if (!service) return {};
   return {
-    title: service.seoTitle,
+    title: brandedTitle(service.seoTitle),
     description: service.seoDescription,
+    alternates: { canonical: `/services/${slug}` },
     openGraph: { title: service.seoTitle, description: service.seoDescription },
   };
 }
@@ -26,9 +29,58 @@ export default async function ServicePage({ params }: Props) {
   if (!service) notFound();
 
   const related = servicePages.filter((s) => service.relatedSlugs.includes(s.slug));
+  const heading = serviceHeading(service.seoTitle, service.title);
+  const base = site.url.replace(/\/$/, "");
+  const pageUrl = `${base}/services/${slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Service",
+        name: heading,
+        description: service.seoDescription,
+        url: pageUrl,
+        provider: {
+          "@type": "ProfessionalService",
+          name: site.name,
+          url: base,
+        },
+        areaServed: [
+          { "@type": "City", name: "London" },
+          { "@type": "Country", name: "United Kingdom" },
+        ],
+        offers: {
+          "@type": "Offer",
+          description: service.from,
+          priceCurrency: "GBP",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: service.faq.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: `${base}/` },
+          { "@type": "ListItem", position: 2, name: "Services", item: `${base}/services` },
+          { "@type": "ListItem", position: 3, name: heading, item: pageUrl },
+        ],
+      },
+    ],
+  };
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ── Hero ── */}
       <section className="border-b border-line py-20 md:py-28">
         <div className="wrap">
@@ -36,7 +88,7 @@ export default async function ServicePage({ params }: Props) {
             {service.category}
           </p>
           <h1 className="display mt-3 text-[clamp(42px,6vw,80px)] leading-[0.95] tracking-[-0.04em]">
-            {service.title}
+            {heading}
           </h1>
           <p className="mt-6 max-w-[55ch] text-[18px] leading-relaxed text-fg/65">
             {service.intro}

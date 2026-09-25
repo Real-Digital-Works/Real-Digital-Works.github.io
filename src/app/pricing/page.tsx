@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { QuoteBuilder } from "@/components/QuoteBuilder";
 import { packages, faq, seo } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: seo.pricing.title,
+  title: brandedTitle(seo.pricing.title),
   description: seo.pricing.description,
   keywords: seo.pricing.keywords,
   alternates: { canonical: "/pricing" },

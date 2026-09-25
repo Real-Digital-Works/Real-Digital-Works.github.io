@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { blogs, site } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: brandedTitle("Blog"),
   description: `Insights, guides and studio news from ${site.name} — a London digital studio.`,
   alternates: { canonical: "/blog" },
 };

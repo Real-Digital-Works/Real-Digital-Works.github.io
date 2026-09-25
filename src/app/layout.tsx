@@ -42,9 +42,6 @@ export const metadata: Metadata = {
     description: seo.home.description,
     images: ["/og.png"],
   },
-  alternates: {
-    canonical: "/",
-  },
   icons: {
     icon: [
       { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },

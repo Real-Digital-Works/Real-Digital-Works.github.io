@@ -2,10 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
-import { services, seo, faq } from "@/lib/content";
+import { services, seo, faq, site } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
+
+const SERVICE_INDEX_HREFS: Record<string, string> = {
+  websites: "/services/web-design",
+  apps: "/services/web-applications",
+  ai: "/services/ai-automation",
+  seo: "/services/seo",
+  motion: "/services/3d-animation",
+  care: "/services/hosting",
+};
 
 export const metadata: Metadata = {
-  title: seo.services.title,
+  title: brandedTitle(seo.services.title),
   description: seo.services.description,
   keywords: seo.services.keywords,
   alternates: { canonical: "/services" },
@@ -27,6 +37,7 @@ const serviceJsonLd = {
     item: {
       "@type": "Service",
       name: s.title,
+      url: `${site.url.replace(/\/$/, "")}${SERVICE_INDEX_HREFS[s.id] ?? "/contact"}`,
       description: s.summary,
       offers: {
         "@type": "Offer",
@@ -75,8 +86,11 @@ export default function ServicesPage() {
                 <p className="text-fg/58">{service.summary}</p>
                 <div className="mt-3 text-[15px] text-fg/60"><RichContent html={service.detail} /></div>
               </div>
-              <Link href="/contact" className="btn btn-ghost w-fit">
-                Enquire
+              <Link
+                href={SERVICE_INDEX_HREFS[service.id] ?? "/contact"}
+                className="btn btn-ghost w-fit"
+              >
+                {SERVICE_INDEX_HREFS[service.id] ? "View service" : "Enquire"}
               </Link>
             </Reveal>
           ))}

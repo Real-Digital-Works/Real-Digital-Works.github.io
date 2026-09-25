@@ -3,9 +3,10 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
 import { disciplines, seo } from "@/lib/content";
+import { brandedTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: seo.about.title,
+  title: brandedTitle(seo.about.title),
   description: seo.about.description,
   keywords: seo.about.keywords,
   alternates: { canonical: "/about" },

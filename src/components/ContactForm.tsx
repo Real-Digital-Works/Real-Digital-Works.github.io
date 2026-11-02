@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent } from "react";
+import Script from "next/script";
 import { site } from "@/lib/content";
 
 const needs = [
@@ -12,15 +13,67 @@ const needs = [
   "Not sure yet",
 ];
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: string | HTMLElement,
+        options: {
+          sitekey: string;
+          theme?: "light" | "dark" | "auto";
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        }
+      ) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
+      getResponse: (widgetId?: string) => string;
+    };
+  }
+}
+
 export function ContactForm({ initialMessage = "" }: { initialMessage?: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
   const [viaMailto, setViaMailto] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState(initialMessage);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const widgetHostRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
+
+  const renderTurnstile = useCallback(() => {
+    if (!TURNSTILE_SITE_KEY || !widgetHostRef.current || !window.turnstile) return;
+    if (widgetIdRef.current != null) {
+      window.turnstile.reset(widgetIdRef.current);
+      return;
+    }
+    widgetIdRef.current = window.turnstile.render(widgetHostRef.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: "dark",
+      callback: (token) => setTurnstileToken(token),
+      "expired-callback": () => setTurnstileToken(""),
+      "error-callback": () => setTurnstileToken(""),
+    });
+  }, []);
+
+  function resetTurnstile() {
+    setTurnstileToken("");
+    if (widgetIdRef.current != null && window.turnstile) {
+      window.turnstile.reset(widgetIdRef.current);
+    }
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const tokenFromWidget =
+      (widgetIdRef.current != null && window.turnstile
+        ? window.turnstile.getResponse(widgetIdRef.current)
+        : "") || turnstileToken;
     const payload = {
       name: String(form.get("name") || "").trim(),
       business: String(form.get("business") || "").trim(),
@@ -28,6 +81,8 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
       phone: String(form.get("phone") || "").trim(),
       need: String(form.get("need") || "").trim(),
       message: String(form.get("message") || "").trim(),
+      website: String(form.get("website") || ""),
+      turnstileToken: tokenFromWidget,
     };
     const next: Record<string, string> = {};
     if (payload.name.length < 2) next.name = "Please tell us your name.";
@@ -35,8 +90,15 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
       next.email = "Please enter a valid email address.";
     }
     if (payload.message.length < 10) next.message = "A sentence or two is plenty.";
+    if (TURNSTILE_SITE_KEY && !payload.turnstileToken) {
+      next.captcha = "Please complete the verification.";
+    }
+    if (!TURNSTILE_SITE_KEY && IS_PRODUCTION) {
+      next.captcha = "Verification is not configured. Write to us instead.";
+    }
     setErrors(next);
     if (Object.keys(next).length) return;
+    if (!TURNSTILE_SITE_KEY && IS_PRODUCTION) return;
 
     setStatus("sending");
     try {
@@ -61,6 +123,10 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
         setStatus("ok");
         return;
       }
+      if (typeof data.error === "string" && data.error.toLowerCase().includes("verif")) {
+        setErrors({ captcha: data.error });
+      }
+      resetTurnstile();
       setStatus("err");
     } catch {
       const lines = [
@@ -96,7 +162,13 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4" noValidate>
+    <form onSubmit={onSubmit} className="relative grid gap-4" noValidate>
+      <div className="pointer-events-none absolute -left-[10000px] h-0 w-0 overflow-hidden" aria-hidden="true">
+        <label>
+          Website
+          <input name="website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+        </label>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Your name" name="name" error={errors.name} placeholder="Sam Patel" />
         <Field label="Business name" name="business" placeholder="Patel & Co" />
@@ -138,7 +210,29 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
           <span className="mt-1 block text-[13.5px] text-[#c0392b]">{errors.message}</span>
         ) : null}
       </label>
-      <button className="btn btn-beam w-fit" disabled={status === "sending"}>
+      {TURNSTILE_SITE_KEY ? (
+        <>
+          <Script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+            strategy="afterInteractive"
+            onReady={renderTurnstile}
+          />
+          <div ref={widgetHostRef} className="min-h-[65px]" />
+          {errors.captcha ? (
+            <p className="text-[13.5px] text-[#c0392b]">{errors.captcha}</p>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-[13.5px] text-fg/55">
+          {IS_PRODUCTION
+            ? `Verification is not configured yet. Write to ${site.email} or call ${site.phone}.`
+            : "Turnstile site key is unset — local submits skip CAPTCHA."}
+        </p>
+      )}
+      <button
+        className="btn btn-beam w-fit"
+        disabled={status === "sending" || (!TURNSTILE_SITE_KEY && IS_PRODUCTION)}
+      >
         {status === "sending" ? "Sending…" : "Send enquiry"}
       </button>
       {status === "err" ? (

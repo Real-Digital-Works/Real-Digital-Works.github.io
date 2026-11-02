@@ -1,3 +1,8 @@
+/**
+ * Contact form env:
+ * - NEXT_PUBLIC_TURNSTILE_SITE_KEY — Cloudflare Turnstile site key (client widget)
+ * - TURNSTILE_SECRET_KEY — Cloudflare Turnstile secret (server siteverify)
+ */
 import { NextResponse } from "next/server";
 import { site } from "@/lib/content";
 
@@ -45,9 +50,44 @@ function mailtoHref(payload: {
   )}&body=${encodeURIComponent(lines)}`;
 }
 
+async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+  const isProduction = process.env.VERCEL_ENV === "production";
+
+  if (!secret) {
+    if (isProduction) {
+      console.error("TURNSTILE_SECRET_KEY is required in production; rejecting contact submit.");
+      return false;
+    }
+    console.warn("TURNSTILE_SECRET_KEY is unset; skipping CAPTCHA verification outside production.");
+    return true;
+  }
+
+  if (!token) return false;
+
+  try {
+    const body = new URLSearchParams();
+    body.set("secret", secret);
+    body.set("response", token);
+    if (ip && ip !== "unknown") body.set("remoteip", ip);
+
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    const data = (await res.json()) as { success?: unknown };
+    return data.success === true;
+  } catch (err) {
+    console.error("Turnstile siteverify failed", err);
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   try {
-    if (rateLimited(clientIp(request))) {
+    const ip = clientIp(request);
+    if (rateLimited(ip)) {
       return NextResponse.json(
         { error: "Too many attempts. Try again later." },
         { status: 429 }
@@ -66,6 +106,21 @@ export async function POST(request: Request) {
     }
 
     const rec = body as Record<string, unknown>;
+    const website = typeof rec.website === "string" ? rec.website.trim() : "";
+    if (website) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const turnstileToken =
+      typeof rec.turnstileToken === "string" ? rec.turnstileToken.trim() : "";
+    const captchaOk = await verifyTurnstile(turnstileToken, ip);
+    if (!captchaOk) {
+      return NextResponse.json(
+        { error: "Verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
+
     const payload = {
       name: typeof rec.name === "string" ? rec.name.trim() : "",
       business: typeof rec.business === "string" ? rec.business.trim() : "",

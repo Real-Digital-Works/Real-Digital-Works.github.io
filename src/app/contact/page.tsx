@@ -42,6 +42,7 @@ export default async function ContactPage({
 }) {
   const params = await searchParams;
   const initialMessage = quotePrefill(params);
+  const initialService = first(params.service)?.trim() ?? "";
 
   return (
     <>
@@ -59,7 +60,7 @@ export default async function ContactPage({
       </section>
       <section className="pb-20">
         <div className="wrap grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
-          <ContactForm initialMessage={initialMessage} />
+          <ContactForm initialMessage={initialMessage} initialService={initialService} />
           <aside className="glass h-fit rounded-[22px] p-8">
             <dl className="space-y-5">
               <div>

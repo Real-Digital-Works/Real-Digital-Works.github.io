@@ -3,7 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { site } from "@/lib/content";
 import { brandedTitle, serviceHeading } from "@/lib/seo";
-import { servicePages, getServiceBySlug } from "@/lib/services-data";
+import {
+  servicePages,
+  getServiceBySlug,
+  servicePricingNote,
+} from "@/lib/services-data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,6 +36,7 @@ export default async function ServicePage({ params }: Props) {
   const heading = serviceHeading(service.seoTitle, service.title);
   const base = site.url.replace(/\/$/, "");
   const pageUrl = `${base}/services/${slug}`;
+  const quoteHref = `/contact?service=${encodeURIComponent(slug)}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -95,24 +100,43 @@ export default async function ServicePage({ params }: Props) {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
-              href="/contact"
+              href={quoteHref}
               className="inline-flex h-12 items-center rounded-full bg-beam px-7 text-[14px] font-semibold tracking-[0.06em] text-black uppercase transition hover:opacity-90"
             >
               Get a quote
             </Link>
+            <a
+              href={site.phoneHref}
+              className="inline-flex h-12 items-center rounded-full border border-line px-7 text-[14px] font-semibold tracking-[0.06em] uppercase transition hover:border-beam/50"
+            >
+              Book a free call
+            </a>
             <span className="font-mono text-[13px] text-fg/55">{service.from}</span>
           </div>
         </div>
       </section>
 
-      {/* ── What's included ── */}
+      {/* ── Overview ── */}
+      <section className="border-b border-line py-20">
+        <div className="wrap max-w-3xl">
+          <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
+            Overview
+          </p>
+          <h2 className="display mt-2 text-[clamp(28px,3.6vw,44px)]">
+            How we approach this.
+          </h2>
+          <p className="mt-6 text-[17px] leading-relaxed text-fg/65">{service.overview}</p>
+        </div>
+      </section>
+
+      {/* ── What we can help with ── */}
       <section className="border-b border-line py-20">
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-            What&apos;s included
+            What we can help with
           </p>
           <h2 className="display mt-2 text-[clamp(28px,3.6vw,44px)]">
-            Everything in the price.
+            Six parts of the work.
           </h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {service.whatsIncluded.map((item) => (
@@ -122,6 +146,32 @@ export default async function ServicePage({ params }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Process ── */}
+      <section className="border-b border-line py-20">
+        <div className="wrap">
+          <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
+            How it works
+          </p>
+          <h2 className="display mt-2 text-[clamp(28px,3.6vw,44px)]">
+            Discover, scope, deliver, review, handover.
+          </h2>
+          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            {service.process.map((item, index) => (
+              <li key={item.title} className="glass rounded-[20px] p-6">
+                <p className="font-mono text-[11px] tracking-[0.18em] text-tech">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-3 text-[16px] font-semibold tracking-[-0.02em]">{item.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-fg/60">{item.description}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-8 max-w-[60ch] text-[14px] leading-relaxed text-fg/55">
+            {servicePricingNote}
+          </p>
         </div>
       </section>
 
@@ -150,7 +200,7 @@ export default async function ServicePage({ params }: Props) {
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
               Related services
             </p>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((s) => (
                 <Link
                   key={s.slug}
@@ -173,17 +223,18 @@ export default async function ServicePage({ params }: Props) {
       <section className="py-24 text-center">
         <div className="wrap">
           <h2 className="display text-[clamp(32px,5vw,64px)] leading-[0.95] tracking-[-0.04em]">
-            Ready to talk?
+            Tell us what you need
           </h2>
           <p className="mx-auto mt-4 max-w-[44ch] text-[17px] text-fg/60">
-            Tell us what you need and we&apos;ll come back with a clear answer within one working day.
+            Tell us what you are trying to achieve. We will review the requirements and explain the
+            most suitable next step.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
-              href="/contact"
+              href={quoteHref}
               className="inline-flex h-12 items-center rounded-full bg-beam px-8 text-[14px] font-semibold tracking-[0.06em] text-black uppercase transition hover:opacity-90"
             >
-              Start a conversation
+              Get a quote
             </Link>
             <Link
               href="/pricing"

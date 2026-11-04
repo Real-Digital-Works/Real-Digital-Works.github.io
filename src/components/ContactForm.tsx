@@ -3,14 +3,12 @@
 import { useCallback, useRef, useState, type FormEvent } from "react";
 import Script from "next/script";
 import { site } from "@/lib/content";
+import { servicePages } from "@/lib/services-data";
 
-const needs = [
-  "A new website",
-  "A custom application",
-  "Help getting found on Google",
-  "AI and automation",
-  "Video, 3D or animation",
-  "Not sure yet",
+const UNSURE = "Not sure yet";
+const serviceOptions = [
+  { value: "", label: UNSURE },
+  ...servicePages.map((s) => ({ value: s.slug, label: s.title })),
 ];
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
@@ -36,7 +34,16 @@ declare global {
   }
 }
 
-export function ContactForm({ initialMessage = "" }: { initialMessage?: string }) {
+export function ContactForm({
+  initialMessage = "",
+  initialService = "",
+}: {
+  initialMessage?: string;
+  initialService?: string;
+}) {
+  const selectedService = serviceOptions.some((o) => o.value === initialService)
+    ? initialService
+    : "";
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
   const [viaMailto, setViaMailto] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -74,12 +81,16 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
       (widgetIdRef.current != null && window.turnstile
         ? window.turnstile.getResponse(widgetIdRef.current)
         : "") || turnstileToken;
+    const needSlug = String(form.get("need") || "").trim();
+    const needLabel =
+      serviceOptions.find((option) => option.value === needSlug)?.label ??
+      (needSlug || UNSURE);
     const payload = {
       name: String(form.get("name") || "").trim(),
       business: String(form.get("business") || "").trim(),
       email: String(form.get("email") || "").trim(),
       phone: String(form.get("phone") || "").trim(),
-      need: String(form.get("need") || "").trim(),
+      need: needSlug ? `${needLabel} (${needSlug})` : needLabel,
       message: String(form.get("message") || "").trim(),
       website: String(form.get("website") || ""),
       turnstileToken: tokenFromWidget,
@@ -187,11 +198,13 @@ export function ContactForm({ initialMessage = "" }: { initialMessage?: string }
         What do you need?
         <select
           name="need"
-          defaultValue={needs[0]}
+          defaultValue={selectedService}
           className="mt-2 w-full rounded-[10px] input-dark px-4 py-3 text-base"
         >
-          {needs.map((n) => (
-            <option key={n}>{n}</option>
+          {serviceOptions.map((option) => (
+            <option key={option.value || "unsure"} value={option.value}>
+              {option.label}
+            </option>
           ))}
         </select>
       </label>

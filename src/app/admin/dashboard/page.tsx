@@ -1001,7 +1001,7 @@ export default function AdminDashboard() {
                   <Field label="Parent company" value={siteData.parent} onChange={(v) => { setSiteData((p) => ({ ...p, parent: v })); markUnsaved(); }} />
                   <Field label="One-line tagline" value={siteData.tagline} onChange={(v) => { setSiteData((p) => ({ ...p, tagline: v })); markUnsaved(); }} />
                   <Field label="Meta description (used by Google)" value={siteData.description} textarea onChange={(v) => { setSiteData((p) => ({ ...p, description: v })); markUnsaved(); }} hint="Aim for 130–160 characters." />
-                  <Field label="Site URL" value={siteData.url} onChange={(v) => { setSiteData((p) => ({ ...p, url: v })); markUnsaved(); }} hint="e.g. https://realdigitalworks.com" />
+                  <Field label="Site URL" value={siteData.url} onChange={(v) => { setSiteData((p) => ({ ...p, url: v })); markUnsaved(); }} hint="Use the live 200 host, currently https://www.realdigitalworks.com (apex 308s to www)." />
                 </Card>
                 <Card className="space-y-4">
                   <h3 className="text-sm font-semibold text-white/70">Contact details</h3>

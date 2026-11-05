@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { site } from "@/lib/content";
+import { canonicalOrigin, canonicalUrl } from "@/lib/canonical-url";
 import { brandedTitle, serviceHeading, shareTitle } from "@/lib/seo";
 import {
   servicePages,
@@ -39,8 +40,8 @@ export default async function ServicePage({ params }: Props) {
 
   const related = servicePages.filter((s) => service.relatedSlugs.includes(s.slug));
   const heading = serviceHeading(service.seoTitle, service.title);
-  const base = site.url.replace(/\/$/, "");
-  const pageUrl = `${base}/services/${slug}`;
+  const origin = canonicalOrigin();
+  const pageUrl = canonicalUrl(`/services/${slug}`);
   const quoteHref = `/contact?service=${encodeURIComponent(slug)}`;
 
   const jsonLd = {
@@ -51,29 +52,35 @@ export default async function ServicePage({ params }: Props) {
         name: heading,
         description: service.seoDescription,
         url: pageUrl,
+        serviceType: service.category,
         provider: {
           "@type": "ProfessionalService",
+          "@id": `${origin}/#business`,
           name: site.name,
-          url: base,
+          url: origin,
         },
-        areaServed: [
-          { "@type": "City", name: "London" },
-          { "@type": "Country", name: "United Kingdom" },
-        ],
+        areaServed: {
+          "@type": "AdministrativeArea",
+          name: "London, United Kingdom",
+        },
       },
-      {
-        "@type": "FAQPage",
-        mainEntity: service.faq.map((item) => ({
-          "@type": "Question",
-          name: item.q,
-          acceptedAnswer: { "@type": "Answer", text: item.a },
-        })),
-      },
+      ...(service.faq.length
+        ? [
+            {
+              "@type": "FAQPage",
+              mainEntity: service.faq.map((item) => ({
+                "@type": "Question",
+                name: item.q,
+                acceptedAnswer: { "@type": "Answer", text: item.a },
+              })),
+            },
+          ]
+        : []),
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: `${base}/` },
-          { "@type": "ListItem", position: 2, name: "Services", item: `${base}/services` },
+          { "@type": "ListItem", position: 1, name: "Home", item: canonicalUrl("/") },
+          { "@type": "ListItem", position: 2, name: "Services", item: canonicalUrl("/services") },
           { "@type": "ListItem", position: 3, name: heading, item: pageUrl },
         ],
       },

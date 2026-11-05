@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogs, site } from "@/lib/content";
+import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -37,14 +38,22 @@ export default async function BlogPostPage({ params }: Props) {
   const post = blogs.find((p) => p.slug === slug && p.status === "published");
   if (!post) notFound();
 
+  const origin = canonicalOrigin();
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
+    image: siteImageUrl(),
     datePublished: post.publishedAt,
-    author: { "@type": "Organization", name: site.name, url: site.url },
-    publisher: { "@type": "Organization", name: site.name, url: site.url },
+    mainEntityOfPage: canonicalUrl(`/blog/${slug}`),
+    author: { "@type": "Organization", name: site.name, url: origin },
+    publisher: {
+      "@type": "Organization",
+      name: site.name,
+      url: origin,
+      logo: { "@type": "ImageObject", url: siteImageUrl() },
+    },
     keywords: post.tags?.join(", "),
   };
 

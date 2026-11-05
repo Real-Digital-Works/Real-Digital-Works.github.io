@@ -3,7 +3,8 @@ import { site } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 const policyTitle = "Modern Slavery Policy";
-const policyDescription = "Modern slavery policy for Real Digital Works. Full policy forthcoming.";
+const policyDescription =
+  "Modern slavery policy for Real Digital Works, covering our Kennington studio, suppliers, and how to raise a concern. Full policy forthcoming.";
 
 export const metadata: Metadata = {
   title: brandedTitle(policyTitle),

@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PublicChrome } from "@/components/PublicChrome";
 import { site, seo } from "@/lib/content";
+import { canonicalOrigin, siteImageUrl } from "@/lib/canonical-url";
+import { metaDescription } from "@/lib/seo";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -11,21 +13,24 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+const origin = canonicalOrigin();
+const homeDescription = metaDescription(seo.home.description);
+
 export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
+  metadataBase: new URL(origin),
   title: {
     default: seo.home.title.trim(),
     template: "%s · Real Digital Works",
   },
-  description: seo.home.description,
-  authors: [{ name: site.name, url: site.url }],
+  description: homeDescription,
+  authors: [{ name: site.name, url: origin }],
   openGraph: {
     type: "website",
     locale: "en_GB",
-    url: site.url,
+    url: origin,
     siteName: site.name,
     title: seo.home.title.trim(),
-    description: seo.home.description,
+    description: homeDescription,
     images: [
       {
         url: "/og.png",
@@ -38,7 +43,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: seo.home.title.trim(),
-    description: seo.home.description,
+    description: homeDescription,
     images: ["/og.png"],
   },
   icons: {
@@ -51,16 +56,39 @@ export const metadata: Metadata = {
 };
 
 // ── LocalBusiness JSON-LD ──────────────────────────────────────────────────────
+const siteImage = siteImageUrl();
+
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
+  "@id": `${origin}/#business`,
   name: site.name,
   alternateName: site.parent,
   description: site.description,
-  url: site.url,
+  url: origin,
+  image: {
+    "@type": "ImageObject",
+    url: siteImage,
+  },
+  logo: {
+    "@type": "ImageObject",
+    url: siteImage,
+  },
   telephone: site.phone,
   email: site.email,
-  openingHours: "Mo-Sa 09:00-19:00",
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ],
+    opens: "09:00",
+    closes: "19:00",
+  },
   currenciesAccepted: "GBP",
   priceRange: "££",
   address: {
@@ -75,11 +103,11 @@ const localBusinessJsonLd = {
     latitude: 51.4867,
     longitude: -0.1085,
   },
-  areaServed: [
-    { "@type": "City", name: "London" },
-    { "@type": "Country", name: "United Kingdom" },
-  ],
-  serviceType: [
+  areaServed: {
+    "@type": "AdministrativeArea",
+    name: "London, United Kingdom",
+  },
+  knowsAbout: [
     "Website design and development",
     "Custom software and applications",
     "AI and automation",

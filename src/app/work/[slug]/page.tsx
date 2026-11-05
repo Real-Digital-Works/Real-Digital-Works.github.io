@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
+import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { RichContent } from "@/components/RichContent";
 
@@ -37,7 +38,9 @@ export default async function WorkDetailPage({ params }: Props) {
     "@type": "CreativeWork",
     name: project.title,
     description: project.summary,
-    creator: { "@type": "Organization", name: site.name, url: site.url },
+    url: canonicalUrl(`/work/${slug}`),
+    image: project.image ? project.image : siteImageUrl(),
+    creator: { "@type": "Organization", name: site.name, url: canonicalOrigin() },
     genre: project.kind,
     dateCreated: project.year,
     keywords: project.tags.join(", "),

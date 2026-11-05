@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/lib/content";
+import { canonicalOrigin } from "@/lib/canonical-url";
 
 export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = site.url.replace(/\/$/, "");
+  const base = canonicalOrigin();
   return {
     rules: [
       {

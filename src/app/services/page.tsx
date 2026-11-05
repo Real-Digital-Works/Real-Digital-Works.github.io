@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
-import { seo, faq, site } from "@/lib/content";
+import { seo, faq } from "@/lib/content";
+import { canonicalUrl } from "@/lib/canonical-url";
 import { cmsServiceRecords } from "@/lib/services-data";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
@@ -24,7 +25,7 @@ const serviceJsonLd = {
     item: {
       "@type": "Service",
       name: s.listingTitle.trim() || s.title,
-      url: `${site.url.replace(/\/$/, "")}/services/${s.slug}`,
+      url: canonicalUrl(`/services/${s.slug}`),
       description: s.summary || s.intro,
     },
   })),

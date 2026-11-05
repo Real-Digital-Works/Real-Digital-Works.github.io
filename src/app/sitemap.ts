@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
-import { site, blogs, pages, projects } from "@/lib/content";
+import { blogs, pages, projects } from "@/lib/content";
+import { canonicalOrigin } from "@/lib/canonical-url";
 import { servicePages } from "@/lib/services-data";
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = site.url.replace(/\/$/, "");
+  const base = canonicalOrigin();
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [

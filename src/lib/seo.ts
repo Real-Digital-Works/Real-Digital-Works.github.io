@@ -1,12 +1,25 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/content";
+import { SITE_IMAGE_PATH } from "@/lib/canonical-url";
+
+const META_DESCRIPTION_MAX = 160;
 
 const shareImage = {
-  url: "/og.png",
+  url: SITE_IMAGE_PATH,
   width: 1200,
   height: 630,
   alt: site.name,
 };
+
+/** Cap CMS/generated descriptions for SERP snippets without rewriting source copy. */
+export function metaDescription(raw: string, max = META_DESCRIPTION_MAX): string {
+  const text = raw.replace(/\s+/g, " ").trim();
+  if (text.length <= max) return text;
+  const sliced = text.slice(0, max - 1);
+  const at = sliced.lastIndexOf(" ");
+  const cut = (at > 80 ? sliced.slice(0, at) : sliced).replace(/[\s.,;:–—-]+$/, "");
+  return `${cut}…`;
+}
 
 /** Use the full string as-is when it already includes the brand, so the layout template cannot double it. */
 export function brandedTitle(title: string): NonNullable<Metadata["title"]> {
@@ -23,10 +36,11 @@ export function shareTitle(
   title: string,
   description: string,
   openGraph?: Metadata["openGraph"],
-): Pick<Metadata, "openGraph" | "twitter"> {
+): Pick<Metadata, "description" | "openGraph" | "twitter"> {
   const trimmedTitle = title.trim();
-  const trimmedDescription = description.trim();
+  const trimmedDescription = metaDescription(description);
   return {
+    description: trimmedDescription,
     openGraph: {
       type: "website",
       locale: "en_GB",
@@ -38,7 +52,7 @@ export function shareTitle(
     },
     twitter: {
       card: "summary_large_image",
-      images: ["/og.png"],
+      images: [SITE_IMAGE_PATH],
       title: trimmedTitle,
       description: trimmedDescription,
     },

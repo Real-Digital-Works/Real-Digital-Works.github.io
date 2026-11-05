@@ -27,12 +27,6 @@ const serviceJsonLd = {
       name: s.title,
       url: `${site.url.replace(/\/$/, "")}${publicPathForCmsService(s.id) ?? "/contact"}`,
       description: s.summary,
-      offers: {
-        "@type": "Offer",
-        description: s.from,
-        priceCurrency: "GBP",
-        seller: { "@type": "Organization", name: "Real Digital Works" },
-      },
     },
   })),
 };

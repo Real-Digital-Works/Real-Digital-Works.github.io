@@ -18,7 +18,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const service = getServiceBySlug(slug);
-  if (!service) return {};
+  if (!service) {
+    return { title: brandedTitle("Page not found"), robots: { index: false, follow: false } };
+  }
   return {
     title: brandedTitle(service.seoTitle),
     description: service.seoDescription,
@@ -58,11 +60,6 @@ export default async function ServicePage({ params }: Props) {
           { "@type": "City", name: "London" },
           { "@type": "Country", name: "United Kingdom" },
         ],
-        offers: {
-          "@type": "Offer",
-          description: service.from,
-          priceCurrency: "GBP",
-        },
       },
       {
         "@type": "FAQPage",

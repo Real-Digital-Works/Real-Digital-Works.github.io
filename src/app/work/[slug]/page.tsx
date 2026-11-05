@@ -14,7 +14,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = projects.find((item) => item.slug === slug);
-  if (!project) return { title: brandedTitle("Work") };
+  if (!project) {
+    return { title: brandedTitle("Work not found"), robots: { index: false, follow: false } };
+  }
   const title = `${project.title} — ${project.kind}`;
   return {
     title: brandedTitle(title),

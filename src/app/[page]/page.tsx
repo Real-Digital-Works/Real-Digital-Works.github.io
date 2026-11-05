@@ -21,13 +21,16 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { page: slug } = await params;
   const pg = pages.find((p) => p.slug === slug && p.status === "published");
-  if (!pg) return { title: brandedTitle("Page not found") };
-  const title = pg.seoTitle || pg.title;
+  if (!pg) {
+    return { title: brandedTitle("Page not found"), robots: { index: false, follow: false } };
+  }
+  const title = (pg.seoTitle || pg.title).trim();
+  const description = (pg.seoDescription || pg.title).trim();
   return {
     title: brandedTitle(title),
-    description: pg.seoDescription,
+    description,
     alternates: { canonical: `/${slug}` },
-    ...shareTitle(title, pg.seoDescription, { url: `/${slug}` }),
+    ...shareTitle(title, description, { url: `/${slug}` }),
   };
 }
 

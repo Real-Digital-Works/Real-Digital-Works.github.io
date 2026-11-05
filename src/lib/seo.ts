@@ -1,22 +1,47 @@
 import type { Metadata } from "next";
+import { site } from "@/lib/content";
+
+const shareImage = {
+  url: "/og.png",
+  width: 1200,
+  height: 630,
+  alt: site.name,
+};
 
 /** Use the full string as-is when it already includes the brand, so the layout template cannot double it. */
 export function brandedTitle(title: string): NonNullable<Metadata["title"]> {
-  return /real digital works/i.test(title) ? { absolute: title } : title;
+  const trimmed = title.trim();
+  return /real digital works/i.test(trimmed) ? { absolute: trimmed } : trimmed;
 }
 
 /**
- * Page-level OG + Twitter titles. Next merges these with the root layout;
- * if a route omits twitter.title it inherits the homepage “Web Design…” title.
+ * Page-level OG + Twitter. Next replaces these objects instead of deep-merging
+ * them with the root layout — so card, image, locale and siteName must be set
+ * here or inner routes ship a title-only card with no image.
  */
 export function shareTitle(
   title: string,
   description: string,
   openGraph?: Metadata["openGraph"],
 ): Pick<Metadata, "openGraph" | "twitter"> {
+  const trimmedTitle = title.trim();
+  const trimmedDescription = description.trim();
   return {
-    openGraph: { ...openGraph, title, description },
-    twitter: { title, description },
+    openGraph: {
+      type: "website",
+      locale: "en_GB",
+      siteName: site.name,
+      images: [shareImage],
+      ...openGraph,
+      title: trimmedTitle,
+      description: trimmedDescription,
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: ["/og.png"],
+      title: trimmedTitle,
+      description: trimmedDescription,
+    },
   };
 }
 

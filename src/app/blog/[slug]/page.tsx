@@ -15,9 +15,11 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = blogs.find((p) => p.slug === slug);
-  if (!post) return { title: brandedTitle("Post not found") };
-  const title = post.seoTitle || post.title;
-  const description = post.seoDescription || post.excerpt;
+  if (!post) {
+    return { title: brandedTitle("Post not found"), robots: { index: false, follow: false } };
+  }
+  const title = (post.seoTitle || post.title).trim();
+  const description = (post.seoDescription || post.excerpt || post.title).trim();
   return {
     title: brandedTitle(title),
     description,

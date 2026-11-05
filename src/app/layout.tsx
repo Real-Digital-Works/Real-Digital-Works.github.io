@@ -14,18 +14,17 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: seo.home.title,
+    default: seo.home.title.trim(),
     template: "%s · Real Digital Works",
   },
   description: seo.home.description,
-  keywords: seo.home.keywords,
   authors: [{ name: site.name, url: site.url }],
   openGraph: {
     type: "website",
     locale: "en_GB",
     url: site.url,
     siteName: site.name,
-    title: seo.home.title,
+    title: seo.home.title.trim(),
     description: seo.home.description,
     images: [
       {
@@ -38,6 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    title: seo.home.title.trim(),
+    description: seo.home.description,
     images: ["/og.png"],
   },
   icons: {
@@ -78,17 +79,13 @@ const localBusinessJsonLd = {
     { "@type": "City", name: "London" },
     { "@type": "Country", name: "United Kingdom" },
   ],
-  hasOfferCatalog: {
-    "@type": "OfferCatalog",
-    name: "Digital Services",
-    itemListElement: [
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Website Design & Development", description: "Brochure, booking and e-commerce sites from £1,450" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "Custom Software & Applications", description: "Client portals, internal tools, cloud applications" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "AI & Automation", description: "Enquiry bots, workflow automation from £900" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "SEO & Search", description: "Technical SEO and content strategy from £550/month" } },
-      { "@type": "Offer", itemOffered: { "@type": "Service", name: "3D, Video & Motion", description: "Product renders, explainers and animation from £450" } },
-    ],
-  },
+  serviceType: [
+    "Website design and development",
+    "Custom software and applications",
+    "AI and automation",
+    "SEO and search",
+    "3D, video and motion",
+  ],
   sameAs: [
     "https://www.realanimationworks.com",
   ],

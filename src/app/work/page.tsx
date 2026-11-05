@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { mergeProjects, mergeWorkPage, mergeWorkSeo, projects, seo, workPage as cmsWorkPage } from "@/lib/content";
+import { mergeWorkPage, mergeWorkSeo, projects, seo, workPage as cmsWorkPage } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 const workPage = mergeWorkPage(cmsWorkPage);
 const workSeo = mergeWorkSeo(seo.work);
-const workProjects = mergeProjects(projects);
+const workProjects = projects;
 
 export const metadata: Metadata = {
   title: brandedTitle(workSeo.title),

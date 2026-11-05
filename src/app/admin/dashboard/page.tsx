@@ -36,9 +36,12 @@ import {
 } from "@/lib/cms-versions";
 import content, {
   DEFAULT_NAV_ITEMS,
+  createBlankProject,
   mergeProjects,
   mergeWorkPage,
   mergeWorkSeo,
+  slugifyProjectTitle,
+  uniqueProjectSlug,
 } from "@/lib/content";
 import type {
   SiteInfo,
@@ -145,6 +148,137 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
+function CaseStudyList({
+  projects,
+  onPatch,
+  onRemove,
+  onMove,
+  onAdd,
+}: {
+  projects: Project[];
+  onPatch: (index: number, patch: Partial<Project>) => void;
+  onRemove: (index: number) => void;
+  onMove: (index: number, dir: -1 | 1) => void;
+  onAdd: () => void;
+}) {
+  return (
+    <>
+      {projects.length === 0 && (
+        <p className="mb-4 text-sm text-white/40">
+          No case studies. The public /work page will show an empty list until you add one.
+        </p>
+      )}
+      {projects.map((proj, i) => (
+        <Card key={i} className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded-full" style={{ background: proj.accent }} />
+            <h3 className="text-sm font-semibold text-white/80">{proj.title || "Untitled"}</h3>
+            <span className="ml-auto font-mono text-[11px] text-white/40">/work/{proj.slug}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onMove(i, -1)}
+              disabled={i === 0}
+              className="text-xs text-white/40 hover:text-white/70 disabled:opacity-30"
+            >
+              ↑ Up
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove(i, 1)}
+              disabled={i === projects.length - 1}
+              className="text-xs text-white/40 hover:text-white/70 disabled:opacity-30"
+            >
+              ↓ Down
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemove(i)}
+              className="ml-auto text-xs text-red-400/60 hover:text-red-400"
+            >
+              Remove
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Project title" value={proj.title} onChange={(v) => onPatch(i, { title: v })} />
+            <Field
+              label="Slug (URL)"
+              value={proj.slug}
+              onChange={(v) => onPatch(i, { slug: v })}
+              hint="/work/your-slug — generated from the title, editable, must be unique."
+            />
+          </div>
+          <Field label="Client" value={proj.client} onChange={(v) => onPatch(i, { client: v })} />
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="Year" value={proj.year} onChange={(v) => onPatch(i, { year: v })} />
+            <Field label="Kind" value={proj.kind} onChange={(v) => onPatch(i, { kind: v })} />
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Status</label>
+              <select
+                value={proj.status}
+                onChange={(e) => onPatch(i, { status: e.target.value as Project["status"] })}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC] focus:ring-1 focus:ring-[#1857EC]"
+              >
+                <option value="Live sample">Live sample</option>
+                <option value="Indicative">Indicative</option>
+              </select>
+            </div>
+          </div>
+          <Field
+            label="Summary (card text)"
+            value={proj.summary}
+            textarea
+            onChange={(v) => onPatch(i, { summary: v })}
+            hint="Shown on /work and the case-study page intro."
+          />
+          <Field
+            label="Tags (comma separated)"
+            value={proj.tags.join(", ")}
+            onChange={(v) =>
+              onPatch(i, {
+                tags: v.split(",").map((k) => k.trim()).filter(Boolean),
+              })
+            }
+            hint="Pills on the individual /work/{slug} page."
+          />
+          <Field
+            label="Accent colour"
+            value={proj.accent}
+            onChange={(v) => onPatch(i, { accent: v })}
+            hint="#hex used for the card when there is no image."
+          />
+          <Field
+            label="Card image URL (optional)"
+            value={proj.image ?? ""}
+            onChange={(v) => onPatch(i, { image: v })}
+            hint="Leave empty to keep the accent gradient."
+          />
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
+            <RichTextEditor content={proj.problem} onChange={(html) => onPatch(i, { problem: html })} placeholder="Describe the challenge…" minHeight="120px" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The work</label>
+            <RichTextEditor content={proj.work} onChange={(html) => onPatch(i, { work: html })} placeholder="Describe what was done…" minHeight="120px" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The outcome</label>
+            <RichTextEditor content={proj.outcome} onChange={(html) => onPatch(i, { outcome: html })} placeholder="Describe the result…" minHeight="120px" />
+          </div>
+        </Card>
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        className="w-full rounded-2xl border border-dashed border-white/15 py-4 text-sm text-white/40 transition hover:border-white/30 hover:text-white/60"
+      >
+        + Add case study
+      </button>
+    </>
+  );
+}
+
 function StatusBadge({ status }: { status: SaveStatus }) {
   const map: Record<SaveStatus, { label: string; cls: string }> = {
     idle: { label: "", cls: "" },
@@ -247,7 +381,7 @@ export default function AdminDashboard() {
     );
     if (d.faq) setFaqData(d.faq as FaqItem[]);
     if (d.packages) setPackagesData(d.packages as Package[]);
-    if (d.projects) setProjectsData(mergeProjects(d.projects as Project[]));
+    if (Array.isArray(d.projects)) setProjectsData(mergeProjects(d.projects as Project[]));
     if (d.process) setProcessData(d.process as ProcessStep[]);
     if (d.disciplines) setDisciplinesData(d.disciplines as Discipline[]);
     if (Array.isArray(d.navItems) && d.navItems.length > 0) {
@@ -300,7 +434,50 @@ export default function AdminDashboard() {
         const next = [...p];
         const current = next[index];
         if (!current) return p;
-        next[index] = { ...current, ...patch, slug: current.slug };
+        const merged: Project = { ...current, ...patch };
+        const slugs = next.map((item) => item.slug);
+        if (patch.slug !== undefined) {
+          merged.slug = uniqueProjectSlug(patch.slug, slugs, index);
+        } else if (patch.title !== undefined) {
+          const previousAuto = slugifyProjectTitle(current.title);
+          if (!current.slug || current.slug === previousAuto) {
+            merged.slug = uniqueProjectSlug(patch.title, slugs, index);
+          }
+        }
+        next[index] = merged;
+        return next;
+      });
+      markUnsaved();
+    },
+    [markUnsaved],
+  );
+
+  const addProject = useCallback(() => {
+    setProjectsData((p) => [...p, createBlankProject(p.map((item) => item.slug))]);
+    markUnsaved();
+  }, [markUnsaved]);
+
+  const removeProject = useCallback(
+    (index: number) => {
+      const item = projectsData[index];
+      const label = item?.title || item?.slug || "this case study";
+      if (!confirm(`Remove "${label}"? It will disappear from /work after you save and deploy.`)) {
+        return;
+      }
+      setProjectsData((p) => p.filter((_, i) => i !== index));
+      markUnsaved();
+    },
+    [markUnsaved, projectsData],
+  );
+
+  const moveProject = useCallback(
+    (index: number, dir: -1 | 1) => {
+      setProjectsData((p) => {
+        const target = index + dir;
+        if (target < 0 || target >= p.length) return p;
+        const next = [...p];
+        const [row] = next.splice(index, 1);
+        next.splice(target, 0, row);
         return next;
       });
       markUnsaved();
@@ -1188,7 +1365,7 @@ export default function AdminDashboard() {
               <>
                 <SectionTitle
                   title="Work page"
-                  sub="Intro, SEO, and the case-study cards on /work. Canonical stays /work. Slugs are frozen."
+                  sub="Intro, SEO, and the case-study cards on /work. Canonical stays /work. Slugs become /work/{slug}."
                 />
                 <Card className="space-y-4">
                   <h3 className="text-sm font-semibold text-white/80">Listing intro</h3>
@@ -1253,131 +1430,32 @@ export default function AdminDashboard() {
 
                 <SectionTitle
                   title="Case studies"
-                  sub="The three items already on /work. URLs stay /work/{slug}. Optional image URL; empty keeps the accent gradient."
+                  sub="Cards on /work. Add, remove, or reorder. Each item needs a unique slug for /work/{slug}. Optional image URL; empty keeps the accent gradient."
                 />
-                {projectsData.map((proj, i) => (
-                  <Card key={proj.slug} className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full" style={{ background: proj.accent }} />
-                      <h3 className="text-sm font-semibold text-white/80">{proj.title}</h3>
-                      <span className="ml-auto font-mono text-[11px] text-white/40">/work/{proj.slug}</span>
-                    </div>
-                    <p className="text-[11px] text-white/30">
-                      Public URL frozen: /work/{proj.slug}
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Field label="Project title" value={proj.title} onChange={(v) => patchProject(i, { title: v })} />
-                      <Field label="Client" value={proj.client} onChange={(v) => patchProject(i, { client: v })} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <Field label="Year" value={proj.year} onChange={(v) => patchProject(i, { year: v })} />
-                      <Field label="Kind" value={proj.kind} onChange={(v) => patchProject(i, { kind: v })} />
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Status</label>
-                        <select
-                          value={proj.status}
-                          onChange={(e) =>
-                            patchProject(i, { status: e.target.value as Project["status"] })
-                          }
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC] focus:ring-1 focus:ring-[#1857EC]"
-                        >
-                          <option value="Live sample">Live sample</option>
-                          <option value="Indicative">Indicative</option>
-                        </select>
-                      </div>
-                    </div>
-                    <Field
-                      label="Summary (card text)"
-                      value={proj.summary}
-                      textarea
-                      onChange={(v) => patchProject(i, { summary: v })}
-                      hint="Shown on /work and the case-study page intro."
-                    />
-                    <Field
-                      label="Tags (comma separated)"
-                      value={proj.tags.join(", ")}
-                      onChange={(v) =>
-                        patchProject(i, {
-                          tags: v.split(",").map((k) => k.trim()).filter(Boolean),
-                        })
-                      }
-                      hint="Pills on the individual /work/{slug} page."
-                    />
-                    <Field
-                      label="Accent colour"
-                      value={proj.accent}
-                      onChange={(v) => patchProject(i, { accent: v })}
-                      hint="#hex used for the card when there is no image."
-                    />
-                    <Field
-                      label="Card image URL (optional)"
-                      value={proj.image ?? ""}
-                      onChange={(v) => patchProject(i, { image: v })}
-                      hint="Leave empty to keep the current gradient. Do not add a new case study here."
-                    />
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
-                      <RichTextEditor content={proj.problem} onChange={(html) => patchProject(i, { problem: html })} placeholder="Describe the challenge…" minHeight="120px" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The work</label>
-                      <RichTextEditor content={proj.work} onChange={(html) => patchProject(i, { work: html })} placeholder="Describe what was done…" minHeight="120px" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The outcome</label>
-                      <RichTextEditor content={proj.outcome} onChange={(html) => patchProject(i, { outcome: html })} placeholder="Describe the result…" minHeight="120px" />
-                    </div>
-                  </Card>
-                ))}
+                <CaseStudyList
+                  projects={projectsData}
+                  onPatch={patchProject}
+                  onRemove={removeProject}
+                  onMove={moveProject}
+                  onAdd={addProject}
+                />
               </>
             )}
 
             {/* ── PROJECTS ── */}
             {tab === "projects" && (
               <>
-                <SectionTitle title="Projects / Work" sub="Same case studies as the Work tab. Shown on /work and /work/[slug]. Slugs stay frozen." />
-                {projectsData.map((proj, i) => (
-                  <Card key={proj.slug} className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 rounded-full" style={{ background: proj.accent }} />
-                      <h3 className="text-sm font-semibold text-white/80">{proj.title}</h3>
-                      <span className="ml-auto rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">{proj.status}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Field label="Project title" value={proj.title} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], title: v }; setProjectsData(p); markUnsaved(); }} />
-                      <Field label="Client" value={proj.client} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], client: v }; setProjectsData(p); markUnsaved(); }} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <Field label="Year" value={proj.year} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], year: v }; setProjectsData(p); markUnsaved(); }} />
-                      <Field label="Kind" value={proj.kind} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], kind: v }; setProjectsData(p); markUnsaved(); }} />
-                      <Field label="Accent colour" value={proj.accent} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], accent: v }; setProjectsData(p); markUnsaved(); }} hint="#hex" />
-                    </div>
-                    <Field label="Summary (card text)" value={proj.summary} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], summary: v }; setProjectsData(p); markUnsaved(); }} />
-                    <Field
-                      label="Tags (comma separated)"
-                      value={proj.tags.join(", ")}
-                      onChange={(v) => {
-                        const p = [...projectsData];
-                        p[i] = { ...p[i], tags: v.split(",").map((k) => k.trim()).filter(Boolean) };
-                        setProjectsData(p);
-                        markUnsaved();
-                      }}
-                    />
-                    <p className="text-[11px] text-white/30">Public URL frozen: /work/{proj.slug}</p>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
-                      <RichTextEditor content={proj.problem} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], problem: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe the challenge…" minHeight="120px" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The work</label>
-                      <RichTextEditor content={proj.work} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], work: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe what was done…" minHeight="120px" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The outcome</label>
-                      <RichTextEditor content={proj.outcome} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], outcome: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe the result…" minHeight="120px" />
-                    </div>
-                  </Card>
-                ))}
+                <SectionTitle
+                  title="Projects / Work"
+                  sub="Same case studies as the Work tab. Shown on /work and /work/{slug}. Add, remove, reorder, and edit slugs here too."
+                />
+                <CaseStudyList
+                  projects={projectsData}
+                  onPatch={patchProject}
+                  onRemove={removeProject}
+                  onMove={moveProject}
+                  onAdd={addProject}
+                />
               </>
             )}
 

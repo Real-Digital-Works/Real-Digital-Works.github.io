@@ -250,37 +250,100 @@ export function mergeWorkSeo(raw?: Partial<PageSeo> | null): PageSeo {
   };
 }
 
+/** URL-safe slug for /work/{slug}. Empty titles become "case-study". */
+export function slugifyProjectTitle(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .trim()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  return slug;
+}
+
+/** Keep a slug unique within the case-study list. Pass `currentIndex` so an item can keep its own slug. */
+export function uniqueProjectSlug(
+  desired: string,
+  existing: string[],
+  currentIndex?: number,
+): string {
+  const base = slugifyProjectTitle(desired) || "case-study";
+  const taken = new Set(
+    existing
+      .filter((_, i) => i !== currentIndex)
+      .map((s) => s.toLowerCase())
+      .filter(Boolean),
+  );
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+export function createBlankProject(existingSlugs: string[]): Project {
+  const title = "New case study";
+  return {
+    slug: uniqueProjectSlug(title, existingSlugs),
+    title,
+    client: "",
+    kind: "",
+    year: "",
+    status: "Indicative",
+    summary: "",
+    problem: "",
+    work: "",
+    outcome: "",
+    tags: [],
+    accent: "#1857EC",
+  };
+}
+
+function normalizeProject(item: Partial<Project>, seed: Project[]): Project {
+  const fallback = seed.find((p) => p.slug && p.slug === item.slug);
+  const tags =
+    Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : (fallback?.tags ?? []);
+  const status: ProjectStatus =
+    item.status === "Live sample" || item.status === "Indicative"
+      ? item.status
+      : (fallback?.status ?? "Indicative");
+  const image = pickStr(item.image, fallback?.image ?? "");
+  return {
+    slug: slugifyProjectTitle(pickStr(item.slug, fallback?.slug ?? "")),
+    title: pickStr(item.title, fallback?.title ?? ""),
+    client: pickStr(item.client, fallback?.client ?? ""),
+    kind: pickStr(item.kind, fallback?.kind ?? ""),
+    year: pickStr(item.year, fallback?.year ?? ""),
+    status,
+    summary: pickStr(item.summary, fallback?.summary ?? ""),
+    problem: pickStr(item.problem, fallback?.problem ?? ""),
+    work: pickStr(item.work, fallback?.work ?? ""),
+    outcome: pickStr(item.outcome, fallback?.outcome ?? ""),
+    tags,
+    accent: pickStr(item.accent, fallback?.accent ?? "#1857EC"),
+    ...(image ? { image } : {}),
+  };
+}
+
+/**
+ * Merge CMS case studies. An empty array is a real value (user deleted every item).
+ * Seed is used only when the list is missing entirely, not when it is empty.
+ */
 export function mergeProjects(raw?: Project[] | null): Project[] {
-  const seed = content.projects ?? [];
-  if (!Array.isArray(raw) || raw.length === 0) return seed;
-  return raw
-    .map((item) => {
-      const fallback = seed.find((p) => p.slug === item.slug);
-      const slug = pickStr(item.slug, fallback?.slug ?? "");
-      const tags =
-        Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : (fallback?.tags ?? []);
-      const status: ProjectStatus =
-        item.status === "Live sample" || item.status === "Indicative"
-          ? item.status
-          : (fallback?.status ?? "Indicative");
-      const image = pickStr(item.image, fallback?.image ?? "");
-      return {
-        slug,
-        title: pickStr(item.title, fallback?.title ?? ""),
-        client: pickStr(item.client, fallback?.client ?? ""),
-        kind: pickStr(item.kind, fallback?.kind ?? ""),
-        year: pickStr(item.year, fallback?.year ?? ""),
-        status,
-        summary: pickStr(item.summary, fallback?.summary ?? ""),
-        problem: pickStr(item.problem, fallback?.problem ?? ""),
-        work: pickStr(item.work, fallback?.work ?? ""),
-        outcome: pickStr(item.outcome, fallback?.outcome ?? ""),
-        tags,
-        accent: pickStr(item.accent, fallback?.accent ?? "#1857EC"),
-        ...(image ? { image } : {}),
-      };
-    })
-    .filter((p) => p.slug);
+  const seed = Array.isArray(content.projects) ? content.projects : [];
+  if (!Array.isArray(raw)) {
+    return seed.map((item) => normalizeProject(item, seed));
+  }
+  const seen: string[] = [];
+  return raw.map((item) => {
+    const normalized = normalizeProject(item, seed);
+    normalized.slug = uniqueProjectSlug(
+      normalized.slug || normalized.title || "case-study",
+      seen,
+    );
+    seen.push(normalized.slug);
+    return normalized;
+  });
 }
 
 export const site = content.site;

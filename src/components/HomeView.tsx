@@ -22,6 +22,7 @@ export function HomeView() {
   const indexEl = useRef<HTMLSpanElement>(null);
   const barEl = useRef<HTMLSpanElement>(null);
   const featured = projects[0];
+  const featuredMark = featured?.title.trim().split(/\s+/)[0] ?? "";
 
   useGSAP(
     () => {
@@ -329,6 +330,7 @@ export function HomeView() {
         </div>
       </section>
 
+      {featured && (
       <section className="work-block pb-20 md:pb-24">
         <div className="wrap">
           <div className="mb-6 flex items-end justify-between gap-6">
@@ -347,13 +349,28 @@ export function HomeView() {
           <Link href={`/work/${featured.slug}`} className="work-stage group block">
             <div className="overflow-hidden rounded-[24px] border border-line">
               <div className="grid md:grid-cols-[1.15fr_0.85fr]">
-                <div className="relative min-h-[280px] bg-[linear-gradient(160deg,#2c211b,#6b4a38_42%,#d7c4a8)] p-8 md:min-h-[340px] md:p-10">
+                <div
+                  className="relative min-h-[280px] p-8 md:min-h-[340px] md:p-10"
+                  style={
+                    featured.image
+                      ? {
+                          backgroundImage: `url(${featured.image})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : {
+                          background: `linear-gradient(160deg, ${featured.accent}, #1a2230 78%)`,
+                        }
+                  }
+                >
                   <p className="font-mono text-[11px] tracking-[0.22em] text-white/55 uppercase">
                     {featured.status} · {featured.kind}
                   </p>
-                  <p className="absolute bottom-8 left-8 font-serif text-[64px] leading-none text-[#f4efe6] italic md:bottom-10 md:left-10 md:text-[80px]">
-                    Plot
-                  </p>
+                  {featuredMark && (
+                    <p className="absolute bottom-8 left-8 font-serif text-[64px] leading-none text-[#f4efe6] italic md:bottom-10 md:left-10 md:text-[80px]">
+                      {featuredMark}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col justify-between bg-fg/[0.03] p-8 md:p-10">
                   <p className="text-[16.5px] leading-relaxed text-fg/68">
@@ -368,6 +385,7 @@ export function HomeView() {
           </Link>
         </div>
       </section>
+      )}
 
       <section className="ship-block border-y border-line py-20 md:py-24">
         <div className="wrap">

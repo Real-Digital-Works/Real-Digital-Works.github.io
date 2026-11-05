@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { site, blogs, pages } from "@/lib/content";
+import { site, blogs, pages, projects } from "@/lib/content";
 import { servicePages } from "@/lib/services-data";
 
 export const dynamic = "force-static";
@@ -46,5 +46,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.65,
     }));
 
-  return [...staticRoutes, ...serviceRoutes, ...blogRoutes, ...pageRoutes];
+  const workRoutes: MetadataRoute.Sitemap = projects
+    .filter((p) => p.slug)
+    .map((p) => ({
+      url: `${base}/work/${p.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    }));
+
+  return [...staticRoutes, ...serviceRoutes, ...workRoutes, ...blogRoutes, ...pageRoutes];
 }

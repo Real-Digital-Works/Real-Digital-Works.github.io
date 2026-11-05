@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import Script from "next/script";
 import { site } from "@/lib/content";
 import { servicePages } from "@/lib/services-data";
@@ -194,20 +202,12 @@ export function ContactForm({
         />
         <Field label="Phone" name="phone" type="tel" placeholder="07700 900123" />
       </div>
-      <label className="block text-[14.5px] font-medium">
-        What do you need?
-        <select
-          name="need"
-          defaultValue={selectedService}
-          className="mt-2 w-full rounded-[10px] input-dark px-4 py-3 text-base"
-        >
-          {serviceOptions.map((option) => (
-            <option key={option.value || "unsure"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <NeedSelect
+        name="need"
+        label="What do you need?"
+        options={serviceOptions}
+        defaultValue={selectedService}
+      />
       <label className="block text-[14.5px] font-medium">
         Tell us a bit more
         <textarea
@@ -254,6 +254,166 @@ export function ContactForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+function NeedSelect({
+  name,
+  label,
+  options,
+  defaultValue,
+}: {
+  name: string;
+  label: string;
+  options: { value: string; label: string }[];
+  defaultValue: string;
+}) {
+  const labelId = useId();
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [value, setValue] = useState(defaultValue);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(() => {
+    const index = options.findIndex((option) => option.value === defaultValue);
+    return index >= 0 ? index : 0;
+  });
+
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
+  }, [open, activeIndex]);
+
+  function commit(index: number) {
+    const option = options[index];
+    if (!option) return;
+    setValue(option.value);
+    setActiveIndex(index);
+    setOpen(false);
+  }
+
+  function moveActive(delta: number) {
+    setActiveIndex((index) => (index + delta + options.length) % options.length);
+  }
+
+  function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") {
+      if (open) {
+        event.preventDefault();
+        setOpen(false);
+      }
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(options.length - 1);
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      moveActive(event.key === "ArrowDown" ? 1 : -1);
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      commit(activeIndex);
+    }
+  }
+
+  return (
+    <div ref={rootRef} className="block text-[14.5px] font-medium">
+      <span id={labelId}>{label}</span>
+      <input type="hidden" name={name} value={value} />
+      <div className="relative mt-2">
+        <button
+          type="button"
+          className="input-dark flex w-full items-center justify-between gap-3 rounded-[10px] px-4 py-3 text-left text-base text-[color:var(--fg)]"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-labelledby={labelId}
+          aria-activedescendant={open ? `${listId}-${activeIndex}` : undefined}
+          onClick={() => setOpen((isOpen) => !isOpen)}
+          onKeyDown={onTriggerKeyDown}
+        >
+          <span>{selected.label}</span>
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            className={`h-4 w-4 shrink-0 text-[color:var(--fg)] transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          >
+            <path
+              fill="currentColor"
+              d="M3.2 5.7a.75.75 0 0 1 1.06 0L8 9.44l3.74-3.74a.75.75 0 1 1 1.06 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0L3.2 6.76a.75.75 0 0 1 0-1.06Z"
+            />
+          </svg>
+        </button>
+        {open ? (
+          <ul
+            id={listId}
+            role="listbox"
+            className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-[10px] border-[1.5px] border-[color:var(--line-dk)] bg-[color:var(--void)] py-1 text-base text-[color:var(--fg)] shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
+          >
+            {options.map((option, index) => {
+              const isSelected = option.value === value;
+              const isActive = index === activeIndex;
+              return (
+                <li key={option.value || "unsure"} role="none">
+                  <div
+                    id={`${listId}-${index}`}
+                    ref={(node) => {
+                      optionRefs.current[index] = node;
+                    }}
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`cursor-pointer px-4 py-2.5 ${
+                      isSelected
+                        ? "bg-[color:var(--beam)] text-white"
+                        : isActive
+                          ? "bg-[color:var(--glass-hover)] text-[color:var(--fg)]"
+                          : "bg-transparent text-[color:var(--fg)]"
+                    }`}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => commit(index)}
+                  >
+                    {option.label}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

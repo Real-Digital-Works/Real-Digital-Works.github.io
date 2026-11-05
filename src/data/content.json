@@ -1,107 +1,124 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-23T00:00:00Z",
+  "lastUpdated": "2026-11-05T15:39:04.758Z",
   "site": {
     "name": "Real Digital Works",
-    "parent": "Real Animation Works",
-    "tagline": "Websites, software, AI and motion — from one London studio.",
-    "description": "Real Digital Works delivers websites, custom software, AI automation, SEO and motion from its Kennington, London studio. A Real Animation Works company.",
-    "phone": "020 7720 2581",
     "phoneHref": "tel:+442077202581",
-    "whatsapp": "07970 325184",
     "whatsappHref": "https://wa.me/447970325184",
-    "email": "hello@realdigitalworks.com",
-    "emailHref": "mailto:hello@realdigitalworks.com",
+    "whatsapp": "07970 325184",
+    "description": "Real Digital Works is a digital agency in Kennington, London. Web design, SEO, AI automation, software and creative services, all under one roof.",
+    "emailHref": "mailto:info@realdigitalworks.com",
+    "phone": "020 7720 2581",
+    "email": "info@realdigitalworks.com",
+    "hours": "Monday to Saturday, 9am – 7pm",
+    "parent": "Real Animation Works",
     "address": [
       "Kennington Business Park",
       "Lincoln House LG-02",
       "London SW9 6DE"
     ],
-    "hours": "Monday to Saturday, 9am – 7pm",
-    "url": "https://realdigitalworks.com"
+    "url": "https://realdigitalworks.com",
+    "tagline": "Websites, SEO and AI for London businesses"
   },
   "seo": {
-    "home": {
-      "title": "London Digital Agency: Web, SEO & AI | Real Digital Works",
-      "description": "London digital agency in Kennington building websites, apps and AI tools, and growing businesses with SEO, Google Ads and social media.",
-      "keywords": [
-        "web design London",
-        "website design Kennington London",
-        "digital agency London",
-        "custom software London",
-        "AI automation London",
-        "SEO agency London",
-        "web developer London",
-        "motion design London",
-        "website design south London"
-      ]
-    },
-    "services": {
-      "title": "Digital Marketing & Web Services London | Real Digital Works",
-      "description": "Web design, ecommerce, software, SEO, Google Ads, social media, branding, 3D video, hosting and training from one London team.",
-      "keywords": [
-        "website design London prices",
-        "custom software development London",
-        "AI workflow automation UK",
-        "SEO services London",
-        "motion design studio London",
-        "web agency Kennington",
-        "brochure website London",
-        "ecommerce website London"
-      ]
-    },
     "pricing": {
-      "title": "Website & SEO Prices London | Real Digital Works",
-      "description": "Clear prices for websites, SEO, Google Ads and more. Build an instant estimate, then get a fixed written quote before any work starts.",
+      "title": "Web Design Pricing London | Real Digital Works",
       "keywords": [
-        "website cost London",
-        "web design prices UK",
-        "how much does a website cost London",
+        "digital agency pricing London",
+        "web design pricing London",
+        "website design cost UK",
+        "website development cost London",
         "SEO pricing London",
-        "web development cost UK",
-        "website package prices"
+        "digital marketing packages London",
+        "website design packages",
+        "bespoke website quote",
+        "affordable web design London"
+      ],
+      "description": "Explore website design pricing and digital project options at Real Digital Works. Discuss your requirements and request a tailored quote for your business."
+    },
+    "work": {
+      "description": "Professional web design and development in London. Real Digital Works creates responsive, SEO-friendly business websites with a focus on design and performance.",
+      "title": "Web Design & Development Agency London | Real Digital Works",
+      "keywords": [
+        "web design agency London",
+        "website design London",
+        "web development London",
+        "professional web design London",
+        "business website design",
+        "responsive web design",
+        "SEO friendly website design",
+        "bespoke website development",
+        "website redesign London",
+        "WordPress website design London"
       ]
     },
     "about": {
-      "title": "About Our London Digital Agency | Real Digital Works",
-      "description": "Meet the Kennington team behind Real Digital Works, part of Real Animation Works, with over a decade of digital and 3D experience.",
+      "description": "Meet Real Digital Works, a London digital agency bringing together web design, SEO, software development, AI automation and creative digital expertise.",
+      "title": "About Real Digital Works | London Digital Agency",
       "keywords": [
-        "digital agency Kennington London",
-        "animation studio London",
-        "web design studio London",
-        "Real Animation Works digital",
-        "Kennington studio London"
+        "Real Digital Works",
+        "about Real Digital Works",
+        "London digital agency",
+        "creative digital agency London",
+        "digital design studio London",
+        "web design experts London",
+        "digital development agency",
+        "digital solutions company London"
+      ]
+    },
+    "services": {
+      "title": "Digital Agency Services London | Real Digital Works",
+      "description": "Explore web design, SEO, AI automation, software development and creative services from Real Digital Works, helping London businesses grow online.",
+      "keywords": [
+        "digital agency services London",
+        "web design services London",
+        "SEO services London",
+        "AI automation services London",
+        "software development services London",
+        "digital marketing services London",
+        "creative digital services",
+        "website development services",
+        "business digital solutions"
       ]
     },
     "contact": {
-      "title": "Contact Real Digital Works | Kennington, London",
-      "description": "Contact our digital agency in Kennington, London by phone, WhatsApp or email. Free consultation and a reply within one working day.",
       "keywords": [
-        "contact web design agency London",
+        "contact Real Digital Works",
+        "Real Digital Works London",
         "digital agency Kennington",
-        "web design quote London",
-        "free web design consultation London"
-      ]
+        "digital agency South London",
+        "contact digital agency London",
+        "web design consultation London",
+        "SEO consultation London",
+        "website development enquiry"
+      ],
+      "title": "Contact — Start a Brief · Real Digital Works",
+      "description": "Get in touch at our Kennington studio. Free 20-minute consultation, fixed written quote before work starts. Call, WhatsApp or use the form — we reply the same day."
     },
-    "work": {
-      "title": "Our Work & Case Studies | Real Digital Works",
-      "description": "Websites, software, AI tools and 3D projects delivered by Real Digital Works in London, with the results they achieved.",
+    "home": {
       "keywords": [
-        "web design portfolio London",
-        "digital agency work London",
-        "website examples UK",
-        "web developer portfolio London"
-      ]
+        "digital agency London",
+        "creative digital agency London",
+        "web design London",
+        "SEO agency London",
+        "AI automation London",
+        "digital marketing agency London",
+        "website development London",
+        "software development London",
+        "Real Digital Works"
+      ],
+      "title": "Digital Agency London | Web Design, SEO & AI - Real Digital Works ",
+      "description": "Real Digital Works is a London digital agency offering web design, SEO, AI automation, software development and creative services for ambitious businesses."
     }
   },
   "hero": {
-    "eyebrow": "Kennington · in-house",
-    "headline": "Websites, software,\nAI and motion.",
-    "sub": "One London studio. Scroll and the offer unpacks — site, software, desk, motion. Not six suppliers in a slide deck.",
-    "primaryCta": "See the work",
-    "primaryHref": "/work",
-    "secondaryCta": "Scope a number",
-    "secondaryHref": "/pricing"
+    "secondaryCta": "See our work",
+    "primaryCta": "Start a brief",
+    "headline": "Websites.\nSoftware.\nAI & motion.",
+    "sub": "From a Kennington studio that has been building and teaching the craft since 2009.",
+    "primaryHref": "/contact",
+    "secondaryHref": "/work",
+    "eyebrow": "Real Digital Works"
   },
   "proof": [
     {
@@ -123,63 +140,63 @@
   ],
   "services": [
     {
-      "id": "websites",
       "title": "Websites & brands",
       "from": "From £1,450",
-      "summary": "Sites that look expensive and are easy to run. Brochure, booking, or a full shop — designed so your team can update them without calling us.",
-      "detail": "Information architecture, visual design, build, CMS, forms, analytics, accessibility pass, and a live review loop until launch."
+      "id": "websites",
+      "detail": "Information architecture, visual design, build, CMS, forms, analytics, accessibility pass, and a live review loop until launch.",
+      "summary": "Sites that look expensive and are easy to run. Brochure, booking, or a full shop — designed so your team can update them without calling us."
     },
     {
-      "id": "apps",
       "title": "Custom applications",
       "from": "Scoped",
+      "detail": "Fixed written scope, then weekly slices you can click. Cloud-native, owned by you.",
       "summary": "The thing that is not a template: client portals, internal tools, booking engines, training ops, dashboards. Cloud-native, owned by you.",
-      "detail": "Fixed written scope, then weekly slices you can click. Cloud-native, owned by you."
+      "id": "apps"
     },
     {
-      "id": "ai",
-      "title": "AI & automation",
       "from": "From £900",
+      "title": "AI & automation",
+      "detail": "We start with one workflow that saves hours. If it works, we add the next. No mystery black box on a retainer.",
       "summary": "Enquiry chats that book into a diary, follow-ups that actually send, admin that stops living in someone's head. Practical, not theatre.",
-      "detail": "We start with one workflow that saves hours. If it works, we add the next. No mystery black box on a retainer."
+      "id": "ai"
     },
     {
       "id": "seo",
-      "title": "Search & SEO",
-      "from": "From £550 / month",
       "summary": "Get found by people already looking. Technical health, local listings, and pages built around real search demand.",
+      "from": "From £550 / month",
+      "title": "Search & SEO",
       "detail": "Most sites fail search because the foundations were never set. We fix that first, then grow content that can rank."
     },
     {
-      "id": "motion",
-      "title": "3D, video & animation",
-      "from": "From £450",
       "summary": "Product renders, explainers, and motion produced in-house by a studio that has taught this craft for over a decade.",
-      "detail": "Maya, 3ds Max, Unreal, Blender, After Effects — taught and used daily at Real Animation Works. Same people, now on client work for this brand."
+      "from": "From £450",
+      "detail": "Maya, 3ds Max, Unreal, Blender, After Effects — taught and used daily at Real Animation Works. Same people, now on client work for this brand.",
+      "id": "motion",
+      "title": "3D, video & animation"
     },
     {
-      "id": "care",
       "title": "Care & launch support",
       "from": "From £95 / month",
       "summary": "Hosting, updates, backups, monitoring, and an hour of changes. You are not left with a login and a prayer.",
-      "detail": "Every build includes 30 days of post-launch support. After that, stay on a care plan or take the keys. You own the source either way."
+      "detail": "Every build includes 30 days of post-launch support. After that, stay on a care plan or take the keys. You own the source either way.",
+      "id": "care"
     }
   ],
   "process": [
     {
-      "n": "01",
+      "body": "Twenty minutes on the phone or at the Kennington studio. We find out what is actually costing you money.",
       "title": "Free consultation",
-      "body": "Twenty minutes on the phone or at the Kennington studio. We find out what is actually costing you money."
+      "n": "01"
     },
     {
       "n": "02",
-      "title": "Fixed written scope",
-      "body": "The work, the price, the date. Signed before anything starts. No sliding retainers in disguise."
+      "body": "The work, the price, the date. Signed before anything starts. No sliding retainers in disguise.",
+      "title": "Fixed written scope"
     },
     {
       "n": "03",
-      "title": "Build in the open",
-      "body": "You get a live link each week and comment on it. Project management and QA sit inside the team, not as an afterthought."
+      "body": "You get a live link each week and comment on it. Project management and QA sit inside the team, not as an afterthought.",
+      "title": "Build in the open"
     },
     {
       "n": "04",
@@ -189,12 +206,12 @@
   ],
   "disciplines": [
     {
-      "title": "Motion",
-      "body": "Animation, 3D and visualisation taught and produced in Kennington since 2009. Not a freelancer we call when a site needs a render."
+      "body": "Animation, 3D and visualisation taught and produced in Kennington since 2009. Not a freelancer we call when a site needs a render.",
+      "title": "Motion"
     },
     {
-      "title": "Engineering",
-      "body": "Websites, applications, AI workflows and cloud systems. The work is scoped in writing and shipped in weekly slices you can click."
+      "body": "Websites, applications, AI workflows and cloud systems. The work is scoped in writing and shipped in weekly slices you can click.",
+      "title": "Engineering"
     },
     {
       "title": "Delivery",
@@ -207,16 +224,16 @@
       "a": "Most small business websites land between £1,450 and £3,200. Online shops start around £5,500. Custom software is scoped after a call. Search work from £550 a month. Use the quote builder for a starting range — then you get a fixed written price before work starts."
     },
     {
-      "q": "How long does it take?",
-      "a": "Two to three weeks for a simple site, four to six for a larger custom build, six to ten for e-commerce. Applications follow the scope. The usual delay is waiting on content from your side, so we agree those dates at the start."
+      "a": "Two to three weeks for a simple site, four to six for a larger custom build, six to ten for e-commerce. Applications follow the scope. The usual delay is waiting on content from your side, so we agree those dates at the start.",
+      "q": "How long does it take?"
     },
     {
       "q": "Am I locked into a contract?",
       "a": "Build work is a one-off project. Monthly plans have a three-month minimum, then roll month to month with 30 days' notice. You own your domain, your site, your data and your source files throughout."
     },
     {
-      "q": "Who actually does the work?",
-      "a": "The Kennington studio. Motion and 3D in-house. Software and cloud in-house. Delivery and QA in the same room. Nothing is offshored without telling you first."
+      "a": "The Kennington studio. Motion and 3D in-house. Software and cloud in-house. Delivery and QA in the same room. Nothing is offshored without telling you first.",
+      "q": "Who actually does the work?"
     },
     {
       "q": "Do you only work with London businesses?",
@@ -225,9 +242,6 @@
   ],
   "packages": [
     {
-      "name": "Starter",
-      "amount": "£1,450",
-      "per": "one-off · 2–3 weeks",
       "featured": false,
       "items": [
         "Up to 5 pages",
@@ -235,12 +249,13 @@
         "Contact forms",
         "Basic SEO setup",
         "One hour of training"
-      ]
+      ],
+      "amount": "£1,450",
+      "per": "one-off · 2–3 weeks",
+      "name": "Starter"
     },
     {
-      "name": "Business",
       "amount": "£3,200",
-      "per": "one-off · 4–6 weeks",
       "featured": true,
       "items": [
         "Up to 15 pages, custom design",
@@ -249,76 +264,78 @@
         "Full technical SEO setup",
         "Speed and accessibility pass",
         "Half-day team training"
-      ]
+      ],
+      "name": "Business",
+      "per": "one-off · 4–6 weeks"
     },
     {
-      "name": "Commerce",
       "amount": "£5,500",
-      "per": "one-off · 6–10 weeks",
       "featured": false,
+      "name": "Commerce",
       "items": [
         "Full e-commerce build",
         "Payments and shipping",
         "Stock and order management",
         "Product page SEO",
         "Full day of training"
-      ]
+      ],
+      "per": "one-off · 6–10 weeks"
     }
   ],
   "projects": [
     {
-      "slug": "plot-atelier",
-      "title": "Plot Atelier",
-      "client": "Sample — interior landscape studio",
-      "kind": "Brand website",
-      "year": "2026",
       "status": "Live sample",
-      "summary": "A cinematic site for a landscape and interior practice. Built to show what a distinctive brand experience looks like when motion, type and space are treated as the product, not decoration.",
-      "problem": "Most interior and architecture sites look like property portals: grids of beige photos and a contact form. The work is better than the website.",
       "work": "Art direction, interaction, and a full marketing site: home, work, method, studio, contact. Smooth scrolling, a living hero field, and a tone that feels like a practice rather than a template.",
-      "outcome": "A piece we can put in front of design, architecture and training clients as proof we do not ship generic agency skins. Built in Cursor as a working sample for this new brand.",
+      "client": "Sample — interior landscape studio",
+      "summary": "A cinematic site for a landscape and interior practice. Built to show what a distinctive brand experience looks like when motion, type and space are treated as the product, not decoration.",
+      "slug": "plot-atelier",
+      "kind": "Brand website",
       "tags": [
         "Next-adjacent React",
         "Motion",
         "Brand"
       ],
+      "year": "2026",
+      "outcome": "A piece we can put in front of design, architecture and training clients as proof we do not ship generic agency skins. Built in Cursor as a working sample for this new brand.",
+      "problem": "Most interior and architecture sites look like property portals: grids of beige photos and a contact form. The work is better than the website.",
+      "title": "Plot Atelier",
       "accent": "#c45d3a"
     },
     {
-      "slug": "enquiry-desk",
+      "summary": "An assistant that answers the questions a studio is asked fifty times a week, then books a call instead of dumping another unread email on the floor.",
+      "accent": "#1857EC",
+      "work": "Scoped conversation flows, calendar booking, handoff to a human when the question is real. Built on the actual questions the Kennington studio already hears.",
       "title": "Enquiry desk",
-      "client": "Indicative — training & services",
-      "kind": "AI + operations",
+      "problem": "High volume of small enquiries (courses, software, quotes) sitting in inboxes. Big clients and tiny individual contributors all arrive through the same door.",
+      "outcome": "A product shape we will refine with stakeholders. Shown here so the offer is visible, not just 'we do AI'.",
       "year": "Draft",
       "status": "Indicative",
-      "summary": "An assistant that answers the questions a studio is asked fifty times a week, then books a call instead of dumping another unread email on the floor.",
-      "problem": "High volume of small enquiries (courses, software, quotes) sitting in inboxes. Big clients and tiny individual contributors all arrive through the same door.",
-      "work": "Scoped conversation flows, calendar booking, handoff to a human when the question is real. Built on the actual questions the Kennington studio already hears.",
-      "outcome": "A product shape we will refine with stakeholders. Shown here so the offer is visible, not just 'we do AI'.",
       "tags": [
         "AI",
         "Automation",
         "Product"
       ],
-      "accent": "#1857EC"
+      "client": "Indicative — training & services",
+      "slug": "enquiry-desk",
+      "kind": "AI + operations"
     },
     {
-      "slug": "atlas-portal",
-      "title": "Atlas",
-      "client": "Indicative — growing firm",
-      "kind": "Custom application",
-      "year": "Draft",
-      "status": "Indicative",
-      "summary": "A client portal: jobs, files, invoices, and status in one place so nobody is hunting WhatsApp for the latest PDF.",
-      "problem": "Work lives in email threads. Clients ask 'where are we?' and the answer is a screenshot of a spreadsheet.",
-      "work": "Authenticated app, roles, document store, simple status. Cloud hosted, owned by the client, designed so a project manager can run it without an engineer on every click.",
-      "outcome": "Placeholder for the software side of the practice. Real case study to replace this after the first paid build.",
       "tags": [
         "App",
         "Cloud",
         "QA"
       ],
-      "accent": "#7c6cff"
+      "title": "Atlas",
+      "kind": "Custom application",
+      "slug": "atlas-portal",
+      "client": "Indicative — growing firm",
+      "summary": "A client portal: jobs, files, invoices, and status in one place so nobody is hunting WhatsApp for the latest PDF.",
+      "year": "Draft",
+      "status": "Indicative",
+      "accent": "#7c6cff",
+      "work": "Authenticated app, roles, document store, simple status. Cloud hosted, owned by the client, designed so a project manager can run it without an engineer on every click.",
+      "problem": "Work lives in email threads. Clients ask 'where are we?' and the answer is a screenshot of a spreadsheet.",
+      "outcome": "Placeholder for the software side of the practice. Real case study to replace this after the first paid build."
     }
   ],
   "sectors": [
@@ -416,5 +433,46 @@
       "seoTitle": "Digital consultancy in London | Real Digital Works",
       "seoDescription": "Independent, practical guidance for businesses reviewing websites, marketing, software choices or digital suppliers. Discuss a tailored project with Real Digital Works in London."
     }
+  },
+  "navItems": [
+    {
+      "id": "home",
+      "href": "/",
+      "label": "Home"
+    },
+    {
+      "id": "work",
+      "href": "/work",
+      "label": "Work"
+    },
+    {
+      "label": "Services",
+      "href": "/services",
+      "id": "services"
+    },
+    {
+      "label": "Pricing",
+      "href": "/pricing",
+      "id": "pricing"
+    },
+    {
+      "label": "Blog",
+      "id": "blog",
+      "href": "/blog"
+    },
+    {
+      "href": "/about",
+      "id": "about",
+      "label": "About"
+    },
+    {
+      "label": "Contact",
+      "href": "/contact",
+      "id": "contact"
+    }
+  ],
+  "updatedAt": {
+    "_seconds": 1793892115,
+    "_nanoseconds": 353000000
   }
 }

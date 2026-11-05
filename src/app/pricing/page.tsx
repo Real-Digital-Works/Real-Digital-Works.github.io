@@ -2,18 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { QuoteBuilder } from "@/components/QuoteBuilder";
 import { packages, faq, seo } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.pricing.title),
   description: seo.pricing.description,
   keywords: seo.pricing.keywords,
   alternates: { canonical: "/pricing" },
-  openGraph: {
-    title: seo.pricing.title,
-    description: seo.pricing.description,
-    url: "/pricing",
-  },
+  ...shareTitle(seo.pricing.title, seo.pricing.description, { url: "/pricing" }),
 };
 
 // FAQ structured data for pricing page

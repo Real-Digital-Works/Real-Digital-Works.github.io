@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
 import { site, seo } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.contact.title),
   description: seo.contact.description,
   keywords: seo.contact.keywords,
   alternates: { canonical: "/contact" },
-  openGraph: {
-    title: seo.contact.title,
-    description: seo.contact.description,
-    url: "/contact",
-  },
+  ...shareTitle(seo.contact.title, seo.contact.description, { url: "/contact" }),
 };
 
 function first(value: string | string[] | undefined) {

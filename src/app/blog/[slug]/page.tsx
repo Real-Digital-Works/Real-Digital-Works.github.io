@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogs, site } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -16,16 +16,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = blogs.find((p) => p.slug === slug);
   if (!post) return { title: brandedTitle("Post not found") };
+  const title = post.seoTitle || post.title;
+  const description = post.seoDescription || post.excerpt;
   return {
-    title: brandedTitle(post.seoTitle || post.title),
-    description: post.seoDescription || post.excerpt,
+    title: brandedTitle(title),
+    description,
     alternates: { canonical: `/blog/${slug}` },
-    openGraph: {
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt,
+    ...shareTitle(title, description, {
       type: "article",
       publishedTime: post.publishedAt,
-    },
+      url: `/blog/${slug}`,
+    }),
   };
 }
 

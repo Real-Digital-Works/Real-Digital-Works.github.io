@@ -4,18 +4,14 @@ import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
 import { services, seo, faq, site } from "@/lib/content";
 import { publicPathForCmsService } from "@/lib/cms-services";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.services.title),
   description: seo.services.description,
   keywords: seo.services.keywords,
   alternates: { canonical: "/services" },
-  openGraph: {
-    title: seo.services.title,
-    description: seo.services.description,
-    url: "/services",
-  },
+  ...shareTitle(seo.services.title, seo.services.description, { url: "/services" }),
 };
 
 // Service structured data (shown in Google)

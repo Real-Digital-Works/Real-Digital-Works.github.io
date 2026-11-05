@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { site } from "@/lib/content";
-import { brandedTitle, serviceHeading } from "@/lib/seo";
+import { brandedTitle, serviceHeading, shareTitle } from "@/lib/seo";
 import {
   servicePages,
   getServiceBySlug,
@@ -24,7 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: service.seoDescription,
     keywords: service.keywords?.length ? service.keywords : undefined,
     alternates: { canonical: `/services/${slug}` },
-    openGraph: { title: service.seoTitle, description: service.seoDescription },
+    ...shareTitle(service.seoTitle, service.seoDescription, {
+      url: `/services/${slug}`,
+    }),
   };
 }
 

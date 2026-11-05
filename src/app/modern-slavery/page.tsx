@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
+
+const policyTitle = "Modern Slavery Policy";
+const policyDescription = "Modern slavery policy for Real Digital Works. Full policy forthcoming.";
 
 export const metadata: Metadata = {
-  title: brandedTitle("Modern Slavery Policy"),
-  description: "Modern slavery policy for Real Digital Works. Full policy forthcoming.",
+  title: brandedTitle(policyTitle),
+  description: policyDescription,
   alternates: { canonical: "/modern-slavery" },
+  ...shareTitle(policyTitle, policyDescription, { url: "/modern-slavery" }),
 };
 
 export default function ModernSlaveryPage() {

@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { site } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
+
+const privacyTitle = "Privacy";
+const privacyDescription = "Privacy information for Real Digital Works.";
 
 export const metadata: Metadata = {
-  title: brandedTitle("Privacy"),
+  title: brandedTitle(privacyTitle),
+  description: privacyDescription,
   alternates: { canonical: "/privacy" },
+  ...shareTitle(privacyTitle, privacyDescription, { url: "/privacy" }),
 };
 
 export default function PrivacyPage() {

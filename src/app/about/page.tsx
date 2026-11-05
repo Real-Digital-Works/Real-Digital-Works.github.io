@@ -3,18 +3,14 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
 import { disciplines, seo } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.about.title),
   description: seo.about.description,
   keywords: seo.about.keywords,
   alternates: { canonical: "/about" },
-  openGraph: {
-    title: seo.about.title,
-    description: seo.about.description,
-    url: "/about",
-  },
+  ...shareTitle(seo.about.title, seo.about.description, { url: "/about" }),
 };
 
 export default function AboutPage() {

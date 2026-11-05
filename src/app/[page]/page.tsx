@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { pages } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 type Props = { params: Promise<{ page: string }> };
 
@@ -22,10 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { page: slug } = await params;
   const pg = pages.find((p) => p.slug === slug && p.status === "published");
   if (!pg) return { title: brandedTitle("Page not found") };
+  const title = pg.seoTitle || pg.title;
   return {
-    title: brandedTitle(pg.seoTitle || pg.title),
+    title: brandedTitle(title),
     description: pg.seoDescription,
     alternates: { canonical: `/${slug}` },
+    ...shareTitle(title, pg.seoDescription, { url: `/${slug}` }),
   };
 }
 

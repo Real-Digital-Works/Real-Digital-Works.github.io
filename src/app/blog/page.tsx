@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { blogs, site } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
+
+const blogDescription = `Insights, guides and studio news from ${site.name} — a London digital studio.`;
 
 export const metadata: Metadata = {
   title: brandedTitle("Blog"),
-  description: `Insights, guides and studio news from ${site.name} — a London digital studio.`,
+  description: blogDescription,
   alternates: { canonical: "/blog" },
+  ...shareTitle("Blog", blogDescription, { url: "/blog" }),
 };
 
 const published = blogs.filter((p) => p.status === "published");

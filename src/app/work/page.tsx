@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { projects, seo } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.work.title),
   description: seo.work.description,
   keywords: seo.work.keywords,
   alternates: { canonical: "/work" },
-  openGraph: {
-    title: seo.work.title,
-    description: seo.work.description,
-    url: "/work",
-  },
+  ...shareTitle(seo.work.title, seo.work.description, { url: "/work" }),
 };
 
 export default function WorkPage() {

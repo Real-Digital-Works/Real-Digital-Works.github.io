@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
-import { brandedTitle } from "@/lib/seo";
+import { brandedTitle, shareTitle } from "@/lib/seo";
 import { RichContent } from "@/components/RichContent";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -15,16 +15,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = projects.find((item) => item.slug === slug);
   if (!project) return { title: brandedTitle("Work") };
+  const title = `${project.title} — ${project.kind}`;
   return {
-    title: brandedTitle(`${project.title} — ${project.kind}`),
+    title: brandedTitle(title),
     description: project.summary,
     keywords: [...project.tags, "web design London", "digital agency London"],
     alternates: { canonical: `/work/${slug}` },
-    openGraph: {
-      title: `${project.title} — ${project.kind} · Real Digital Works`,
-      description: project.summary,
-      url: `/work/${slug}`,
-    },
+    ...shareTitle(title, project.summary, { url: `/work/${slug}` }),
   };
 }
 

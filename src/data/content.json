@@ -37,19 +37,19 @@
       "description": "Explore website design pricing and digital project options at Real Digital Works. Discuss your requirements and request a tailored quote for your business."
     },
     "work": {
-      "description": "Professional web design and development in London. Real Digital Works creates responsive, SEO-friendly business websites with a focus on design and performance.",
-      "title": "Web Design & Development Agency London | Real Digital Works",
+      "description": "See sample websites, product shapes and case studies from Real Digital Works, a digital agency in Kennington, London.",
+      "title": "Work & Case Studies London | Real Digital Works",
       "keywords": [
+        "web design case studies London",
+        "digital agency work London",
+        "website portfolio London",
         "web design agency London",
         "website design London",
         "web development London",
         "professional web design London",
         "business website design",
         "responsive web design",
-        "SEO friendly website design",
-        "bespoke website development",
-        "website redesign London",
-        "WordPress website design London"
+        "bespoke website development"
       ]
     },
     "about": {
@@ -119,6 +119,11 @@
     "primaryHref": "/contact",
     "secondaryHref": "/work",
     "eyebrow": "Real Digital Works"
+  },
+  "workPage": {
+    "eyebrow": "Work",
+    "headline": "Proof before claims.",
+    "sub": "One live sample. Two product shapes labelled honestly until a paid case replaces them."
   },
   "proof": [
     {

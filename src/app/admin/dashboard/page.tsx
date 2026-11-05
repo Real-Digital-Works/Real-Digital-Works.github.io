@@ -4,7 +4,7 @@
  * Admin dashboard — content editor.
  *
  * Tabs:
- *   Site Info | SEO | Hero | Services | FAQ | Pricing | Projects | Blog | Pages | Deploy
+ *   Site Info | SEO | Hero | Services | Work | FAQ | Pricing | Projects | Blog | Pages | Deploy
  */
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
@@ -34,7 +34,12 @@ import {
   type CmsSaveSource,
   type CmsVersionRow,
 } from "@/lib/cms-versions";
-import content, { DEFAULT_NAV_ITEMS } from "@/lib/content";
+import content, {
+  DEFAULT_NAV_ITEMS,
+  mergeProjects,
+  mergeWorkPage,
+  mergeWorkSeo,
+} from "@/lib/content";
 import type {
   SiteInfo,
   PageSeo,
@@ -45,6 +50,7 @@ import type {
   FaqItem,
   Package,
   Project,
+  WorkPageContent,
   BlogPost,
   DynamicPage,
   ProcessStep,
@@ -63,6 +69,7 @@ type Tab =
   | "seo"
   | "hero"
   | "services"
+  | "work"
   | "faq"
   | "pricing"
   | "projects"
@@ -165,8 +172,14 @@ export default function AdminDashboard() {
 
   // ── Content state ──
   const [siteData, setSiteData] = useState<SiteInfo>(content.site);
-  const [seoData, setSeoData] = useState(content.seo);
+  const [seoData, setSeoData] = useState(() => ({
+    ...content.seo,
+    work: mergeWorkSeo(content.seo.work),
+  }));
   const [heroData, setHeroData] = useState<HeroContent>(content.hero);
+  const [workPageData, setWorkPageData] = useState<WorkPageContent>(() =>
+    mergeWorkPage(content.workPage),
+  );
   const [servicesData, setServicesData] = useState<Service[]>(content.services);
   const [servicePagesContent, setServicePagesContent] = useState<ServicePagesCmsMap>(() =>
     mergeServicePagesCms(content.servicePagesContent, content.servicePagesSeo)
@@ -174,7 +187,9 @@ export default function AdminDashboard() {
   const [openServiceSlug, setOpenServiceSlug] = useState<string | null>(null);
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
   const [packagesData, setPackagesData] = useState<Package[]>(content.packages);
-  const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
+  const [projectsData, setProjectsData] = useState<Project[]>(() =>
+    mergeProjects(content.projects),
+  );
   const [processData, setProcessData] = useState<ProcessStep[]>(content.process);
   const [disciplinesData, setDisciplinesData] = useState<Discipline[]>(content.disciplines);
   const [navData, setNavData] = useState<NavItem[]>(
@@ -213,8 +228,16 @@ export default function AdminDashboard() {
 
   const applyLiveContent = useCallback((d: Record<string, unknown>) => {
     if (d.site) setSiteData(d.site as SiteInfo);
-    if (d.seo) setSeoData(d.seo as typeof content.seo);
+    if (d.seo) {
+      const liveSeo = d.seo as typeof content.seo;
+      setSeoData({
+        ...content.seo,
+        ...liveSeo,
+        work: mergeWorkSeo(liveSeo.work),
+      });
+    }
     if (d.hero) setHeroData(d.hero as HeroContent);
+    setWorkPageData(mergeWorkPage(d.workPage as Partial<WorkPageContent> | undefined));
     if (d.services) setServicesData(d.services as Service[]);
     setServicePagesContent(
       mergeServicePagesCms(
@@ -224,7 +247,7 @@ export default function AdminDashboard() {
     );
     if (d.faq) setFaqData(d.faq as FaqItem[]);
     if (d.packages) setPackagesData(d.packages as Package[]);
-    if (d.projects) setProjectsData(d.projects as Project[]);
+    if (d.projects) setProjectsData(mergeProjects(d.projects as Project[]));
     if (d.process) setProcessData(d.process as ProcessStep[]);
     if (d.disciplines) setDisciplinesData(d.disciplines as Discipline[]);
     if (Array.isArray(d.navItems) && d.navItems.length > 0) {
@@ -266,6 +289,20 @@ export default function AdminDashboard() {
         ...p,
         [slug]: { ...p[slug], ...patch },
       }));
+      markUnsaved();
+    },
+    [markUnsaved],
+  );
+
+  const patchProject = useCallback(
+    (index: number, patch: Partial<Project>) => {
+      setProjectsData((p) => {
+        const next = [...p];
+        const current = next[index];
+        if (!current) return p;
+        next[index] = { ...current, ...patch, slug: current.slug };
+        return next;
+      });
       markUnsaved();
     },
     [markUnsaved],
@@ -349,6 +386,7 @@ export default function AdminDashboard() {
       site: siteData,
       seo: seoData,
       hero: heroData,
+      workPage: workPageData,
       services: servicesData,
       servicePagesContent,
       servicePagesSeo: Object.fromEntries(
@@ -508,6 +546,7 @@ export default function AdminDashboard() {
     { id: "seo", label: "SEO" },
     { id: "hero", label: "Hero" },
     { id: "services", label: "Services" },
+    { id: "work", label: "Work" },
     { id: "faq", label: "FAQ" },
     { id: "pricing", label: "Pricing" },
     { id: "projects", label: "Projects" },
@@ -1144,10 +1183,159 @@ export default function AdminDashboard() {
               </>
             )}
 
+            {/* ── WORK ── */}
+            {tab === "work" && (
+              <>
+                <SectionTitle
+                  title="Work page"
+                  sub="Intro, SEO, and the case-study cards on /work. Canonical stays /work. Slugs are frozen."
+                />
+                <Card className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white/80">Listing intro</h3>
+                  <p className="text-[11px] text-white/35">
+                    The heading block at the top of /work. Empty fields fall back to the live copy so the public page cannot go blank.
+                  </p>
+                  <Field
+                    label="Eyebrow"
+                    value={workPageData.eyebrow}
+                    onChange={(v) => { setWorkPageData((p) => ({ ...p, eyebrow: v })); markUnsaved(); }}
+                    hint="Small uppercase label above the H1."
+                  />
+                  <Field
+                    label="Headline"
+                    value={workPageData.headline}
+                    textarea
+                    onChange={(v) => { setWorkPageData((p) => ({ ...p, headline: v })); markUnsaved(); }}
+                    hint="Public H1. Line breaks are kept."
+                  />
+                  <Field
+                    label="Intro paragraph"
+                    value={workPageData.sub}
+                    textarea
+                    onChange={(v) => { setWorkPageData((p) => ({ ...p, sub: v })); markUnsaved(); }}
+                    hint="Copy under the H1."
+                  />
+                </Card>
+
+                <Card className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white/80">/work SEO</h3>
+                  <p className="text-[11px] text-white/35">
+                    Browser tab, Google snippet, and Open Graph for /work. Same fields as the SEO tab. Canonical is always /work.
+                  </p>
+                  <Field
+                    label="Page title"
+                    value={seoData.work.title}
+                    onChange={(v) => { setSeoData((p) => ({ ...p, work: { ...p.work, title: v } })); markUnsaved(); }}
+                    hint="50–60 characters. Should describe the work/case-studies page, not the homepage."
+                  />
+                  <Field
+                    label="Meta description"
+                    value={seoData.work.description}
+                    textarea
+                    onChange={(v) => { setSeoData((p) => ({ ...p, work: { ...p.work, description: v } })); markUnsaved(); }}
+                    hint="130–160 characters. Google snippet for /work."
+                  />
+                  <Field
+                    label="Keywords (comma separated)"
+                    value={seoData.work.keywords.join(", ")}
+                    onChange={(v) => {
+                      setSeoData((p) => ({
+                        ...p,
+                        work: {
+                          ...p.work,
+                          keywords: v.split(",").map((k) => k.trim()).filter(Boolean),
+                        },
+                      }));
+                      markUnsaved();
+                    }}
+                  />
+                </Card>
+
+                <SectionTitle
+                  title="Case studies"
+                  sub="The three items already on /work. URLs stay /work/{slug}. Optional image URL; empty keeps the accent gradient."
+                />
+                {projectsData.map((proj, i) => (
+                  <Card key={proj.slug} className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full" style={{ background: proj.accent }} />
+                      <h3 className="text-sm font-semibold text-white/80">{proj.title}</h3>
+                      <span className="ml-auto font-mono text-[11px] text-white/40">/work/{proj.slug}</span>
+                    </div>
+                    <p className="text-[11px] text-white/30">
+                      Public URL frozen: /work/{proj.slug}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Field label="Project title" value={proj.title} onChange={(v) => patchProject(i, { title: v })} />
+                      <Field label="Client" value={proj.client} onChange={(v) => patchProject(i, { client: v })} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <Field label="Year" value={proj.year} onChange={(v) => patchProject(i, { year: v })} />
+                      <Field label="Kind" value={proj.kind} onChange={(v) => patchProject(i, { kind: v })} />
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Status</label>
+                        <select
+                          value={proj.status}
+                          onChange={(e) =>
+                            patchProject(i, { status: e.target.value as Project["status"] })
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC] focus:ring-1 focus:ring-[#1857EC]"
+                        >
+                          <option value="Live sample">Live sample</option>
+                          <option value="Indicative">Indicative</option>
+                        </select>
+                      </div>
+                    </div>
+                    <Field
+                      label="Summary (card text)"
+                      value={proj.summary}
+                      textarea
+                      onChange={(v) => patchProject(i, { summary: v })}
+                      hint="Shown on /work and the case-study page intro."
+                    />
+                    <Field
+                      label="Tags (comma separated)"
+                      value={proj.tags.join(", ")}
+                      onChange={(v) =>
+                        patchProject(i, {
+                          tags: v.split(",").map((k) => k.trim()).filter(Boolean),
+                        })
+                      }
+                      hint="Pills on the individual /work/{slug} page."
+                    />
+                    <Field
+                      label="Accent colour"
+                      value={proj.accent}
+                      onChange={(v) => patchProject(i, { accent: v })}
+                      hint="#hex used for the card when there is no image."
+                    />
+                    <Field
+                      label="Card image URL (optional)"
+                      value={proj.image ?? ""}
+                      onChange={(v) => patchProject(i, { image: v })}
+                      hint="Leave empty to keep the current gradient. Do not add a new case study here."
+                    />
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
+                      <RichTextEditor content={proj.problem} onChange={(html) => patchProject(i, { problem: html })} placeholder="Describe the challenge…" minHeight="120px" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The work</label>
+                      <RichTextEditor content={proj.work} onChange={(html) => patchProject(i, { work: html })} placeholder="Describe what was done…" minHeight="120px" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The outcome</label>
+                      <RichTextEditor content={proj.outcome} onChange={(html) => patchProject(i, { outcome: html })} placeholder="Describe the result…" minHeight="120px" />
+                    </div>
+                  </Card>
+                ))}
+              </>
+            )}
+
             {/* ── PROJECTS ── */}
             {tab === "projects" && (
               <>
-                <SectionTitle title="Projects / Work" sub="Case studies shown on the Work page and in individual project pages." />
+                <SectionTitle title="Projects / Work" sub="Same case studies as the Work tab. Shown on /work and /work/[slug]. Slugs stay frozen." />
                 {projectsData.map((proj, i) => (
                   <Card key={proj.slug} className="space-y-4">
                     <div className="flex items-center gap-2">
@@ -1165,6 +1353,17 @@ export default function AdminDashboard() {
                       <Field label="Accent colour" value={proj.accent} onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], accent: v }; setProjectsData(p); markUnsaved(); }} hint="#hex" />
                     </div>
                     <Field label="Summary (card text)" value={proj.summary} textarea onChange={(v) => { const p = [...projectsData]; p[i] = { ...p[i], summary: v }; setProjectsData(p); markUnsaved(); }} />
+                    <Field
+                      label="Tags (comma separated)"
+                      value={proj.tags.join(", ")}
+                      onChange={(v) => {
+                        const p = [...projectsData];
+                        p[i] = { ...p[i], tags: v.split(",").map((k) => k.trim()).filter(Boolean) };
+                        setProjectsData(p);
+                        markUnsaved();
+                      }}
+                    />
+                    <p className="text-[11px] text-white/30">Public URL frozen: /work/{proj.slug}</p>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
                       <RichTextEditor content={proj.problem} onChange={(html) => { const p = [...projectsData]; p[i] = { ...p[i], problem: html }; setProjectsData(p); markUnsaved(); }} placeholder="Describe the challenge…" minHeight="120px" />

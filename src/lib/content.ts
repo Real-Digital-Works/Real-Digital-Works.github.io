@@ -127,6 +127,15 @@ export interface Project {
   outcome: string;
   tags: string[];
   accent: string;
+  /** Optional card image. Empty keeps the accent gradient used on /work. */
+  image?: string;
+}
+
+/** Intro copy on the public /work listing (not individual case studies). */
+export interface WorkPageContent {
+  eyebrow: string;
+  headline: string;
+  sub: string;
 }
 
 export type BlogStatus = "published" | "draft";
@@ -177,6 +186,8 @@ export interface Content {
   faq: FaqItem[];
   packages: Package[];
   projects: Project[];
+  /** Intro on the public /work listing page */
+  workPage?: WorkPageContent;
   sectors: string[];
   stack: string[];
   blogs: BlogPost[];
@@ -192,8 +203,91 @@ export interface Content {
 
 const content = raw as Content;
 
+function pickStr(value: string | undefined, fallback: string): string {
+  return value?.trim() ? value : fallback;
+}
+
+export const DEFAULT_WORK_PAGE: WorkPageContent = {
+  eyebrow: "Work",
+  headline: "Proof before claims.",
+  sub: "One live sample. Two product shapes labelled honestly until a paid case replaces them.",
+};
+
+export const DEFAULT_WORK_SEO: PageSeo = {
+  title: "Work & Case Studies London | Real Digital Works",
+  description:
+    "See sample websites, product shapes and case studies from Real Digital Works, a digital agency in Kennington, London.",
+  keywords: [
+    "web design case studies London",
+    "digital agency work London",
+    "website portfolio London",
+    "web design agency London",
+    "website design London",
+    "web development London",
+    "professional web design London",
+    "business website design",
+    "responsive web design",
+    "bespoke website development",
+  ],
+};
+
+export function mergeWorkPage(raw?: Partial<WorkPageContent> | null): WorkPageContent {
+  return {
+    eyebrow: pickStr(raw?.eyebrow, DEFAULT_WORK_PAGE.eyebrow),
+    headline: pickStr(raw?.headline, DEFAULT_WORK_PAGE.headline),
+    sub: pickStr(raw?.sub, DEFAULT_WORK_PAGE.sub),
+  };
+}
+
+export function mergeWorkSeo(raw?: Partial<PageSeo> | null): PageSeo {
+  const keywords = Array.isArray(raw?.keywords)
+    ? raw.keywords.map((k) => k.trim()).filter(Boolean)
+    : [];
+  return {
+    title: pickStr(raw?.title, DEFAULT_WORK_SEO.title),
+    description: pickStr(raw?.description, DEFAULT_WORK_SEO.description),
+    keywords: keywords.length > 0 ? keywords : DEFAULT_WORK_SEO.keywords,
+  };
+}
+
+export function mergeProjects(raw?: Project[] | null): Project[] {
+  const seed = content.projects ?? [];
+  if (!Array.isArray(raw) || raw.length === 0) return seed;
+  return raw
+    .map((item) => {
+      const fallback = seed.find((p) => p.slug === item.slug);
+      const slug = pickStr(item.slug, fallback?.slug ?? "");
+      const tags =
+        Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : (fallback?.tags ?? []);
+      const status: ProjectStatus =
+        item.status === "Live sample" || item.status === "Indicative"
+          ? item.status
+          : (fallback?.status ?? "Indicative");
+      const image = pickStr(item.image, fallback?.image ?? "");
+      return {
+        slug,
+        title: pickStr(item.title, fallback?.title ?? ""),
+        client: pickStr(item.client, fallback?.client ?? ""),
+        kind: pickStr(item.kind, fallback?.kind ?? ""),
+        year: pickStr(item.year, fallback?.year ?? ""),
+        status,
+        summary: pickStr(item.summary, fallback?.summary ?? ""),
+        problem: pickStr(item.problem, fallback?.problem ?? ""),
+        work: pickStr(item.work, fallback?.work ?? ""),
+        outcome: pickStr(item.outcome, fallback?.outcome ?? ""),
+        tags,
+        accent: pickStr(item.accent, fallback?.accent ?? "#1857EC"),
+        ...(image ? { image } : {}),
+      };
+    })
+    .filter((p) => p.slug);
+}
+
 export const site = content.site;
-export const seo = content.seo;
+export const seo: SeoMap = {
+  ...content.seo,
+  work: mergeWorkSeo(content.seo?.work),
+};
 export const hero = content.hero;
 export const proof = content.proof;
 export const services = content.services;
@@ -201,7 +295,8 @@ export const process = content.process;
 export const disciplines = content.disciplines;
 export const faq = content.faq;
 export const packages = content.packages;
-export const projects = content.projects;
+export const projects = mergeProjects(content.projects);
+export const workPage = mergeWorkPage(content.workPage);
 export const sectors = content.sectors;
 export const stack = content.stack;
 export const blogs: BlogPost[] = content.blogs ?? [];

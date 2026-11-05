@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { projects, seo } from "@/lib/content";
+import { mergeProjects, mergeWorkPage, mergeWorkSeo, projects, seo, workPage as cmsWorkPage } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
+const workPage = mergeWorkPage(cmsWorkPage);
+const workSeo = mergeWorkSeo(seo.work);
+const workProjects = mergeProjects(projects);
+
 export const metadata: Metadata = {
-  title: brandedTitle(seo.work.title),
-  description: seo.work.description,
-  keywords: seo.work.keywords,
+  title: brandedTitle(workSeo.title),
+  description: workSeo.description,
+  keywords: workSeo.keywords,
   alternates: { canonical: "/work" },
-  ...shareTitle(seo.work.title, seo.work.description, { url: "/work" }),
+  ...shareTitle(workSeo.title, workSeo.description, { url: "/work" }),
 };
 
 export default function WorkPage() {
@@ -17,30 +21,33 @@ export default function WorkPage() {
       <section className="page-intro">
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-            Work
+            {workPage.eyebrow}
           </p>
-          <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,6vw,68px)]">
-            Proof before claims.
+          <h1 className="display mt-3 max-w-[16ch] whitespace-pre-line text-[clamp(36px,6vw,68px)]">
+            {workPage.headline}
           </h1>
-          <p className="mt-4 max-w-[54ch] text-[16.5px] text-fg/55">
-            One live sample. Two product shapes labelled honestly until a paid
-            case replaces them.
+          <p className="mt-4 max-w-[54ch] whitespace-pre-line text-[16.5px] text-fg/55">
+            {workPage.sub}
           </p>
         </div>
       </section>
       <section className="pb-20">
         <div className="wrap space-y-3">
-          {projects.map((project) => (
+          {workProjects.map((project) => (
             <Link
               key={project.slug}
               href={`/work/${project.slug}`}
               className="glass group grid overflow-hidden rounded-[22px] md:grid-cols-[240px_1fr]"
             >
               <div
-                className="min-h-[140px]"
-                style={{
-                  background: `linear-gradient(145deg, ${project.accent}, #1a2230 78%)`,
-                }}
+                className="min-h-[140px] bg-cover bg-center"
+                style={
+                  project.image
+                    ? { backgroundImage: `url(${project.image})` }
+                    : {
+                        background: `linear-gradient(145deg, ${project.accent}, #1a2230 78%)`,
+                      }
+                }
               />
               <div className="p-6 md:p-8">
                 <p className="font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">

@@ -20,10 +20,20 @@ import {
   setDoc,
   collection,
   getDocs,
+  addDoc,
+  query,
+  orderBy,
+  limit,
   deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import {
+  cmsVersionsCollection,
+  mapCmsVersionDoc,
+  type CmsSaveSource,
+  type CmsVersionRow,
+} from "@/lib/cms-versions";
 import content, { DEFAULT_NAV_ITEMS } from "@/lib/content";
 import type {
   SiteInfo,
@@ -180,6 +190,9 @@ export default function AdminDashboard() {
   const [hookConfigured, setHookConfigured] = useState(false);
   const [hookSource, setHookSource] = useState<"firestore" | "env" | "none">("none");
   const [hookDisplay, setHookDisplay] = useState("");
+  const [versions, setVersions] = useState<CmsVersionRow[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   // ── Users state ──
   type AdminUser = { uid: string; email?: string; displayName: string | null; createdAt?: string; lastSignIn: string | null; emailVerified: boolean; };
@@ -198,6 +211,27 @@ export default function AdminDashboard() {
     return unsub;
   }, [router]);
 
+  const applyLiveContent = useCallback((d: Record<string, unknown>) => {
+    if (d.site) setSiteData(d.site as SiteInfo);
+    if (d.seo) setSeoData(d.seo as typeof content.seo);
+    if (d.hero) setHeroData(d.hero as HeroContent);
+    if (d.services) setServicesData(d.services as Service[]);
+    setServicePagesContent(
+      mergeServicePagesCms(
+        d.servicePagesContent as ServicePagesCmsMap | undefined,
+        d.servicePagesSeo as Parameters<typeof mergeServicePagesCms>[1],
+      ),
+    );
+    if (d.faq) setFaqData(d.faq as FaqItem[]);
+    if (d.packages) setPackagesData(d.packages as Package[]);
+    if (d.projects) setProjectsData(d.projects as Project[]);
+    if (d.process) setProcessData(d.process as ProcessStep[]);
+    if (d.disciplines) setDisciplinesData(d.disciplines as Discipline[]);
+    if (Array.isArray(d.navItems) && d.navItems.length > 0) {
+      setNavData(d.navItems as NavItem[]);
+    }
+  }, []);
+
   // ── Load from Firestore ──
   useEffect(() => {
     if (!user) return;
@@ -205,20 +239,7 @@ export default function AdminDashboard() {
       try {
         const snap = await getDoc(doc(db(), "cms", "content"));
         if (snap.exists()) {
-          const d = snap.data();
-          if (d.site) setSiteData(d.site);
-          if (d.seo) setSeoData(d.seo);
-          if (d.hero) setHeroData(d.hero);
-          if (d.services) setServicesData(d.services);
-          setServicePagesContent(mergeServicePagesCms(d.servicePagesContent, d.servicePagesSeo));
-          if (d.faq) setFaqData(d.faq);
-          if (d.packages) setPackagesData(d.packages);
-          if (d.projects) setProjectsData(d.projects);
-          if (d.process) setProcessData(d.process);
-          if (d.disciplines) setDisciplinesData(d.disciplines);
-          if (Array.isArray(d.navItems) && d.navItems.length > 0) {
-            setNavData(d.navItems);
-          }
+          applyLiveContent(snap.data());
         }
         // Load blogs collection
         const blogsSnap = await getDocs(collection(db(), "blogs"));
@@ -234,7 +255,7 @@ export default function AdminDashboard() {
       }
     }
     load();
-  }, [user]);
+  }, [user, applyLiveContent]);
 
   // ── Mark unsaved on any edit ──
   const markUnsaved = useCallback(() => setStatus("unsaved"), []);
@@ -249,6 +270,25 @@ export default function AdminDashboard() {
     },
     [markUnsaved],
   );
+
+  const loadVersions = useCallback(async () => {
+    setVersionsLoading(true);
+    try {
+      const snap = await getDocs(
+        query(cmsVersionsCollection(db()), orderBy("createdAt", "desc"), limit(50)),
+      );
+      setVersions(snap.docs.map(mapCmsVersionDoc));
+    } catch (e) {
+      console.error("Failed to load CMS versions:", e);
+    } finally {
+      setVersionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    loadVersions();
+  }, [user, loadVersions]);
 
   // ── Auth token helper for API calls ──
   async function getToken() {
@@ -304,34 +344,61 @@ export default function AdminDashboard() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  function buildLiveContentPayload() {
+    return {
+      site: siteData,
+      seo: seoData,
+      hero: heroData,
+      services: servicesData,
+      servicePagesContent,
+      servicePagesSeo: Object.fromEntries(
+        SERVICE_PAGE_SLUGS.map((slug) => [
+          slug,
+          {
+            seoTitle: servicePagesContent[slug]?.seoTitle ?? "",
+            seoDescription: servicePagesContent[slug]?.seoDescription ?? "",
+            keywords: servicePagesContent[slug]?.keywords ?? [],
+          },
+        ]),
+      ),
+      faq: faqData,
+      packages: packagesData,
+      projects: projectsData,
+      process: processData,
+      disciplines: disciplinesData,
+      navItems: navData,
+      updatedAt: serverTimestamp(),
+    };
+  }
+
+  async function writeCmsVersion(
+    payload: Record<string, unknown>,
+    source: CmsSaveSource,
+    note?: string,
+  ) {
+    await addDoc(cmsVersionsCollection(db()), {
+      createdAt: serverTimestamp(),
+      createdBy: {
+        uid: user?.uid ?? null,
+        email: user?.email ?? null,
+      },
+      source,
+      ...(note ? { note } : {}),
+      content: payload,
+    });
+  }
+
   // ── Save to Firestore ──
-  async function save() {
+  async function save(source: CmsSaveSource = "save"): Promise<boolean> {
     setStatus("saving");
     try {
-      await setDoc(doc(db(), "cms", "content"), {
-        site: siteData,
-        seo: seoData,
-        hero: heroData,
-        services: servicesData,
-        servicePagesContent,
-        servicePagesSeo: Object.fromEntries(
-          SERVICE_PAGE_SLUGS.map((slug) => [
-            slug,
-            {
-              seoTitle: servicePagesContent[slug]?.seoTitle ?? "",
-              seoDescription: servicePagesContent[slug]?.seoDescription ?? "",
-              keywords: servicePagesContent[slug]?.keywords ?? [],
-            },
-          ]),
-        ),
-        faq: faqData,
-        packages: packagesData,
-        projects: projectsData,
-        process: processData,
-        disciplines: disciplinesData,
-        navItems: navData,
-        updatedAt: serverTimestamp(),
-      });
+      const payload = buildLiveContentPayload();
+      await setDoc(doc(db(), "cms", "content"), payload);
+      try {
+        await writeCmsVersion(payload as Record<string, unknown>, source);
+      } catch (versionErr) {
+        console.error("CMS version snapshot failed (live content was still saved):", versionErr);
+      }
       // Persist a typed override only — never write an empty string over the shared hook
       if (deployHook.trim()) {
         const token = await getToken();
@@ -350,15 +417,50 @@ export default function AdminDashboard() {
       }
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 3000);
+      void loadVersions();
+      return true;
     } catch (e) {
       console.error("Save error:", e);
       setStatus("error");
+      return false;
+    }
+  }
+
+  async function restoreVersion(row: CmsVersionRow) {
+    const when = row.createdAt ? row.createdAt.toLocaleString() : row.id;
+    if (
+      !confirm(
+        `Restore the snapshot from ${when}? This writes it back to live cms/content. Then use Save & Deploy to publish the site. Older versions are kept.`,
+      )
+    ) {
+      return;
+    }
+    setRestoringId(row.id);
+    setStatus("saving");
+    try {
+      const restored = { ...row.content, updatedAt: serverTimestamp() };
+      await setDoc(doc(db(), "cms", "content"), restored);
+      applyLiveContent(row.content);
+      try {
+        await writeCmsVersion(restored as Record<string, unknown>, "restore", `Restored from ${row.id}`);
+      } catch (versionErr) {
+        console.error("CMS version snapshot failed after restore (live content was still restored):", versionErr);
+      }
+      setStatus("saved");
+      setTimeout(() => setStatus("idle"), 3000);
+      void loadVersions();
+    } catch (e) {
+      console.error("Restore error:", e);
+      setStatus("error");
+    } finally {
+      setRestoringId(null);
     }
   }
 
   // ── Save & Deploy ──
   async function saveAndDeploy() {
-    await save();
+    const ok = await save("save-and-deploy");
+    if (!ok) return;
     if (!hookConfigured && !deployHook.trim()) {
       alert("No shared deploy hook is configured. Add DEPLOY_HOOK_URL in Vercel, or paste a hook URL in the Deploy tab.");
       return;
@@ -466,7 +568,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={save}
+              onClick={() => void save()}
               disabled={status === "saving"}
               className="rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/70 transition hover:text-white disabled:opacity-40"
             >
@@ -1646,6 +1748,46 @@ export default function AdminDashboard() {
                   <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/70 leading-relaxed">
                     <strong className="text-blue-300">How it works:</strong> "Save &amp; Deploy" writes content to Firestore, then the server POSTs to the shared Vercel hook (from <code className="rounded bg-white/10 px-1">DEPLOY_HOOK_URL</code> or the optional override above). The hook is never called from your browser, so CORS and per-user paste are not an issue. Vercel starts a new build — GitHub Actions then runs <code className="rounded bg-white/10 px-1">scripts/fetch-content.js</code> and the public site updates in about 60–90 seconds.
                   </div>
+                </Card>
+
+                <Card className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white/70">Content versions</h3>
+                  <p className="text-sm text-white/40">
+                    Every Save writes the live <code className="rounded bg-white/10 px-1">cms/content</code> document and an immutable snapshot under{" "}
+                    <code className="rounded bg-white/10 px-1">cms/content/versions</code>. Builds still read only the live document. Restore copies a snapshot back to live — then Save &amp; Deploy to publish.
+                  </p>
+                  {versionsLoading && versions.length === 0 ? (
+                    <p className="text-sm text-white/40">Loading versions…</p>
+                  ) : versions.length === 0 ? (
+                    <p className="text-sm text-white/40">No snapshots yet. The next Save will create the first one.</p>
+                  ) : (
+                    <div className="divide-y divide-white/8 rounded-xl border border-white/8">
+                      {versions.map((v) => (
+                        <div
+                          key={v.id}
+                          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                        >
+                          <div>
+                            <p className="text-sm text-white/80">
+                              {v.createdAt ? v.createdAt.toLocaleString() : "Saving…"}
+                            </p>
+                            <p className="text-[11px] text-white/35">
+                              {v.createdBy.email || v.createdBy.uid || "unknown"} · {v.source}
+                              {v.note ? ` · ${v.note}` : ""}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => restoreVersion(v)}
+                            disabled={restoringId !== null || status === "saving"}
+                            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 transition hover:text-white disabled:opacity-40"
+                          >
+                            {restoringId === v.id ? "Restoring…" : "Restore"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Card>
 
                 <Card className="space-y-4">

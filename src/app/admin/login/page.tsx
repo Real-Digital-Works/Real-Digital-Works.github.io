@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { AdminThemeToggle } from "@/components/AdminTheme";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,7 +28,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
+    <div className="relative flex min-h-screen items-center justify-center p-6">
+      <div className="absolute right-4 top-4 w-36">
+        <AdminThemeToggle compact />
+      </div>
       <div className="w-full max-w-sm">
         {/* Logo mark */}
         <div className="mb-8 text-center">

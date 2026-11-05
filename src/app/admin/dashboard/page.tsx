@@ -76,6 +76,7 @@ import {
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor, type NavPageOption } from "@/components/NavEditor";
 import { ServiceEditor } from "@/components/ServiceEditor";
+import { AdminThemeToggle } from "@/components/AdminTheme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -940,7 +941,8 @@ export default function AdminDashboard() {
             </button>
           ))}
         </nav>
-        <div className="border-t border-white/8 p-4">
+        <div className="border-t border-white/8 p-4 space-y-3">
+          <AdminThemeToggle />
           <button
             onClick={() => signOut(auth())}
             className="w-full rounded-xl border border-white/10 px-4 py-2 text-xs text-white/50 transition hover:text-white/80"
@@ -962,6 +964,9 @@ export default function AdminDashboard() {
             <StatusBadge status={status} />
           </div>
           <div className="flex items-center gap-3">
+            <div className="lg:hidden">
+              <AdminThemeToggle compact />
+            </div>
             <button
               onClick={() => void save()}
               disabled={status === "saving"}

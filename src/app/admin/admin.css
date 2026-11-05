@@ -1,0 +1,130 @@
+/* Admin-only theme. Selectors are scoped to .admin-shell so marketing pages stay dark. */
+
+.admin-shell {
+  background: var(--admin-bg);
+  color: var(--admin-fg);
+  min-height: 100vh;
+  --admin-bg: #0f1117;
+  --admin-fg: #e2e8f0;
+  --admin-muted: rgba(226, 232, 240, 0.5);
+}
+
+.admin-shell[data-admin-theme="light"] {
+  --admin-bg: #f3f5f8;
+  --admin-fg: #1a2230;
+  color-scheme: light;
+}
+
+.admin-shell[data-admin-theme="dark"] {
+  color-scheme: dark;
+}
+
+.admin-shell[data-admin-theme="light"] .text-white { color: #1a2230; }
+.admin-shell[data-admin-theme="light"] .text-white\/85 { color: rgba(26, 34, 48, 0.88); }
+.admin-shell[data-admin-theme="light"] .text-white\/80 { color: rgba(26, 34, 48, 0.82); }
+.admin-shell[data-admin-theme="light"] .text-white\/70 { color: rgba(26, 34, 48, 0.72); }
+.admin-shell[data-admin-theme="light"] .text-white\/60 { color: rgba(26, 34, 48, 0.62); }
+.admin-shell[data-admin-theme="light"] .text-white\/50 { color: rgba(26, 34, 48, 0.55); }
+.admin-shell[data-admin-theme="light"] .text-white\/45 { color: rgba(26, 34, 48, 0.5); }
+.admin-shell[data-admin-theme="light"] .text-white\/40 { color: rgba(26, 34, 48, 0.45); }
+.admin-shell[data-admin-theme="light"] .text-white\/35 { color: rgba(26, 34, 48, 0.4); }
+.admin-shell[data-admin-theme="light"] .text-white\/30 { color: rgba(26, 34, 48, 0.38); }
+.admin-shell[data-admin-theme="light"] .text-white\/25 { color: rgba(26, 34, 48, 0.32); }
+.admin-shell[data-admin-theme="light"] .text-white\/20 { color: rgba(26, 34, 48, 0.28); }
+
+.admin-shell[data-admin-theme="light"] .placeholder-white\/25::placeholder,
+.admin-shell[data-admin-theme="light"] .placeholder-white\/20::placeholder {
+  color: rgba(26, 34, 48, 0.35);
+}
+
+.admin-shell[data-admin-theme="light"] .bg-white\/2,
+.admin-shell[data-admin-theme="light"] .bg-white\/3,
+.admin-shell[data-admin-theme="light"] .bg-white\/4,
+.admin-shell[data-admin-theme="light"] .bg-white\/5 {
+  background-color: #ffffff;
+}
+
+.admin-shell[data-admin-theme="light"] .bg-white\/8,
+.admin-shell[data-admin-theme="light"] .bg-white\/10,
+.admin-shell[data-admin-theme="light"] .bg-white\/12 {
+  background-color: rgba(26, 34, 48, 0.06);
+}
+
+.admin-shell[data-admin-theme="light"] .border-white\/5,
+.admin-shell[data-admin-theme="light"] .border-white\/8,
+.admin-shell[data-admin-theme="light"] .border-white\/10,
+.admin-shell[data-admin-theme="light"] .border-white\/15 {
+  border-color: rgba(26, 34, 48, 0.12);
+}
+
+.admin-shell[data-admin-theme="light"] .hover\:border-white\/30:hover,
+.admin-shell[data-admin-theme="light"] .hover\:border-white\/12:hover {
+  border-color: rgba(26, 34, 48, 0.22);
+}
+
+.admin-shell[data-admin-theme="light"] .hover\:text-white:hover,
+.admin-shell[data-admin-theme="light"] .hover\:text-white\/80:hover,
+.admin-shell[data-admin-theme="light"] .hover\:text-white\/70:hover,
+.admin-shell[data-admin-theme="light"] .hover\:text-white\/60:hover,
+.admin-shell[data-admin-theme="light"] .hover\:text-white\/50:hover {
+  color: #0f1724;
+}
+
+.admin-shell[data-admin-theme="light"] .bg-\[\#0f1117\] {
+  background-color: #f3f5f8;
+}
+
+.admin-shell[data-admin-theme="light"] .text-\[\#e2e8f0\] {
+  color: #1a2230;
+}
+
+.admin-shell[data-admin-theme="light"] .bg-\[\#1857EC\],
+.admin-shell[data-admin-theme="light"] .bg-\[\#1857EC\].text-white,
+.admin-shell[data-admin-theme="light"] .bg-blue-600 {
+  color: #ffffff !important;
+}
+
+.admin-shell[data-admin-theme="light"] .ProseMirror,
+.admin-shell[data-admin-theme="light"] .tiptap {
+  color: #1a2230;
+}
+
+.admin-shell[data-admin-theme="light"] input,
+.admin-shell[data-admin-theme="light"] textarea,
+.admin-shell[data-admin-theme="light"] select {
+  color: #1a2230;
+  background-color: #ffffff;
+}
+
+.admin-shell[data-admin-theme="light"] option {
+  color: #1a2230;
+  background-color: #ffffff;
+}
+
+.admin-shell[data-admin-theme="light"] .text-blue-300,
+.admin-shell[data-admin-theme="light"] .text-\[\#60a5fa\] {
+  color: #1857ec;
+}
+
+.admin-shell[data-admin-theme="light"] .text-blue-200\/60,
+.admin-shell[data-admin-theme="light"] .text-blue-200\/70 {
+  color: rgba(24, 87, 236, 0.75);
+}
+
+.admin-shell[data-admin-theme="light"] .text-yellow-200\/80,
+.admin-shell[data-admin-theme="light"] .text-yellow-300,
+.admin-shell[data-admin-theme="light"] .text-yellow-400,
+.admin-shell[data-admin-theme="light"] .text-yellow-400\/70 {
+  color: #92400e;
+}
+
+.admin-shell[data-admin-theme="light"] .text-green-400,
+.admin-shell[data-admin-theme="light"] .text-green-300,
+.admin-shell[data-admin-theme="light"] .text-green-400\/80 {
+  color: #166534;
+}
+
+.admin-shell[data-admin-theme="light"] .text-red-300,
+.admin-shell[data-admin-theme="light"] .text-red-400 {
+  color: #b42318;
+}

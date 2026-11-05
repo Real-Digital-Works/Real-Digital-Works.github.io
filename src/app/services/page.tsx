@@ -3,16 +3,8 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
 import { services, seo, faq, site } from "@/lib/content";
+import { publicPathForCmsService } from "@/lib/cms-services";
 import { brandedTitle } from "@/lib/seo";
-
-const SERVICE_INDEX_HREFS: Record<string, string> = {
-  websites: "/services/web-design",
-  apps: "/services/web-applications",
-  ai: "/services/ai-automation",
-  seo: "/services/seo",
-  motion: "/services/3d-animation",
-  care: "/services/hosting",
-};
 
 export const metadata: Metadata = {
   title: brandedTitle(seo.services.title),
@@ -37,7 +29,7 @@ const serviceJsonLd = {
     item: {
       "@type": "Service",
       name: s.title,
-      url: `${site.url.replace(/\/$/, "")}${SERVICE_INDEX_HREFS[s.id] ?? "/contact"}`,
+      url: `${site.url.replace(/\/$/, "")}${publicPathForCmsService(s.id) ?? "/contact"}`,
       description: s.summary,
       offers: {
         "@type": "Offer",
@@ -87,10 +79,10 @@ export default function ServicesPage() {
                 <div className="mt-3 text-[15px] text-fg/60"><RichContent html={service.detail} /></div>
               </div>
               <Link
-                href={SERVICE_INDEX_HREFS[service.id] ?? "/contact"}
+                href={publicPathForCmsService(service.id) ?? "/contact"}
                 className="btn btn-ghost w-fit"
               >
-                {SERVICE_INDEX_HREFS[service.id] ? "View service" : "Enquire"}
+                {publicPathForCmsService(service.id) ? "View service" : "Enquire"}
               </Link>
             </Reveal>
           ))}

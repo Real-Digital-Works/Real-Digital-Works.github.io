@@ -63,6 +63,13 @@ export interface Service {
   detail: string;
 }
 
+export interface ServicePageSeo {
+  seoTitle: string;
+  seoDescription: string;
+}
+
+export type ServicePagesSeoMap = Record<string, ServicePageSeo>;
+
 export interface ProcessStep {
   n: string;
   title: string;
@@ -157,6 +164,8 @@ export interface Content {
   blogs: BlogPost[];
   pages: DynamicPage[];
   navItems?: NavItem[];
+  /** Per-slug SEO for public /services/[slug] pages */
+  servicePagesSeo?: ServicePagesSeoMap;
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -177,6 +186,7 @@ export const sectors = content.sectors;
 export const stack = content.stack;
 export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
+export const servicePagesSeo: ServicePagesSeoMap = content.servicePagesSeo ?? {};
 
 /** Default nav — used when no CMS nav has been saved yet */
 export const DEFAULT_NAV_ITEMS: NavItem[] = [

@@ -350,5 +350,71 @@
     "Postgres"
   ],
   "blogs": [],
-  "pages": []
+  "pages": [],
+  "servicePagesSeo": {
+    "web-design": {
+      "seoTitle": "Website design in London | Real Digital Works",
+      "seoDescription": "A website that explains your offer clearly and gives visitors a straightforward way to enquire. Discuss a tailored project with Real Digital Works in London."
+    },
+    "ecommerce": {
+      "seoTitle": "E-commerce website design in London | Real Digital Works",
+      "seoDescription": "Online shops designed to make products easy to find, understand and buy. Discuss a tailored project with Real Digital Works in London."
+    },
+    "web-applications": {
+      "seoTitle": "Custom web application development in London | Real Digital Works",
+      "seoDescription": "Software built around your processes, not the limits of a generic template. Discuss a tailored project with Real Digital Works in London."
+    },
+    "landing-pages": {
+      "seoTitle": "Landing page design in London | Real Digital Works",
+      "seoDescription": "Focused landing pages built around one audience, one offer and one clear action. Discuss a tailored project with Real Digital Works in London."
+    },
+    "seo": {
+      "seoTitle": "SEO agency in London for Google and AI search | Real Digital Works",
+      "seoDescription": "Make your website easier to discover, understand and use. Discuss a tailored project with Real Digital Works in London."
+    },
+    "google-ads": {
+      "seoTitle": "Google Ads management in London | Real Digital Works",
+      "seoDescription": "Paid search campaigns built around relevant enquiries and measurable actions. Discuss a tailored project with Real Digital Works in London."
+    },
+    "social-media": {
+      "seoTitle": "Social media management in London | Real Digital Works",
+      "seoDescription": "A consistent social presence that sounds and looks like your business. Discuss a tailored project with Real Digital Works in London."
+    },
+    "email-marketing": {
+      "seoTitle": "Email marketing services in London | Real Digital Works",
+      "seoDescription": "Useful email campaigns and customer journeys built around permission, relevance and clear calls to action. Discuss a tailored project with Real Digital Works in London."
+    },
+    "branding": {
+      "seoTitle": "Branding and logo design in London | Real Digital Works",
+      "seoDescription": "A recognisable identity that works across the places customers meet your business. Discuss a tailored project with Real Digital Works in London."
+    },
+    "3d-animation": {
+      "seoTitle": "3D animation and video production in London | Real Digital Works",
+      "seoDescription": "Explain ideas, show products and communicate visually through motion. Discuss a tailored project with Real Digital Works in London."
+    },
+    "photography": {
+      "seoTitle": "Commercial photography in London | Real Digital Works",
+      "seoDescription": "Original photography that reflects your people, products and premises. Discuss a tailored project with Real Digital Works in London."
+    },
+    "copywriting": {
+      "seoTitle": "Copywriting services in London | Real Digital Works",
+      "seoDescription": "Clear, useful words that help customers understand why to choose you. Discuss a tailored project with Real Digital Works in London."
+    },
+    "hosting": {
+      "seoTitle": "Managed website hosting and care in London | Real Digital Works",
+      "seoDescription": "Practical support for keeping your website maintained after launch. Discuss a tailored project with Real Digital Works in London."
+    },
+    "training": {
+      "seoTitle": "AI and digital skills training in London | Real Digital Works",
+      "seoDescription": "Give your team the confidence to use digital tools independently. Discuss a tailored project with Real Digital Works in London."
+    },
+    "ai-automation": {
+      "seoTitle": "AI automation services in London | Real Digital Works",
+      "seoDescription": "Reduce repetitive work by improving one practical workflow at a time. Discuss a tailored project with Real Digital Works in London."
+    },
+    "consultancy": {
+      "seoTitle": "Digital consultancy in London | Real Digital Works",
+      "seoDescription": "Independent, practical guidance for businesses reviewing websites, marketing, software choices or digital suppliers. Discuss a tailored project with Real Digital Works in London."
+    }
+  }
 }

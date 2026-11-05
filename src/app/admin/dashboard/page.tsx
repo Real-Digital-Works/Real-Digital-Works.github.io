@@ -30,6 +30,7 @@ import type {
   PageSeo,
   HeroContent,
   Service,
+  ServicePagesSeoMap,
   FaqItem,
   Package,
   Project,
@@ -39,6 +40,8 @@ import type {
   Discipline,
   NavItem,
 } from "@/lib/content";
+import { CMS_SERVICE_SLUGS, publicPathForCmsService } from "@/lib/cms-services";
+import { mergeServicePagesSeo, servicePages } from "@/lib/services-data";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor } from "@/components/NavEditor";
 
@@ -154,6 +157,9 @@ export default function AdminDashboard() {
   const [seoData, setSeoData] = useState(content.seo);
   const [heroData, setHeroData] = useState<HeroContent>(content.hero);
   const [servicesData, setServicesData] = useState<Service[]>(content.services);
+  const [servicePagesSeo, setServicePagesSeo] = useState<ServicePagesSeoMap>(() =>
+    mergeServicePagesSeo(content.servicePagesSeo)
+  );
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
   const [packagesData, setPackagesData] = useState<Package[]>(content.packages);
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
@@ -202,6 +208,7 @@ export default function AdminDashboard() {
           if (d.seo) setSeoData(d.seo);
           if (d.hero) setHeroData(d.hero);
           if (d.services) setServicesData(d.services);
+          setServicePagesSeo(mergeServicePagesSeo(d.servicePagesSeo));
           if (d.faq) setFaqData(d.faq);
           if (d.packages) setPackagesData(d.packages);
           if (d.projects) setProjectsData(d.projects);
@@ -293,6 +300,7 @@ export default function AdminDashboard() {
         seo: seoData,
         hero: heroData,
         services: servicesData,
+        servicePagesSeo,
         faq: faqData,
         packages: packagesData,
         projects: projectsData,
@@ -550,27 +558,145 @@ export default function AdminDashboard() {
             {/* ── SERVICES ── */}
             {tab === "services" && (
               <>
-                <SectionTitle title="Services" sub="These appear on the Services page and in Google structured data." />
-                {servicesData.map((svc, i) => (
-                  <Card key={svc.id} className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-white/80">{svc.title}</h3>
-                      <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">{svc.id}</span>
-                    </div>
-                    <Field label="Service title" value={svc.title} onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], title: v }; setServicesData(s); markUnsaved(); }} />
-                    <Field label="Starting from (price)" value={svc.from} onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], from: v }; setServicesData(s); markUnsaved(); }} />
-                    <Field label="Short summary (plain text)" value={svc.summary} textarea onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }} />
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Detail description</label>
-                      <RichTextEditor
-                        content={svc.detail}
-                        onChange={(html) => { const s = [...servicesData]; s[i] = { ...s[i], detail: html }; setServicesData(s); markUnsaved(); }}
-                        placeholder="Detailed description…"
-                        minHeight="140px"
+                <SectionTitle
+                  title="Services"
+                  sub="The six cards below are the homepage offer strip and the /services listing. Each card also maps to one public URL (slugs are frozen). Save & Deploy for changes to go live."
+                />
+                <Card className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white/80">/services listing page SEO</h3>
+                  <p className="text-[11px] text-white/35">
+                    Google title and snippet for the listing page itself — not an individual service. Same fields as the SEO tab.
+                  </p>
+                  <Field
+                    label="Page title"
+                    value={seoData.services.title}
+                    onChange={(v) => { setSeoData((p) => ({ ...p, services: { ...p.services, title: v } })); markUnsaved(); }}
+                    hint="50–60 characters ideal. Shown in the browser tab and Google for /services."
+                  />
+                  <Field
+                    label="Meta description"
+                    value={seoData.services.description}
+                    textarea
+                    onChange={(v) => { setSeoData((p) => ({ ...p, services: { ...p.services, description: v } })); markUnsaved(); }}
+                    hint="130–160 characters. Google snippet for /services."
+                  />
+                  <Field
+                    label="Keywords (comma separated)"
+                    value={seoData.services.keywords.join(", ")}
+                    onChange={(v) => { setSeoData((p) => ({ ...p, services: { ...p.services, keywords: v.split(",").map((k) => k.trim()).filter(Boolean) } })); markUnsaved(); }}
+                  />
+                </Card>
+                {servicesData.map((svc, i) => {
+                  const livePath = publicPathForCmsService(svc.id);
+                  const slug = CMS_SERVICE_SLUGS[svc.id];
+                  const pageSeo = slug
+                    ? servicePagesSeo[slug] ?? { seoTitle: "", seoDescription: "" }
+                    : { seoTitle: "", seoDescription: "" };
+                  return (
+                    <Card key={svc.id} className="space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white/80">{svc.title}</h3>
+                        <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">{livePath ?? svc.id}</span>
+                      </div>
+                      <Field
+                        label="Service title"
+                        value={svc.title}
+                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], title: v }; setServicesData(s); markUnsaved(); }}
+                        hint="Homepage offer cards and the heading on each /services listing card. Not the big H1 on the individual page — that comes from SEO title."
                       />
-                    </div>
-                  </Card>
-                ))}
+                      <Field
+                        label="Starting from (price)"
+                        value={svc.from}
+                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], from: v }; setServicesData(s); markUnsaved(); }}
+                        hint={livePath ? `Homepage, /services listing, and the price on ${livePath}.` : "Homepage and /services listing."}
+                      />
+                      <Field
+                        label="Short summary (plain text)"
+                        value={svc.summary}
+                        textarea
+                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }}
+                        hint={livePath ? `Homepage + /services listing, and the intro paragraph under the H1 on ${livePath}.` : "Homepage and /services listing."}
+                      />
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Detail description</label>
+                        <p className="text-[11px] text-white/30">
+                          {livePath
+                            ? `Longer copy on the /services listing card, and the Overview section on ${livePath}.`
+                            : "Longer copy on the /services listing card."}
+                        </p>
+                        <RichTextEditor
+                          content={svc.detail}
+                          onChange={(html) => { const s = [...servicesData]; s[i] = { ...s[i], detail: html }; setServicesData(s); markUnsaved(); }}
+                          placeholder="Detailed description…"
+                          minHeight="140px"
+                        />
+                      </div>
+                      {slug && (
+                        <div className="space-y-4 border-t border-white/8 pt-4">
+                          <h4 className="text-sm font-semibold text-white/70">SEO for {livePath}</h4>
+                          <p className="text-[11px] text-white/35">
+                            Browser tab, Google snippet, and the large heading on that public page. Canonical stays {livePath}.
+                          </p>
+                          <Field
+                            label="SEO title"
+                            value={pageSeo.seoTitle}
+                            onChange={(v) => {
+                              setServicePagesSeo((p) => ({ ...p, [slug]: { ...pageSeo, ...p[slug], seoTitle: v } }));
+                              markUnsaved();
+                            }}
+                            hint="50–60 characters. This is the H1 on the public service page."
+                          />
+                          <Field
+                            label="SEO description"
+                            value={pageSeo.seoDescription}
+                            textarea
+                            onChange={(v) => {
+                              setServicePagesSeo((p) => ({ ...p, [slug]: { ...pageSeo, ...p[slug], seoDescription: v } }));
+                              markUnsaved();
+                            }}
+                            hint="130–160 characters. Meta description and Open Graph description."
+                          />
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+                <SectionTitle
+                  title="Other service pages"
+                  sub="These URLs are not one of the six listing cards. You can still edit their Google title and description. Slugs stay frozen."
+                />
+                {servicePages
+                  .filter((page) => !Object.values(CMS_SERVICE_SLUGS).includes(page.slug))
+                  .map((page) => {
+                    const pageSeo = servicePagesSeo[page.slug] ?? { seoTitle: "", seoDescription: "" };
+                    return (
+                      <Card key={page.slug} className="space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-sm font-semibold text-white/80">{page.title}</h3>
+                          <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">/services/{page.slug}</span>
+                        </div>
+                        <Field
+                          label="SEO title"
+                          value={pageSeo.seoTitle}
+                          onChange={(v) => {
+                            setServicePagesSeo((p) => ({ ...p, [page.slug]: { ...pageSeo, ...p[page.slug], seoTitle: v } }));
+                            markUnsaved();
+                          }}
+                          hint="Browser tab, Google title, and the H1 on this page."
+                        />
+                        <Field
+                          label="SEO description"
+                          value={pageSeo.seoDescription}
+                          textarea
+                          onChange={(v) => {
+                            setServicePagesSeo((p) => ({ ...p, [page.slug]: { ...pageSeo, ...p[page.slug], seoDescription: v } }));
+                            markUnsaved();
+                          }}
+                          hint="Meta description and Open Graph description."
+                        />
+                      </Card>
+                    );
+                  })}
               </>
             )}
 

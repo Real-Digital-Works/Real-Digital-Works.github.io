@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RichContent } from "@/components/RichContent";
 import { site } from "@/lib/content";
 import { brandedTitle, serviceHeading } from "@/lib/seo";
 import {
@@ -125,7 +126,13 @@ export default async function ServicePage({ params }: Props) {
           <h2 className="display mt-2 text-[clamp(28px,3.6vw,44px)]">
             How we approach this.
           </h2>
-          <p className="mt-6 text-[17px] leading-relaxed text-fg/65">{service.overview}</p>
+          {service.cmsDetail ? (
+            <div className="mt-6 text-[17px] leading-relaxed text-fg/65">
+              <RichContent html={service.cmsDetail} />
+            </div>
+          ) : (
+            <p className="mt-6 text-[17px] leading-relaxed text-fg/65">{service.overview}</p>
+          )}
         </div>
       </section>
 

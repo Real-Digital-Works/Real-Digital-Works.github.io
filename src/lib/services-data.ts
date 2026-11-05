@@ -3,6 +3,13 @@
 // mapped onto existing live slugs. Boilerplate card/FAQ lines were rewritten
 // so each page stays unique without inventing SLAs, rankings, or case studies.
 
+import {
+  services as cmsServices,
+  servicePagesSeo as cmsServicePagesSeo,
+  type ServicePagesSeoMap,
+} from "@/lib/content";
+import { CMS_SERVICE_SLUGS } from "@/lib/cms-services";
+
 export type ServiceEntry = {
   slug: string;
   category: "Build" | "Grow" | "Create" | "Support";
@@ -12,6 +19,8 @@ export type ServiceEntry = {
   seoDescription: string;
   intro: string;
   overview: string;
+  /** HTML from the admin listing card, when this slug is one of the six CMS services */
+  cmsDetail?: string;
   whatsIncluded: { title: string; description: string }[];
   process: { title: string; description: string }[];
   faq: { q: string; a: string }[];
@@ -39,7 +48,7 @@ function steps(
   ];
 }
 
-export const servicePages: ServiceEntry[] = [
+const seedServicePages: ServiceEntry[] = [
   // ───── BUILD ─────
   {
     slug: "web-design",
@@ -1312,6 +1321,48 @@ export const servicePages: ServiceEntry[] = [
     relatedSlugs: ["web-design", "seo", "web-applications"],
   },
 ];
+
+function applyCmsOverlays(pages: ServiceEntry[]): ServiceEntry[] {
+  const cmsBySlug = Object.fromEntries(
+    cmsServices
+      .map((s) => [CMS_SERVICE_SLUGS[s.id], s] as const)
+      .filter(([slug]) => Boolean(slug)),
+  );
+
+  return pages.map((page) => {
+    const cms = cmsBySlug[page.slug];
+    const seo = cmsServicePagesSeo[page.slug];
+    return {
+      ...page,
+      title: cms?.title?.trim() || page.title,
+      from: cms?.from?.trim() || page.from,
+      intro: cms?.summary?.trim() || page.intro,
+      cmsDetail: cms?.detail?.trim() || undefined,
+      seoTitle: seo?.seoTitle?.trim() || page.seoTitle,
+      seoDescription: seo?.seoDescription?.trim() || page.seoDescription,
+    };
+  });
+}
+
+export const servicePages: ServiceEntry[] = applyCmsOverlays(seedServicePages);
+
+export function seedServicePageSeo(): ServicePagesSeoMap {
+  return Object.fromEntries(
+    seedServicePages.map((s) => [s.slug, { seoTitle: s.seoTitle, seoDescription: s.seoDescription }]),
+  );
+}
+
+export function mergeServicePagesSeo(fromFs?: ServicePagesSeoMap): ServicePagesSeoMap {
+  const defaults = seedServicePageSeo();
+  const merged: ServicePagesSeoMap = {};
+  for (const slug of Object.keys(defaults)) {
+    merged[slug] = {
+      seoTitle: fromFs?.[slug]?.seoTitle?.trim() || defaults[slug].seoTitle,
+      seoDescription: fromFs?.[slug]?.seoDescription?.trim() || defaults[slug].seoDescription,
+    };
+  }
+  return merged;
+}
 
 export const serviceCategories = [
   { label: "Build", slugs: ["web-design", "ecommerce", "web-applications", "landing-pages"] },

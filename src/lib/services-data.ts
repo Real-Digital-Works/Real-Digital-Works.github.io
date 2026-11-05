@@ -4,11 +4,12 @@
 // so each page stays unique without inventing SLAs, rankings, or case studies.
 
 import {
-  services as cmsServices,
+  servicePagesContent as cmsServicePagesContent,
   servicePagesSeo as cmsServicePagesSeo,
+  type CmsServicePage,
+  type ServicePagesCmsMap,
   type ServicePagesSeoMap,
 } from "@/lib/content";
-import { CMS_SERVICE_SLUGS } from "@/lib/cms-services";
 
 export type ServiceEntry = {
   slug: string;
@@ -17,10 +18,9 @@ export type ServiceEntry = {
   from: string;
   seoTitle: string;
   seoDescription: string;
+  keywords?: string[];
   intro: string;
   overview: string;
-  /** HTML from the admin listing card, when this slug is one of the six CMS services */
-  cmsDetail?: string;
   whatsIncluded: { title: string; description: string }[];
   process: { title: string; description: string }[];
   faq: { q: string; a: string }[];
@@ -1322,24 +1322,83 @@ const seedServicePages: ServiceEntry[] = [
   },
 ];
 
-function applyCmsOverlays(pages: ServiceEntry[]): ServiceEntry[] {
-  const cmsBySlug = Object.fromEntries(
-    cmsServices
-      .map((s) => [CMS_SERVICE_SLUGS[s.id], s] as const)
-      .filter(([slug]) => Boolean(slug)),
-  );
+export const SERVICE_PAGE_SLUGS = seedServicePages.map((s) => s.slug);
 
+function toCmsPage(page: ServiceEntry): CmsServicePage {
+  return {
+    title: page.title,
+    from: page.from,
+    intro: page.intro,
+    overview: page.overview,
+    whatsIncluded: page.whatsIncluded,
+    process: page.process,
+    faq: page.faq,
+    relatedSlugs: page.relatedSlugs,
+    seoTitle: page.seoTitle,
+    seoDescription: page.seoDescription,
+    keywords: page.keywords ?? [],
+  };
+}
+
+export function seedCmsServicePages(): ServicePagesCmsMap {
+  return Object.fromEntries(seedServicePages.map((s) => [s.slug, toCmsPage(s)]));
+}
+
+function pickStr(value: string | undefined, fallback: string): string {
+  return value?.trim() ? value : fallback;
+}
+
+function pickList<T>(value: T[] | undefined, fallback: T[]): T[] {
+  return Array.isArray(value) ? value : fallback;
+}
+
+export function mergeServicePagesCms(
+  fromFs?: Partial<Record<string, Partial<CmsServicePage>>>,
+  seoFallback?: ServicePagesSeoMap,
+): ServicePagesCmsMap {
+  const defaults = seedCmsServicePages();
+  const merged: ServicePagesCmsMap = {};
+  for (const slug of SERVICE_PAGE_SLUGS) {
+    const cms = fromFs?.[slug];
+    const seo = seoFallback?.[slug];
+    const seed = defaults[slug];
+    merged[slug] = {
+      title: pickStr(cms?.title, seed.title),
+      from: pickStr(cms?.from, seed.from),
+      intro: pickStr(cms?.intro, seed.intro),
+      overview: pickStr(cms?.overview, seed.overview),
+      whatsIncluded: pickList(cms?.whatsIncluded, seed.whatsIncluded),
+      process: pickList(cms?.process, seed.process),
+      faq: pickList(cms?.faq, seed.faq),
+      relatedSlugs: pickList(cms?.relatedSlugs, seed.relatedSlugs).filter((s) =>
+        SERVICE_PAGE_SLUGS.includes(s),
+      ),
+      seoTitle: pickStr(cms?.seoTitle, pickStr(seo?.seoTitle, seed.seoTitle)),
+      seoDescription: pickStr(cms?.seoDescription, pickStr(seo?.seoDescription, seed.seoDescription)),
+      keywords: pickList(cms?.keywords, pickList(seo?.keywords, seed.keywords)),
+    };
+  }
+  return merged;
+}
+
+function applyCmsOverlays(pages: ServiceEntry[]): ServiceEntry[] {
+  const cms = mergeServicePagesCms(cmsServicePagesContent, cmsServicePagesSeo);
   return pages.map((page) => {
-    const cms = cmsBySlug[page.slug];
-    const seo = cmsServicePagesSeo[page.slug];
+    const over = cms[page.slug];
+    if (!over) return page;
     return {
       ...page,
-      title: cms?.title?.trim() || page.title,
-      from: cms?.from?.trim() || page.from,
-      intro: cms?.summary?.trim() || page.intro,
-      cmsDetail: cms?.detail?.trim() || undefined,
-      seoTitle: seo?.seoTitle?.trim() || page.seoTitle,
-      seoDescription: seo?.seoDescription?.trim() || page.seoDescription,
+      title: over.title,
+      from: over.from,
+      intro: over.intro,
+      overview: over.overview,
+      whatsIncluded: over.whatsIncluded,
+      process: over.process,
+      faq: over.faq,
+      relatedSlugs: over.relatedSlugs,
+      seoTitle: over.seoTitle,
+      seoDescription: over.seoDescription,
+      keywords: over.keywords,
     };
   });
 }
@@ -1348,20 +1407,25 @@ export const servicePages: ServiceEntry[] = applyCmsOverlays(seedServicePages);
 
 export function seedServicePageSeo(): ServicePagesSeoMap {
   return Object.fromEntries(
-    seedServicePages.map((s) => [s.slug, { seoTitle: s.seoTitle, seoDescription: s.seoDescription }]),
+    seedServicePages.map((s) => [
+      s.slug,
+      { seoTitle: s.seoTitle, seoDescription: s.seoDescription, keywords: s.keywords ?? [] },
+    ]),
   );
 }
 
 export function mergeServicePagesSeo(fromFs?: ServicePagesSeoMap): ServicePagesSeoMap {
-  const defaults = seedServicePageSeo();
-  const merged: ServicePagesSeoMap = {};
-  for (const slug of Object.keys(defaults)) {
-    merged[slug] = {
-      seoTitle: fromFs?.[slug]?.seoTitle?.trim() || defaults[slug].seoTitle,
-      seoDescription: fromFs?.[slug]?.seoDescription?.trim() || defaults[slug].seoDescription,
-    };
-  }
-  return merged;
+  const pages = mergeServicePagesCms(undefined, fromFs);
+  return Object.fromEntries(
+    SERVICE_PAGE_SLUGS.map((slug) => [
+      slug,
+      {
+        seoTitle: pages[slug].seoTitle,
+        seoDescription: pages[slug].seoDescription,
+        keywords: pages[slug].keywords,
+      },
+    ]),
+  );
 }
 
 export const serviceCategories = [

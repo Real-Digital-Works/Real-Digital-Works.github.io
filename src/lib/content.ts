@@ -66,9 +66,27 @@ export interface Service {
 export interface ServicePageSeo {
   seoTitle: string;
   seoDescription: string;
+  keywords?: string[];
 }
 
 export type ServicePagesSeoMap = Record<string, ServicePageSeo>;
+
+/** Editable body + SEO for a public /services/[slug] page */
+export interface CmsServicePage {
+  title: string;
+  from: string;
+  intro: string;
+  overview: string;
+  whatsIncluded: { title: string; description: string }[];
+  process: { title: string; description: string }[];
+  faq: { q: string; a: string }[];
+  relatedSlugs: string[];
+  seoTitle: string;
+  seoDescription: string;
+  keywords: string[];
+}
+
+export type ServicePagesCmsMap = Record<string, CmsServicePage>;
 
 export interface ProcessStep {
   n: string;
@@ -164,8 +182,10 @@ export interface Content {
   blogs: BlogPost[];
   pages: DynamicPage[];
   navItems?: NavItem[];
-  /** Per-slug SEO for public /services/[slug] pages */
+  /** Per-slug SEO for public /services/[slug] pages (kept in sync with servicePagesContent) */
   servicePagesSeo?: ServicePagesSeoMap;
+  /** Full CMS body for each public /services/[slug] page */
+  servicePagesContent?: ServicePagesCmsMap;
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -187,6 +207,7 @@ export const stack = content.stack;
 export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
 export const servicePagesSeo: ServicePagesSeoMap = content.servicePagesSeo ?? {};
+export const servicePagesContent: ServicePagesCmsMap = content.servicePagesContent ?? {};
 
 /** Default nav — used when no CMS nav has been saved yet */
 export const DEFAULT_NAV_ITEMS: NavItem[] = [

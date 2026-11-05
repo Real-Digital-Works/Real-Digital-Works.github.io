@@ -30,7 +30,8 @@ import type {
   PageSeo,
   HeroContent,
   Service,
-  ServicePagesSeoMap,
+  CmsServicePage,
+  ServicePagesCmsMap,
   FaqItem,
   Package,
   Project,
@@ -40,8 +41,8 @@ import type {
   Discipline,
   NavItem,
 } from "@/lib/content";
-import { CMS_SERVICE_SLUGS, publicPathForCmsService } from "@/lib/cms-services";
-import { mergeServicePagesSeo, servicePages } from "@/lib/services-data";
+import { publicPathForCmsService } from "@/lib/cms-services";
+import { mergeServicePagesCms, SERVICE_PAGE_SLUGS, servicePages } from "@/lib/services-data";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor } from "@/components/NavEditor";
 
@@ -157,9 +158,10 @@ export default function AdminDashboard() {
   const [seoData, setSeoData] = useState(content.seo);
   const [heroData, setHeroData] = useState<HeroContent>(content.hero);
   const [servicesData, setServicesData] = useState<Service[]>(content.services);
-  const [servicePagesSeo, setServicePagesSeo] = useState<ServicePagesSeoMap>(() =>
-    mergeServicePagesSeo(content.servicePagesSeo)
+  const [servicePagesContent, setServicePagesContent] = useState<ServicePagesCmsMap>(() =>
+    mergeServicePagesCms(content.servicePagesContent, content.servicePagesSeo)
   );
+  const [openServiceSlug, setOpenServiceSlug] = useState<string | null>(null);
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
   const [packagesData, setPackagesData] = useState<Package[]>(content.packages);
   const [projectsData, setProjectsData] = useState<Project[]>(content.projects);
@@ -208,7 +210,7 @@ export default function AdminDashboard() {
           if (d.seo) setSeoData(d.seo);
           if (d.hero) setHeroData(d.hero);
           if (d.services) setServicesData(d.services);
-          setServicePagesSeo(mergeServicePagesSeo(d.servicePagesSeo));
+          setServicePagesContent(mergeServicePagesCms(d.servicePagesContent, d.servicePagesSeo));
           if (d.faq) setFaqData(d.faq);
           if (d.packages) setPackagesData(d.packages);
           if (d.projects) setProjectsData(d.projects);
@@ -236,6 +238,17 @@ export default function AdminDashboard() {
 
   // ── Mark unsaved on any edit ──
   const markUnsaved = useCallback(() => setStatus("unsaved"), []);
+
+  const patchServicePage = useCallback(
+    (slug: string, patch: Partial<CmsServicePage>) => {
+      setServicePagesContent((p) => ({
+        ...p,
+        [slug]: { ...p[slug], ...patch },
+      }));
+      markUnsaved();
+    },
+    [markUnsaved],
+  );
 
   // ── Auth token helper for API calls ──
   async function getToken() {
@@ -300,7 +313,17 @@ export default function AdminDashboard() {
         seo: seoData,
         hero: heroData,
         services: servicesData,
-        servicePagesSeo,
+        servicePagesContent,
+        servicePagesSeo: Object.fromEntries(
+          SERVICE_PAGE_SLUGS.map((slug) => [
+            slug,
+            {
+              seoTitle: servicePagesContent[slug]?.seoTitle ?? "",
+              seoDescription: servicePagesContent[slug]?.seoDescription ?? "",
+              keywords: servicePagesContent[slug]?.keywords ?? [],
+            },
+          ]),
+        ),
         faq: faqData,
         packages: packagesData,
         projects: projectsData,
@@ -559,8 +582,8 @@ export default function AdminDashboard() {
             {tab === "services" && (
               <>
                 <SectionTitle
-                  title="Services"
-                  sub="The six cards below are the homepage offer strip and the /services listing. Each card also maps to one public URL (slugs are frozen). Save & Deploy for changes to go live."
+                  title="A — Listing cards"
+                  sub="Homepage offer strip and the /services grid only. These six cards do not edit the full individual pages — use section B below."
                 />
                 <Card className="space-y-4">
                   <h3 className="text-sm font-semibold text-white/80">/services listing page SEO</h3>
@@ -588,10 +611,6 @@ export default function AdminDashboard() {
                 </Card>
                 {servicesData.map((svc, i) => {
                   const livePath = publicPathForCmsService(svc.id);
-                  const slug = CMS_SERVICE_SLUGS[svc.id];
-                  const pageSeo = slug
-                    ? servicePagesSeo[slug] ?? { seoTitle: "", seoDescription: "" }
-                    : { seoTitle: "", seoDescription: "" };
                   return (
                     <Card key={svc.id} className="space-y-4">
                       <div className="flex items-center justify-between gap-3">
@@ -599,30 +618,28 @@ export default function AdminDashboard() {
                         <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">{livePath ?? svc.id}</span>
                       </div>
                       <Field
-                        label="Service title"
+                        label="Card title"
                         value={svc.title}
                         onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], title: v }; setServicesData(s); markUnsaved(); }}
-                        hint="Homepage offer cards and the heading on each /services listing card. Not the big H1 on the individual page — that comes from SEO title."
+                        hint="Homepage offer cards and the /services listing heading only."
                       />
                       <Field
                         label="Starting from (price)"
                         value={svc.from}
                         onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], from: v }; setServicesData(s); markUnsaved(); }}
-                        hint={livePath ? `Homepage, /services listing, and the price on ${livePath}.` : "Homepage and /services listing."}
+                        hint="Price shown on homepage and the /services listing card."
                       />
                       <Field
                         label="Short summary (plain text)"
                         value={svc.summary}
                         textarea
                         onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }}
-                        hint={livePath ? `Homepage + /services listing, and the intro paragraph under the H1 on ${livePath}.` : "Homepage and /services listing."}
+                        hint="Homepage and /services listing card."
                       />
                       <div className="space-y-1.5">
                         <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Detail description</label>
                         <p className="text-[11px] text-white/30">
-                          {livePath
-                            ? `Longer copy on the /services listing card, and the Overview section on ${livePath}.`
-                            : "Longer copy on the /services listing card."}
+                          Longer copy on the /services listing card only — not the individual page overview.
                         </p>
                         <RichTextEditor
                           content={svc.detail}
@@ -631,72 +648,299 @@ export default function AdminDashboard() {
                           minHeight="140px"
                         />
                       </div>
-                      {slug && (
-                        <div className="space-y-4 border-t border-white/8 pt-4">
-                          <h4 className="text-sm font-semibold text-white/70">SEO for {livePath}</h4>
-                          <p className="text-[11px] text-white/35">
-                            Browser tab, Google snippet, and the large heading on that public page. Canonical stays {livePath}.
-                          </p>
+                    </Card>
+                  );
+                })}
+
+                <SectionTitle
+                  title="B — Individual service pages"
+                  sub="All 16 public URLs. Expand a page to edit its body and its own SEO. Slugs are frozen. Save & Deploy for changes to go live."
+                />
+                {SERVICE_PAGE_SLUGS.map((slug) => {
+                  const page = servicePagesContent[slug];
+                  if (!page) return null;
+                  const livePath = `/services/${slug}`;
+                  const open = openServiceSlug === slug;
+                  const seedMeta = servicePages.find((s) => s.slug === slug);
+                  return (
+                    <Card key={slug} className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setOpenServiceSlug(open ? null : slug)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <span className="text-white/35">{open ? "▾" : "▸"}</span>
+                          <span>
+                            <span className="block text-sm font-semibold text-white/80">{page.title}</span>
+                            <span className="font-mono text-[11px] text-white/35">{livePath}</span>
+                          </span>
+                        </button>
+                        <a
+                          href={livePath}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-[#60a5fa] hover:bg-white/12"
+                        >
+                          Open {livePath}
+                        </a>
+                      </div>
+                      {open && (
+                        <div className="space-y-6 border-t border-white/8 pt-4">
+                          <div className="space-y-4 rounded-xl border border-[#1857EC]/25 bg-[#1857EC]/8 p-4">
+                            <h4 className="text-sm font-semibold text-white/85">SEO for {livePath}</h4>
+                            <p className="text-[11px] text-white/40">
+                              Canonical stays {livePath}. The SEO title is also the public H1 (with the brand stripped if it is already in the string).
+                            </p>
+                            <Field
+                              label="SEO title (also the H1)"
+                              value={page.seoTitle}
+                              onChange={(v) => patchServicePage(slug, { seoTitle: v })}
+                              hint="50–60 characters. Browser tab, Google title, Open Graph title, and the large heading on this page."
+                            />
+                            <Field
+                              label="Meta description"
+                              value={page.seoDescription}
+                              textarea
+                              onChange={(v) => patchServicePage(slug, { seoDescription: v })}
+                              hint="130–160 characters. Meta description and Open Graph description."
+                            />
+                            <Field
+                              label="Keywords (comma separated)"
+                              value={(page.keywords ?? []).join(", ")}
+                              onChange={(v) =>
+                                patchServicePage(slug, {
+                                  keywords: v.split(",").map((k) => k.trim()).filter(Boolean),
+                                })
+                              }
+                              hint="Used in meta keywords, same as other page SEO editors."
+                            />
+                          </div>
+
                           <Field
-                            label="SEO title"
-                            value={pageSeo.seoTitle}
-                            onChange={(v) => {
-                              setServicePagesSeo((p) => ({ ...p, [slug]: { ...pageSeo, ...p[slug], seoTitle: v } }));
-                              markUnsaved();
-                            }}
-                            hint="50–60 characters. This is the H1 on the public service page."
+                            label="Page name"
+                            value={page.title}
+                            onChange={(v) => patchServicePage(slug, { title: v })}
+                            hint="Short name in related-service cards and the mega menu. Not the H1 — that is the SEO title."
                           />
                           <Field
-                            label="SEO description"
-                            value={pageSeo.seoDescription}
+                            label="Starting from (price)"
+                            value={page.from}
+                            onChange={(v) => patchServicePage(slug, { from: v })}
+                            hint={`Shown next to the quote buttons on ${livePath}.`}
+                          />
+                          <Field
+                            label="Intro"
+                            value={page.intro}
                             textarea
-                            onChange={(v) => {
-                              setServicePagesSeo((p) => ({ ...p, [slug]: { ...pageSeo, ...p[slug], seoDescription: v } }));
-                              markUnsaved();
-                            }}
-                            hint="130–160 characters. Meta description and Open Graph description."
+                            onChange={(v) => patchServicePage(slug, { intro: v })}
+                            hint="Paragraph under the H1 on the individual page."
                           />
+                          <Field
+                            label="Overview"
+                            value={page.overview}
+                            textarea
+                            onChange={(v) => patchServicePage(slug, { overview: v })}
+                            hint="“How we approach this” body on the individual page."
+                          />
+
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-white/80">Feature cards</h4>
+                            <p className="text-[11px] text-white/35">“What we can help with” — typically six cards.</p>
+                            {page.whatsIncluded.map((item, i) => (
+                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
+                                <div className="flex justify-between">
+                                  <span className="text-[11px] text-white/30">Card {i + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      patchServicePage(slug, {
+                                        whatsIncluded: page.whatsIncluded.filter((_, idx) => idx !== i),
+                                      })
+                                    }
+                                    className="text-xs text-red-400/60 hover:text-red-400"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <Field
+                                  label="Title"
+                                  value={item.title}
+                                  onChange={(v) => {
+                                    const next = [...page.whatsIncluded];
+                                    next[i] = { ...next[i], title: v };
+                                    patchServicePage(slug, { whatsIncluded: next });
+                                  }}
+                                />
+                                <Field
+                                  label="Body"
+                                  value={item.description}
+                                  textarea
+                                  onChange={(v) => {
+                                    const next = [...page.whatsIncluded];
+                                    next[i] = { ...next[i], description: v };
+                                    patchServicePage(slug, { whatsIncluded: next });
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                patchServicePage(slug, {
+                                  whatsIncluded: [...page.whatsIncluded, { title: "", description: "" }],
+                                })
+                              }
+                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
+                            >
+                              + Add feature card
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-white/80">Process steps</h4>
+                            <p className="text-[11px] text-white/35">Discover → Scope → Deliver → Review → Handover on {livePath}.</p>
+                            {page.process.map((item, i) => (
+                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
+                                <div className="flex justify-between">
+                                  <span className="text-[11px] text-white/30">Step {String(i + 1).padStart(2, "0")}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      patchServicePage(slug, {
+                                        process: page.process.filter((_, idx) => idx !== i),
+                                      })
+                                    }
+                                    className="text-xs text-red-400/60 hover:text-red-400"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <Field
+                                  label="Title"
+                                  value={item.title}
+                                  onChange={(v) => {
+                                    const next = [...page.process];
+                                    next[i] = { ...next[i], title: v };
+                                    patchServicePage(slug, { process: next });
+                                  }}
+                                />
+                                <Field
+                                  label="Body"
+                                  value={item.description}
+                                  textarea
+                                  onChange={(v) => {
+                                    const next = [...page.process];
+                                    next[i] = { ...next[i], description: v };
+                                    patchServicePage(slug, { process: next });
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                patchServicePage(slug, {
+                                  process: [...page.process, { title: "", description: "" }],
+                                })
+                              }
+                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
+                            >
+                              + Add process step
+                            </button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-white/80">FAQs</h4>
+                            <p className="text-[11px] text-white/35">
+                              Visible FAQ section and the FAQ JSON-LD on this page stay in sync.
+                            </p>
+                            {page.faq.map((item, i) => (
+                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
+                                <div className="flex justify-between">
+                                  <span className="text-[11px] text-white/30">FAQ {i + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      patchServicePage(slug, {
+                                        faq: page.faq.filter((_, idx) => idx !== i),
+                                      })
+                                    }
+                                    className="text-xs text-red-400/60 hover:text-red-400"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                                <Field
+                                  label="Question"
+                                  value={item.q}
+                                  onChange={(v) => {
+                                    const next = [...page.faq];
+                                    next[i] = { ...next[i], q: v };
+                                    patchServicePage(slug, { faq: next });
+                                  }}
+                                />
+                                <Field
+                                  label="Answer"
+                                  value={item.a}
+                                  textarea
+                                  onChange={(v) => {
+                                    const next = [...page.faq];
+                                    next[i] = { ...next[i], a: v };
+                                    patchServicePage(slug, { faq: next });
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                patchServicePage(slug, {
+                                  faq: [...page.faq, { q: "", a: "" }],
+                                })
+                              }
+                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
+                            >
+                              + Add FAQ
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold text-white/80">Related services</h4>
+                            <p className="text-[11px] text-white/35">Shown at the bottom of {livePath}. Slugs stay frozen.</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {SERVICE_PAGE_SLUGS.filter((s) => s !== slug).map((rel) => {
+                                const checked = page.relatedSlugs.includes(rel);
+                                const relTitle = servicePagesContent[rel]?.title ?? rel;
+                                return (
+                                  <label key={rel} className="flex items-center gap-2 text-[13px] text-white/70">
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => {
+                                        const next = checked
+                                          ? page.relatedSlugs.filter((s) => s !== rel)
+                                          : [...page.relatedSlugs, rel];
+                                        patchServicePage(slug, { relatedSlugs: next });
+                                      }}
+                                      className="accent-[#1857EC]"
+                                    />
+                                    {relTitle}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {seedMeta && (
+                            <p className="text-[11px] text-white/30">
+                              Category stays {seedMeta.category}. URL stays {livePath}.
+                            </p>
+                          )}
                         </div>
                       )}
                     </Card>
                   );
                 })}
-                <SectionTitle
-                  title="Other service pages"
-                  sub="These URLs are not one of the six listing cards. You can still edit their Google title and description. Slugs stay frozen."
-                />
-                {servicePages
-                  .filter((page) => !Object.values(CMS_SERVICE_SLUGS).includes(page.slug))
-                  .map((page) => {
-                    const pageSeo = servicePagesSeo[page.slug] ?? { seoTitle: "", seoDescription: "" };
-                    return (
-                      <Card key={page.slug} className="space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-semibold text-white/80">{page.title}</h3>
-                          <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">/services/{page.slug}</span>
-                        </div>
-                        <Field
-                          label="SEO title"
-                          value={pageSeo.seoTitle}
-                          onChange={(v) => {
-                            setServicePagesSeo((p) => ({ ...p, [page.slug]: { ...pageSeo, ...p[page.slug], seoTitle: v } }));
-                            markUnsaved();
-                          }}
-                          hint="Browser tab, Google title, and the H1 on this page."
-                        />
-                        <Field
-                          label="SEO description"
-                          value={pageSeo.seoDescription}
-                          textarea
-                          onChange={(v) => {
-                            setServicePagesSeo((p) => ({ ...p, [page.slug]: { ...pageSeo, ...p[page.slug], seoDescription: v } }));
-                            markUnsaved();
-                          }}
-                          hint="Meta description and Open Graph description."
-                        />
-                      </Card>
-                    );
-                  })}
               </>
             )}
 

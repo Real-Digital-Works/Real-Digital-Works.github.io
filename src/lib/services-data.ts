@@ -4,12 +4,22 @@
 // so each page stays unique without inventing SLAs, rankings, or case studies.
 
 import {
+  SERVICE_CATEGORIES,
+  isServiceCategory,
   servicePagesContent as cmsServicePagesContent,
+  servicePagesList as cmsServicePagesList,
   servicePagesSeo as cmsServicePagesSeo,
+  services as listingSeed,
+  uniqueServiceSlug,
+  slugifyServiceTitle,
   type CmsServicePage,
+  type CmsServiceRecord,
+  type Service,
+  type ServiceCategory,
   type ServicePagesCmsMap,
   type ServicePagesSeoMap,
 } from "@/lib/content";
+import { CMS_SERVICE_SLUGS } from "@/lib/cms-services";
 
 export type ServiceEntry = {
   slug: string;
@@ -1323,11 +1333,19 @@ const seedServicePages: ServiceEntry[] = [
 ];
 
 export const SERVICE_PAGE_SLUGS = seedServicePages.map((s) => s.slug);
+export const LIVE_SERVICE_SLUGS = new Set(SERVICE_PAGE_SLUGS);
+
+function listingCardForSlug(slug: string): Service | undefined {
+  const id = Object.entries(CMS_SERVICE_SLUGS).find(([, mapped]) => mapped === slug)?.[0];
+  if (!id) return undefined;
+  return listingSeed.find((card) => card.id === id);
+}
 
 function toCmsPage(page: ServiceEntry): CmsServicePage {
+  const listing = listingCardForSlug(page.slug);
   return {
     title: page.title,
-    from: page.from,
+    from: listing?.from ?? page.from,
     intro: page.intro,
     overview: page.overview,
     whatsIncluded: page.whatsIncluded,
@@ -1337,11 +1355,33 @@ function toCmsPage(page: ServiceEntry): CmsServicePage {
     seoTitle: page.seoTitle,
     seoDescription: page.seoDescription,
     keywords: page.keywords ?? [],
+    listingTitle: listing?.title ?? page.title,
+    summary: listing?.summary ?? page.intro,
+    detail: listing?.detail ?? "",
+    category: page.category,
+    showOnHome: Boolean(listing),
+  };
+}
+
+function toCmsRecord(page: ServiceEntry): CmsServiceRecord {
+  const cms = toCmsPage(page);
+  return {
+    ...cms,
+    slug: page.slug,
+    category: page.category,
+    listingTitle: cms.listingTitle ?? page.title,
+    summary: cms.summary ?? page.intro,
+    detail: cms.detail ?? "",
+    showOnHome: Boolean(cms.showOnHome),
   };
 }
 
 export function seedCmsServicePages(): ServicePagesCmsMap {
   return Object.fromEntries(seedServicePages.map((s) => [s.slug, toCmsPage(s)]));
+}
+
+export function seedServicePagesList(): CmsServiceRecord[] {
+  return seedServicePages.map(toCmsRecord);
 }
 
 function pickStr(value: string | undefined, fallback: string): string {
@@ -1352,88 +1392,222 @@ function pickList<T>(value: T[] | undefined, fallback: T[]): T[] {
   return Array.isArray(value) ? value : fallback;
 }
 
-export function mergeServicePagesCms(
-  fromFs?: Partial<Record<string, Partial<CmsServicePage>>>,
-  seoFallback?: ServicePagesSeoMap,
-): ServicePagesCmsMap {
-  const defaults = seedCmsServicePages();
-  const merged: ServicePagesCmsMap = {};
-  for (const slug of SERVICE_PAGE_SLUGS) {
-    const cms = fromFs?.[slug];
-    const seo = seoFallback?.[slug];
-    const seed = defaults[slug];
-    merged[slug] = {
-      title: pickStr(cms?.title, seed.title),
-      from: pickStr(cms?.from, seed.from),
-      intro: pickStr(cms?.intro, seed.intro),
-      overview: pickStr(cms?.overview, seed.overview),
-      whatsIncluded: pickList(cms?.whatsIncluded, seed.whatsIncluded),
-      process: pickList(cms?.process, seed.process),
-      faq: pickList(cms?.faq, seed.faq),
-      relatedSlugs: pickList(cms?.relatedSlugs, seed.relatedSlugs).filter((s) =>
-        SERVICE_PAGE_SLUGS.includes(s),
-      ),
-      seoTitle: pickStr(cms?.seoTitle, pickStr(seo?.seoTitle, seed.seoTitle)),
-      seoDescription: pickStr(cms?.seoDescription, pickStr(seo?.seoDescription, seed.seoDescription)),
-      keywords: pickList(cms?.keywords, pickList(seo?.keywords, seed.keywords)),
-    };
-  }
-  return merged;
+function normalizeServiceRecord(
+  item: Partial<CmsServiceRecord> & { slug?: string },
+  seedBySlug: Map<string, CmsServiceRecord>,
+  map?: Partial<Record<string, Partial<CmsServicePage>>>,
+  seo?: ServicePagesSeoMap,
+): CmsServiceRecord {
+  const slugHint = pickStr(item.slug, "");
+  const seed = seedBySlug.get(slugHint);
+  const cms = slugHint ? map?.[slugHint] : undefined;
+  const seoRow = slugHint ? seo?.[slugHint] : undefined;
+  const category: ServiceCategory = isServiceCategory(item.category)
+    ? item.category
+    : isServiceCategory(cms?.category)
+      ? cms.category
+      : (seed?.category ?? "Build");
+  const relatedSource = pickList(
+    item.relatedSlugs,
+    pickList(cms?.relatedSlugs, seed?.relatedSlugs ?? []),
+  );
+
+  return {
+    slug: slugifyServiceTitle(pickStr(item.slug, seed?.slug ?? "service")),
+    category,
+    title: pickStr(item.title, pickStr(cms?.title, seed?.title ?? "New service")),
+    from: pickStr(item.from, pickStr(cms?.from, seed?.from ?? "")),
+    listingTitle: pickStr(
+      item.listingTitle,
+      pickStr(cms?.listingTitle, seed?.listingTitle ?? seed?.title ?? ""),
+    ),
+    summary: pickStr(item.summary, pickStr(cms?.summary, seed?.summary ?? "")),
+    detail: pickStr(item.detail, pickStr(cms?.detail, seed?.detail ?? "")),
+    showOnHome: typeof item.showOnHome === "boolean"
+      ? item.showOnHome
+      : typeof cms?.showOnHome === "boolean"
+        ? cms.showOnHome
+        : Boolean(seed?.showOnHome),
+    intro: pickStr(item.intro, pickStr(cms?.intro, seed?.intro ?? "")),
+    overview: pickStr(item.overview, pickStr(cms?.overview, seed?.overview ?? "")),
+    whatsIncluded: pickList(item.whatsIncluded, pickList(cms?.whatsIncluded, seed?.whatsIncluded ?? [])),
+    process: pickList(item.process, pickList(cms?.process, seed?.process ?? [])),
+    faq: pickList(item.faq, pickList(cms?.faq, seed?.faq ?? [])),
+    relatedSlugs: relatedSource,
+    seoTitle: pickStr(
+      item.seoTitle,
+      pickStr(cms?.seoTitle, pickStr(seoRow?.seoTitle, seed?.seoTitle ?? "")),
+    ),
+    seoDescription: pickStr(
+      item.seoDescription,
+      pickStr(cms?.seoDescription, pickStr(seoRow?.seoDescription, seed?.seoDescription ?? "")),
+    ),
+    keywords: pickList(
+      item.keywords,
+      pickList(cms?.keywords, pickList(seoRow?.keywords, seed?.keywords ?? [])),
+    ),
+  };
 }
 
-function applyCmsOverlays(pages: ServiceEntry[]): ServiceEntry[] {
-  const cms = mergeServicePagesCms(cmsServicePagesContent, cmsServicePagesSeo);
-  return pages.map((page) => {
-    const over = cms[page.slug];
-    if (!over) return page;
-    return {
-      ...page,
-      title: over.title,
-      from: over.from,
-      intro: over.intro,
-      overview: over.overview,
-      whatsIncluded: over.whatsIncluded,
-      process: over.process,
-      faq: over.faq,
-      relatedSlugs: over.relatedSlugs,
-      seoTitle: over.seoTitle,
-      seoDescription: over.seoDescription,
-      keywords: over.keywords,
-    };
+function knownSlugs(records: CmsServiceRecord[]): string[] {
+  return records.map((r) => r.slug).filter(Boolean);
+}
+
+/**
+ * Merge CMS services. An empty array is a real value (user deleted every item).
+ * Seed is used only when the list is missing entirely, not when it is empty.
+ */
+export function mergeServicePagesList(
+  list?: CmsServiceRecord[] | null,
+  map?: Partial<Record<string, Partial<CmsServicePage>>>,
+  seo?: ServicePagesSeoMap,
+): CmsServiceRecord[] {
+  const seed = seedServicePagesList();
+  const seedBySlug = new Map(seed.map((s) => [s.slug, s]));
+
+  const source: Partial<CmsServiceRecord>[] = Array.isArray(list)
+    ? list
+    : seed.map((row) => {
+        const overlay = map?.[row.slug];
+        return overlay ? { ...row, ...overlay, slug: row.slug } : row;
+      });
+
+  const seen: string[] = [];
+  const records = source.map((item, index) => {
+    const normalized = normalizeServiceRecord(item, seedBySlug, map, seo);
+    normalized.slug = uniqueServiceSlug(
+      normalized.slug || normalized.title || "service",
+      seen,
+    );
+    seen.push(normalized.slug);
+    return normalized;
   });
+
+  const allowed = new Set(knownSlugs(records));
+  return records.map((row) => ({
+    ...row,
+    relatedSlugs: row.relatedSlugs.filter((rel) => rel !== row.slug && allowed.has(rel)),
+  }));
 }
 
-export const servicePages: ServiceEntry[] = applyCmsOverlays(seedServicePages);
-
-export function seedServicePageSeo(): ServicePagesSeoMap {
+export function recordsToCmsMap(list: CmsServiceRecord[]): ServicePagesCmsMap {
   return Object.fromEntries(
-    seedServicePages.map((s) => [
-      s.slug,
-      { seoTitle: s.seoTitle, seoDescription: s.seoDescription, keywords: s.keywords ?? [] },
-    ]),
+    list.map(({ slug, ...page }) => [slug, page]),
   );
 }
 
-export function mergeServicePagesSeo(fromFs?: ServicePagesSeoMap): ServicePagesSeoMap {
-  const pages = mergeServicePagesCms(undefined, fromFs);
+export function recordsToSeoMap(list: CmsServiceRecord[]): ServicePagesSeoMap {
   return Object.fromEntries(
-    SERVICE_PAGE_SLUGS.map((slug) => [
-      slug,
+    list.map((row) => [
+      row.slug,
       {
-        seoTitle: pages[slug].seoTitle,
-        seoDescription: pages[slug].seoDescription,
-        keywords: pages[slug].keywords,
+        seoTitle: row.seoTitle,
+        seoDescription: row.seoDescription,
+        keywords: row.keywords,
       },
     ]),
   );
 }
 
-export const serviceCategories = [
-  { label: "Build", slugs: ["web-design", "ecommerce", "web-applications", "landing-pages"] },
-  { label: "Grow", slugs: ["seo", "google-ads", "social-media", "email-marketing"] },
-  { label: "Create", slugs: ["branding", "3d-animation", "photography", "copywriting"] },
-  { label: "Support", slugs: ["hosting", "training", "ai-automation", "consultancy"] },
-] as const;
+export function recordsToListingServices(list: CmsServiceRecord[]): Service[] {
+  return list
+    .filter((row) => row.showOnHome)
+    .map((row) => ({
+      id: row.slug,
+      title: row.listingTitle.trim() || row.title,
+      from: row.from,
+      summary: row.summary,
+      detail: row.detail,
+    }));
+}
+
+export function recordToServiceEntry(row: CmsServiceRecord): ServiceEntry {
+  return {
+    slug: row.slug,
+    category: row.category,
+    title: row.title,
+    from: row.from,
+    seoTitle: row.seoTitle,
+    seoDescription: row.seoDescription,
+    keywords: row.keywords,
+    intro: row.intro,
+    overview: row.overview,
+    whatsIncluded: row.whatsIncluded,
+    process: row.process,
+    faq: row.faq,
+    relatedSlugs: row.relatedSlugs,
+  };
+}
+
+export function createBlankService(existingSlugs: string[]): CmsServiceRecord {
+  const title = "New service";
+  return {
+    slug: uniqueServiceSlug(title, existingSlugs),
+    category: "Build",
+    title,
+    listingTitle: title,
+    from: "From £",
+    summary: "",
+    detail: "",
+    showOnHome: false,
+    intro: "",
+    overview: "",
+    whatsIncluded: [{ title: "", description: "" }],
+    process: [
+      { title: "Discover", description: "" },
+      { title: "Scope", description: "" },
+      { title: "Deliver", description: "" },
+      { title: "Review", description: "" },
+      { title: "Handover", description: "" },
+    ],
+    faq: [{ q: "", a: "" }],
+    relatedSlugs: [],
+    seoTitle: "",
+    seoDescription: "",
+    keywords: [],
+  };
+}
+
+/** @deprecated Use mergeServicePagesList — kept for older admin/state callers */
+export function mergeServicePagesCms(
+  fromFs?: Partial<Record<string, Partial<CmsServicePage>>>,
+  seoFallback?: ServicePagesSeoMap,
+): ServicePagesCmsMap {
+  return recordsToCmsMap(
+    mergeServicePagesList(undefined, fromFs, seoFallback),
+  );
+}
+
+export const cmsServiceRecords: CmsServiceRecord[] = mergeServicePagesList(
+  cmsServicePagesList,
+  cmsServicePagesContent,
+  cmsServicePagesSeo,
+);
+
+export const servicePages: ServiceEntry[] = cmsServiceRecords.map(recordToServiceEntry);
+
+export const homeServices: Service[] = recordsToListingServices(cmsServiceRecords);
+
+export function seedServicePageSeo(): ServicePagesSeoMap {
+  return recordsToSeoMap(seedServicePagesList());
+}
+
+export function mergeServicePagesSeo(fromFs?: ServicePagesSeoMap): ServicePagesSeoMap {
+  return recordsToSeoMap(mergeServicePagesList(undefined, undefined, fromFs));
+}
+
+export function serviceCategoriesFrom(pages: ServiceEntry[]): { label: string; slugs: string[] }[] {
+  const cats: { label: string; slugs: string[] }[] = SERVICE_CATEGORIES.map((label) => ({
+    label,
+    slugs: pages.filter((p) => p.category === label).map((p) => p.slug),
+  })).filter((c) => c.slugs.length > 0);
+  const known = new Set(cats.flatMap((c) => c.slugs));
+  const extra = pages.filter((p) => !known.has(p.slug)).map((p) => p.slug);
+  if (extra.length) cats.push({ label: "More", slugs: extra });
+  return cats;
+}
+
+export const serviceCategories = serviceCategoriesFrom(servicePages);
 
 export function getServiceBySlug(slug: string): ServiceEntry | undefined {
   return servicePages.find((s) => s.slug === slug);

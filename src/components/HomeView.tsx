@@ -11,7 +11,8 @@ import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
 import { RichContent } from "@/components/RichContent";
 import { StudioChat } from "@/components/StudioChat";
-import { process, projects, proof, services, stack, hero } from "@/lib/content";
+import { process, projects, proof, stack, hero } from "@/lib/content";
+import { homeServices } from "@/lib/services-data";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -227,7 +228,7 @@ export function HomeView() {
 
       <Marquee items={stack} />
 
-      <section ref={pin} className="relative z-0 hidden overflow-x-clip md:block">
+      <section ref={pin} className={`relative z-0 overflow-x-clip ${homeServices.length > 0 ? "hidden md:block" : "hidden"}`}>
         <div className="flex h-[calc(100svh-64px)] flex-col justify-center overflow-hidden">
           <div className="wrap mb-6 flex items-end justify-between gap-6">
             <div>
@@ -240,14 +241,14 @@ export function HomeView() {
             </div>
             <p className="font-mono text-[13px] text-fg/40">
               <span ref={indexEl}>01</span>
-              <span className="text-fg/20"> / 06</span>
+              <span className="text-fg/20"> / {String(homeServices.length).padStart(2, "0")}</span>
             </p>
           </div>
           <div ref={track} className="flex w-max items-center gap-6 px-6 will-change-transform md:px-16">
-            {services.map((service, i) => (
+            {homeServices.map((service, i) => (
               <Link
                 key={service.id}
-                href="/services"
+                href={`/services/${service.id}`}
                 className="glass offer-card flex h-[min(420px,56vh)] w-[min(84vw,540px)] shrink-0 flex-col justify-between rounded-[28px] p-8 md:p-10"
               >
                 <div className="flex items-start justify-between">
@@ -285,15 +286,15 @@ export function HomeView() {
       </section>
 
       {/* Mobile vertical stack — replaces GSAP horizontal scroll on small screens */}
-      <section className="border-t border-line py-12 md:hidden">
+      <section className={`border-t border-line py-12 ${homeServices.length > 0 ? "md:hidden" : "hidden"}`}>
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">What we do</p>
           <h2 className="display mt-2 text-[28px]">One line at a time.</h2>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {services.map((service, i) => (
+            {homeServices.map((service, i) => (
               <Link
                 key={service.id}
-                href="/services"
+                href={`/services/${service.id}`}
                 className="glass flex flex-col gap-4 rounded-[20px] p-6"
               >
                 <div className="flex items-center justify-between">

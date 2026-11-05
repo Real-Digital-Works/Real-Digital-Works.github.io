@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { nav } from "@/lib/content";
+import { navItems, type NavItem } from "@/lib/content";
+
+function flattenNav(items: NavItem[]): { label: string; href: string }[] {
+  const out: { label: string; href: string }[] = [];
+  for (const item of items) {
+    if (item.hidden) continue;
+    out.push({ label: item.label, href: item.href });
+    if (item.children) out.push(...flattenNav(item.children));
+  }
+  return out;
+}
 
 export function CommandK() {
   const [open, setOpen] = useState(false);
@@ -33,7 +43,7 @@ export function CommandK() {
     };
   }, []);
 
-  const items = nav.filter((item) =>
+  const items = flattenNav(navItems).filter((item) =>
     item.label.toLowerCase().includes(q.toLowerCase()),
   );
 

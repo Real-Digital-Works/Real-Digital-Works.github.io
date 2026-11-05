@@ -36,20 +36,26 @@ import {
 } from "@/lib/cms-versions";
 import content, {
   DEFAULT_NAV_ITEMS,
+  appendNavChild,
   createBlankProject,
+  hydrateServicesNavChildren,
+  mergeNavItems,
   mergeProjects,
   mergeWorkPage,
   mergeWorkSeo,
+  navContainsHref,
+  removeNavHrefs,
+  rewriteNavHrefs,
   slugifyProjectTitle,
+  slugifyServiceTitle,
   uniqueProjectSlug,
+  uniqueServiceSlug,
+  type CmsServiceRecord,
 } from "@/lib/content";
 import type {
   SiteInfo,
   PageSeo,
   HeroContent,
-  Service,
-  CmsServicePage,
-  ServicePagesCmsMap,
   FaqItem,
   Package,
   Project,
@@ -60,10 +66,16 @@ import type {
   Discipline,
   NavItem,
 } from "@/lib/content";
-import { publicPathForCmsService } from "@/lib/cms-services";
-import { mergeServicePagesCms, SERVICE_PAGE_SLUGS, servicePages } from "@/lib/services-data";
+import {
+  createBlankService,
+  mergeServicePagesList,
+  recordsToCmsMap,
+  recordsToListingServices,
+  recordsToSeoMap,
+} from "@/lib/services-data";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { NavEditor } from "@/components/NavEditor";
+import { NavEditor, type NavPageOption } from "@/components/NavEditor";
+import { ServiceEditor } from "@/components/ServiceEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -314,9 +326,8 @@ export default function AdminDashboard() {
   const [workPageData, setWorkPageData] = useState<WorkPageContent>(() =>
     mergeWorkPage(content.workPage),
   );
-  const [servicesData, setServicesData] = useState<Service[]>(content.services);
-  const [servicePagesContent, setServicePagesContent] = useState<ServicePagesCmsMap>(() =>
-    mergeServicePagesCms(content.servicePagesContent, content.servicePagesSeo)
+  const [servicePagesList, setServicePagesList] = useState<CmsServiceRecord[]>(() =>
+    mergeServicePagesList(content.servicePagesList, content.servicePagesContent, content.servicePagesSeo),
   );
   const [openServiceSlug, setOpenServiceSlug] = useState<string | null>(null);
   const [faqData, setFaqData] = useState<FaqItem[]>(content.faq);
@@ -326,10 +337,11 @@ export default function AdminDashboard() {
   );
   const [processData, setProcessData] = useState<ProcessStep[]>(content.process);
   const [disciplinesData, setDisciplinesData] = useState<Discipline[]>(content.disciplines);
-  const [navData, setNavData] = useState<NavItem[]>(
-    content.navItems && content.navItems.length > 0
-      ? content.navItems
-      : DEFAULT_NAV_ITEMS
+  const [navData, setNavData] = useState<NavItem[]>(() =>
+    hydrateServicesNavChildren(
+      mergeNavItems(content.navItems),
+      mergeServicePagesList(content.servicePagesList, content.servicePagesContent, content.servicePagesSeo),
+    ),
   );
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
@@ -372,20 +384,21 @@ export default function AdminDashboard() {
     }
     if (d.hero) setHeroData(d.hero as HeroContent);
     setWorkPageData(mergeWorkPage(d.workPage as Partial<WorkPageContent> | undefined));
-    if (d.services) setServicesData(d.services as Service[]);
-    setServicePagesContent(
-      mergeServicePagesCms(
-        d.servicePagesContent as ServicePagesCmsMap | undefined,
-        d.servicePagesSeo as Parameters<typeof mergeServicePagesCms>[1],
-      ),
+    const nextServices = mergeServicePagesList(
+      d.servicePagesList as CmsServiceRecord[] | undefined,
+      d.servicePagesContent as Parameters<typeof mergeServicePagesList>[1],
+      d.servicePagesSeo as Parameters<typeof mergeServicePagesList>[2],
     );
+    setServicePagesList(nextServices);
     if (d.faq) setFaqData(d.faq as FaqItem[]);
     if (d.packages) setPackagesData(d.packages as Package[]);
     if (Array.isArray(d.projects)) setProjectsData(mergeProjects(d.projects as Project[]));
     if (d.process) setProcessData(d.process as ProcessStep[]);
     if (d.disciplines) setDisciplinesData(d.disciplines as Discipline[]);
-    if (Array.isArray(d.navItems) && d.navItems.length > 0) {
-      setNavData(d.navItems as NavItem[]);
+    if (Array.isArray(d.navItems)) {
+      setNavData(hydrateServicesNavChildren(mergeNavItems(d.navItems as NavItem[]), nextServices));
+    } else {
+      setNavData(hydrateServicesNavChildren(DEFAULT_NAV_ITEMS, nextServices));
     }
   }, []);
 
@@ -417,12 +430,103 @@ export default function AdminDashboard() {
   // ── Mark unsaved on any edit ──
   const markUnsaved = useCallback(() => setStatus("unsaved"), []);
 
-  const patchServicePage = useCallback(
-    (slug: string, patch: Partial<CmsServicePage>) => {
-      setServicePagesContent((p) => ({
-        ...p,
-        [slug]: { ...p[slug], ...patch },
-      }));
+  const patchService = useCallback(
+    (index: number, patch: Partial<CmsServiceRecord>) => {
+      const current = servicePagesList[index];
+      if (!current) return;
+      const next = servicePagesList.map((row) => ({ ...row, relatedSlugs: [...row.relatedSlugs] }));
+      const merged: CmsServiceRecord = { ...current, ...patch };
+      const slugs = next.map((item) => item.slug);
+      const previousSlug = current.slug;
+      if (patch.slug !== undefined) {
+        merged.slug = uniqueServiceSlug(patch.slug, slugs, index);
+      } else if (patch.title !== undefined) {
+        const previousAuto = slugifyServiceTitle(current.title);
+        if (!current.slug || current.slug === previousAuto) {
+          merged.slug = uniqueServiceSlug(patch.title, slugs, index);
+        }
+        if (!current.listingTitle || current.listingTitle === current.title) {
+          merged.listingTitle = patch.title;
+        }
+      }
+      if (merged.slug !== previousSlug) {
+        for (let i = 0; i < next.length; i += 1) {
+          if (i === index) continue;
+          next[i].relatedSlugs = next[i].relatedSlugs.map((rel) =>
+            rel === previousSlug ? merged.slug : rel,
+          );
+        }
+        setNavData((nav) =>
+          rewriteNavHrefs(nav, `/services/${previousSlug}`, `/services/${merged.slug}`),
+        );
+        setOpenServiceSlug(merged.slug);
+      }
+      next[index] = merged;
+      setServicePagesList(next);
+      markUnsaved();
+    },
+    [markUnsaved, servicePagesList],
+  );
+
+  const addService = useCallback(() => {
+    const blank = createBlankService(servicePagesList.map((item) => item.slug));
+    setServicePagesList((list) => [...list, blank]);
+    setOpenServiceSlug(blank.slug);
+    const href = `/services/${blank.slug}`;
+    if (
+      !navContainsHref(navData, href) &&
+      confirm(`Add "${blank.title}" to the Services menu? You can still pick the page later from Navigation.`)
+    ) {
+      setNavData((nav) =>
+        appendNavChild(nav, "/services", {
+          id: `svc-${blank.slug}`,
+          label: blank.title,
+          href,
+        }),
+      );
+    }
+    markUnsaved();
+  }, [markUnsaved, navData, servicePagesList]);
+
+  const removeService = useCallback(
+    (index: number) => {
+      const item = servicePagesList[index];
+      const label = item?.title || item?.slug || "this service";
+      if (
+        !confirm(
+          `Remove "${label}"? After you save and deploy it disappears from /services, /services/{slug}, the sitemap, the contact form, related-service pickers, and matching nav links.`,
+        )
+      ) {
+        return;
+      }
+      const slug = item?.slug;
+      setServicePagesList((list) =>
+        list
+          .filter((_, i) => i !== index)
+          .map((row) => ({
+            ...row,
+            relatedSlugs: slug ? row.relatedSlugs.filter((rel) => rel !== slug) : row.relatedSlugs,
+          })),
+      );
+      if (slug) {
+        setNavData((nav) => removeNavHrefs(nav, `/services/${slug}`));
+        setOpenServiceSlug((open) => (open === slug ? null : open));
+      }
+      markUnsaved();
+    },
+    [markUnsaved, servicePagesList],
+  );
+
+  const moveService = useCallback(
+    (index: number, dir: -1 | 1) => {
+      setServicePagesList((list) => {
+        const target = index + dir;
+        if (target < 0 || target >= list.length) return list;
+        const next = [...list];
+        const [row] = next.splice(index, 1);
+        next.splice(target, 0, row);
+        return next;
+      });
       markUnsaved();
     },
     [markUnsaved],
@@ -564,18 +668,10 @@ export default function AdminDashboard() {
       seo: seoData,
       hero: heroData,
       workPage: workPageData,
-      services: servicesData,
-      servicePagesContent,
-      servicePagesSeo: Object.fromEntries(
-        SERVICE_PAGE_SLUGS.map((slug) => [
-          slug,
-          {
-            seoTitle: servicePagesContent[slug]?.seoTitle ?? "",
-            seoDescription: servicePagesContent[slug]?.seoDescription ?? "",
-            keywords: servicePagesContent[slug]?.keywords ?? [],
-          },
-        ]),
-      ),
+      services: recordsToListingServices(servicePagesList),
+      servicePagesList,
+      servicePagesContent: recordsToCmsMap(servicePagesList),
+      servicePagesSeo: recordsToSeoMap(servicePagesList),
       faq: faqData,
       packages: packagesData,
       projects: projectsData,
@@ -708,6 +804,89 @@ export default function AdminDashboard() {
       console.error(e);
       setDeployStatus("error");
     }
+  }
+
+  const navPageOptions: NavPageOption[] = [
+    { group: "Site", label: "Home", href: "/" },
+    { group: "Site", label: "Services", href: "/services" },
+    { group: "Site", label: "Work", href: "/work" },
+    { group: "Site", label: "Pricing", href: "/pricing" },
+    { group: "Site", label: "Blog", href: "/blog" },
+    { group: "Site", label: "About", href: "/about" },
+    { group: "Site", label: "Contact", href: "/contact" },
+    ...servicePagesList.map((svc) => ({
+      group: "Services",
+      label: svc.title || svc.slug,
+      href: `/services/${svc.slug}`,
+    })),
+    ...projectsData.filter((p) => p.slug).map((proj) => ({
+      group: "Work",
+      label: proj.title || proj.slug,
+      href: `/work/${proj.slug}`,
+    })),
+    ...blogsData.map((post) => ({
+      group: "Blog",
+      label: post.title || post.slug,
+      href: `/blog/${post.slug}`,
+    })),
+    ...pagesData.map((pg) => ({
+      group: "Pages",
+      label: pg.title || pg.slug,
+      href: `/${pg.slug}`,
+    })),
+  ];
+
+  function editPageFromHref(href: string) {
+    if (href === "/" || href === "/home") {
+      setTab("hero");
+      return;
+    }
+    if (href === "/services") {
+      setTab("services");
+      setOpenServiceSlug(null);
+      return;
+    }
+    const serviceMatch = href.match(/^\/services\/([^/]+)\/?$/);
+    if (serviceMatch) {
+      setTab("services");
+      setOpenServiceSlug(serviceMatch[1]);
+      return;
+    }
+    if (href === "/work") {
+      setTab("work");
+      return;
+    }
+    const workMatch = href.match(/^\/work\/([^/]+)\/?$/);
+    if (workMatch) {
+      setTab("work");
+      return;
+    }
+    if (href === "/pricing") {
+      setTab("pricing");
+      return;
+    }
+    if (href === "/about") {
+      setTab("about");
+      return;
+    }
+    if (href === "/contact") {
+      setTab("site");
+      return;
+    }
+    if (href === "/blog" || href.startsWith("/blog/")) {
+      const blogSlug = href.startsWith("/blog/") ? href.slice("/blog/".length).replace(/\/$/, "") : "";
+      const post = blogSlug ? blogsData.find((b) => b.slug === blogSlug) : null;
+      setTab("blog");
+      setEditingBlog(post ?? null);
+      return;
+    }
+    const page = pagesData.find((pg) => `/${pg.slug}` === href);
+    if (page) {
+      setTab("pages");
+      setEditingPage(page);
+      return;
+    }
+    setTab("nav");
   }
 
   if (loading) {
@@ -900,8 +1079,8 @@ export default function AdminDashboard() {
             {tab === "services" && (
               <>
                 <SectionTitle
-                  title="A — Listing cards"
-                  sub="Homepage offer strip and the /services grid only. These six cards do not edit the full individual pages — use section B below."
+                  title="Services"
+                  sub="Add, remove, or update services. Each item is a listing card and a public /services/{slug} page. Empty list stays empty — seed pages are not resurrected."
                 />
                 <Card className="space-y-4">
                   <h3 className="text-sm font-semibold text-white/80">/services listing page SEO</h3>
@@ -927,338 +1106,15 @@ export default function AdminDashboard() {
                     onChange={(v) => { setSeoData((p) => ({ ...p, services: { ...p.services, keywords: v.split(",").map((k) => k.trim()).filter(Boolean) } })); markUnsaved(); }}
                   />
                 </Card>
-                {servicesData.map((svc, i) => {
-                  const livePath = publicPathForCmsService(svc.id);
-                  return (
-                    <Card key={svc.id} className="space-y-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-semibold text-white/80">{svc.title}</h3>
-                        <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-white/40">{livePath ?? svc.id}</span>
-                      </div>
-                      <Field
-                        label="Card title"
-                        value={svc.title}
-                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], title: v }; setServicesData(s); markUnsaved(); }}
-                        hint="Homepage offer cards and the /services listing heading only."
-                      />
-                      <Field
-                        label="Starting from (price)"
-                        value={svc.from}
-                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], from: v }; setServicesData(s); markUnsaved(); }}
-                        hint="Price shown on homepage and the /services listing card."
-                      />
-                      <Field
-                        label="Short summary (plain text)"
-                        value={svc.summary}
-                        textarea
-                        onChange={(v) => { const s = [...servicesData]; s[i] = { ...s[i], summary: v }; setServicesData(s); markUnsaved(); }}
-                        hint="Homepage and /services listing card."
-                      />
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Detail description</label>
-                        <p className="text-[11px] text-white/30">
-                          Longer copy on the /services listing card only — not the individual page overview.
-                        </p>
-                        <RichTextEditor
-                          content={svc.detail}
-                          onChange={(html) => { const s = [...servicesData]; s[i] = { ...s[i], detail: html }; setServicesData(s); markUnsaved(); }}
-                          placeholder="Detailed description…"
-                          minHeight="140px"
-                        />
-                      </div>
-                    </Card>
-                  );
-                })}
-
-                <SectionTitle
-                  title="B — Individual service pages"
-                  sub="All 16 public URLs. Expand a page to edit its body and its own SEO. Slugs are frozen. Save & Deploy for changes to go live."
+                <ServiceEditor
+                  services={servicePagesList}
+                  openSlug={openServiceSlug}
+                  onOpen={setOpenServiceSlug}
+                  onPatch={patchService}
+                  onRemove={removeService}
+                  onMove={moveService}
+                  onAdd={addService}
                 />
-                {SERVICE_PAGE_SLUGS.map((slug) => {
-                  const page = servicePagesContent[slug];
-                  if (!page) return null;
-                  const livePath = `/services/${slug}`;
-                  const open = openServiceSlug === slug;
-                  const seedMeta = servicePages.find((s) => s.slug === slug);
-                  return (
-                    <Card key={slug} className="space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setOpenServiceSlug(open ? null : slug)}
-                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                        >
-                          <span className="text-white/35">{open ? "▾" : "▸"}</span>
-                          <span>
-                            <span className="block text-sm font-semibold text-white/80">{page.title}</span>
-                            <span className="font-mono text-[11px] text-white/35">{livePath}</span>
-                          </span>
-                        </button>
-                        <a
-                          href={livePath}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full bg-white/8 px-2.5 py-0.5 text-[11px] text-[#60a5fa] hover:bg-white/12"
-                        >
-                          Open {livePath}
-                        </a>
-                      </div>
-                      {open && (
-                        <div className="space-y-6 border-t border-white/8 pt-4">
-                          <div className="space-y-4 rounded-xl border border-[#1857EC]/25 bg-[#1857EC]/8 p-4">
-                            <h4 className="text-sm font-semibold text-white/85">SEO for {livePath}</h4>
-                            <p className="text-[11px] text-white/40">
-                              Canonical stays {livePath}. The SEO title is also the public H1 (with the brand stripped if it is already in the string).
-                            </p>
-                            <Field
-                              label="SEO title (also the H1)"
-                              value={page.seoTitle}
-                              onChange={(v) => patchServicePage(slug, { seoTitle: v })}
-                              hint="50–60 characters. Browser tab, Google title, Open Graph title, and the large heading on this page."
-                            />
-                            <Field
-                              label="Meta description"
-                              value={page.seoDescription}
-                              textarea
-                              onChange={(v) => patchServicePage(slug, { seoDescription: v })}
-                              hint="130–160 characters. Meta description and Open Graph description."
-                            />
-                            <Field
-                              label="Keywords (comma separated)"
-                              value={(page.keywords ?? []).join(", ")}
-                              onChange={(v) =>
-                                patchServicePage(slug, {
-                                  keywords: v.split(",").map((k) => k.trim()).filter(Boolean),
-                                })
-                              }
-                              hint="Used in meta keywords, same as other page SEO editors."
-                            />
-                          </div>
-
-                          <Field
-                            label="Page name"
-                            value={page.title}
-                            onChange={(v) => patchServicePage(slug, { title: v })}
-                            hint="Short name in related-service cards and the mega menu. Not the H1 — that is the SEO title."
-                          />
-                          <Field
-                            label="Starting from (price)"
-                            value={page.from}
-                            onChange={(v) => patchServicePage(slug, { from: v })}
-                            hint={`Shown next to the quote buttons on ${livePath}.`}
-                          />
-                          <Field
-                            label="Intro"
-                            value={page.intro}
-                            textarea
-                            onChange={(v) => patchServicePage(slug, { intro: v })}
-                            hint="Paragraph under the H1 on the individual page."
-                          />
-                          <Field
-                            label="Overview"
-                            value={page.overview}
-                            textarea
-                            onChange={(v) => patchServicePage(slug, { overview: v })}
-                            hint="“How we approach this” body on the individual page."
-                          />
-
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-white/80">Feature cards</h4>
-                            <p className="text-[11px] text-white/35">“What we can help with” — typically six cards.</p>
-                            {page.whatsIncluded.map((item, i) => (
-                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
-                                <div className="flex justify-between">
-                                  <span className="text-[11px] text-white/30">Card {i + 1}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      patchServicePage(slug, {
-                                        whatsIncluded: page.whatsIncluded.filter((_, idx) => idx !== i),
-                                      })
-                                    }
-                                    className="text-xs text-red-400/60 hover:text-red-400"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                                <Field
-                                  label="Title"
-                                  value={item.title}
-                                  onChange={(v) => {
-                                    const next = [...page.whatsIncluded];
-                                    next[i] = { ...next[i], title: v };
-                                    patchServicePage(slug, { whatsIncluded: next });
-                                  }}
-                                />
-                                <Field
-                                  label="Body"
-                                  value={item.description}
-                                  textarea
-                                  onChange={(v) => {
-                                    const next = [...page.whatsIncluded];
-                                    next[i] = { ...next[i], description: v };
-                                    patchServicePage(slug, { whatsIncluded: next });
-                                  }}
-                                />
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                patchServicePage(slug, {
-                                  whatsIncluded: [...page.whatsIncluded, { title: "", description: "" }],
-                                })
-                              }
-                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
-                            >
-                              + Add feature card
-                            </button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-white/80">Process steps</h4>
-                            <p className="text-[11px] text-white/35">Discover → Scope → Deliver → Review → Handover on {livePath}.</p>
-                            {page.process.map((item, i) => (
-                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
-                                <div className="flex justify-between">
-                                  <span className="text-[11px] text-white/30">Step {String(i + 1).padStart(2, "0")}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      patchServicePage(slug, {
-                                        process: page.process.filter((_, idx) => idx !== i),
-                                      })
-                                    }
-                                    className="text-xs text-red-400/60 hover:text-red-400"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                                <Field
-                                  label="Title"
-                                  value={item.title}
-                                  onChange={(v) => {
-                                    const next = [...page.process];
-                                    next[i] = { ...next[i], title: v };
-                                    patchServicePage(slug, { process: next });
-                                  }}
-                                />
-                                <Field
-                                  label="Body"
-                                  value={item.description}
-                                  textarea
-                                  onChange={(v) => {
-                                    const next = [...page.process];
-                                    next[i] = { ...next[i], description: v };
-                                    patchServicePage(slug, { process: next });
-                                  }}
-                                />
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                patchServicePage(slug, {
-                                  process: [...page.process, { title: "", description: "" }],
-                                })
-                              }
-                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
-                            >
-                              + Add process step
-                            </button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-semibold text-white/80">FAQs</h4>
-                            <p className="text-[11px] text-white/35">
-                              Visible FAQ section and the FAQ JSON-LD on this page stay in sync.
-                            </p>
-                            {page.faq.map((item, i) => (
-                              <div key={i} className="space-y-2 rounded-xl border border-white/8 p-3">
-                                <div className="flex justify-between">
-                                  <span className="text-[11px] text-white/30">FAQ {i + 1}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      patchServicePage(slug, {
-                                        faq: page.faq.filter((_, idx) => idx !== i),
-                                      })
-                                    }
-                                    className="text-xs text-red-400/60 hover:text-red-400"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                                <Field
-                                  label="Question"
-                                  value={item.q}
-                                  onChange={(v) => {
-                                    const next = [...page.faq];
-                                    next[i] = { ...next[i], q: v };
-                                    patchServicePage(slug, { faq: next });
-                                  }}
-                                />
-                                <Field
-                                  label="Answer"
-                                  value={item.a}
-                                  textarea
-                                  onChange={(v) => {
-                                    const next = [...page.faq];
-                                    next[i] = { ...next[i], a: v };
-                                    patchServicePage(slug, { faq: next });
-                                  }}
-                                />
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                patchServicePage(slug, {
-                                  faq: [...page.faq, { q: "", a: "" }],
-                                })
-                              }
-                              className="w-full rounded-xl border border-dashed border-white/15 py-3 text-sm text-white/40 hover:border-white/30"
-                            >
-                              + Add FAQ
-                            </button>
-                          </div>
-
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-semibold text-white/80">Related services</h4>
-                            <p className="text-[11px] text-white/35">Shown at the bottom of {livePath}. Slugs stay frozen.</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              {SERVICE_PAGE_SLUGS.filter((s) => s !== slug).map((rel) => {
-                                const checked = page.relatedSlugs.includes(rel);
-                                const relTitle = servicePagesContent[rel]?.title ?? rel;
-                                return (
-                                  <label key={rel} className="flex items-center gap-2 text-[13px] text-white/70">
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={() => {
-                                        const next = checked
-                                          ? page.relatedSlugs.filter((s) => s !== rel)
-                                          : [...page.relatedSlugs, rel];
-                                        patchServicePage(slug, { relatedSlugs: next });
-                                      }}
-                                      className="accent-[#1857EC]"
-                                    />
-                                    {relTitle}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          {seedMeta && (
-                            <p className="text-[11px] text-white/30">
-                              Category stays {seedMeta.category}. URL stays {livePath}.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })}
               </>
             )}
 
@@ -1524,18 +1380,21 @@ export default function AdminDashboard() {
               <>
                 <SectionTitle
                   title="Navigation"
-                  sub="Drag to reorder. Toggle the eye to hide without deleting. Click ▶ on any item to add sub-links."
+                  sub="Drag to reorder. Toggle the eye to hide without deleting. Click ▶ / sub to manage nested dropdowns. Pick an existing page or enter a custom path."
                 />
                 <Card>
                   <NavEditor
                     items={navData}
+                    pageOptions={navPageOptions}
                     onChange={(items) => { setNavData(items); markUnsaved(); }}
+                    onEditPage={editPageFromHref}
                   />
                 </Card>
                 <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/60 leading-relaxed space-y-2">
-                  <p><strong className="text-blue-300">Services item</strong> — automatically uses the 4-column mega menu on desktop and an accordion on mobile. You don&apos;t need to add sub-links to it manually.</p>
-                  <p><strong className="text-blue-300">Any other item with sub-links</strong> — shows a dropdown on desktop and an indented list on mobile.</p>
-                  <p><strong className="text-blue-300">Changes go live</strong> on the next "Save &amp; Deploy" — the header rebuilds with the new structure.</p>
+                  <p><strong className="text-blue-300">Services item</strong> — nested links become the desktop mega menu and the mobile accordion. When you add a service you can append one menu item; saving will not duplicate the whole list.</p>
+                  <p><strong className="text-blue-300">Any other item with nested links</strong> — shows a dropdown on desktop and an indented list on mobile.</p>
+                  <p><strong className="text-blue-300">Edit page</strong> — jumps to that page’s editor so you do not have to hunt tabs.</p>
+                  <p><strong className="text-blue-300">Changes go live</strong> on the next “Save &amp; Deploy” — the header rebuilds with the new structure.</p>
                 </div>
               </>
             )}

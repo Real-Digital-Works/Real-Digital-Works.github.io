@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { RichContent } from "@/components/RichContent";
-import { services, seo, faq, site } from "@/lib/content";
-import { publicPathForCmsService } from "@/lib/cms-services";
+import { seo, faq, site } from "@/lib/content";
+import { cmsServiceRecords } from "@/lib/services-data";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -14,19 +14,18 @@ export const metadata: Metadata = {
   ...shareTitle(seo.services.title, seo.services.description, { url: "/services" }),
 };
 
-// Service structured data (shown in Google)
 const serviceJsonLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "Real Digital Works Services",
-  itemListElement: services.map((s, i) => ({
+  itemListElement: cmsServiceRecords.map((s, i) => ({
     "@type": "ListItem",
     position: i + 1,
     item: {
       "@type": "Service",
-      name: s.title,
-      url: `${site.url.replace(/\/$/, "")}${publicPathForCmsService(s.id) ?? "/contact"}`,
-      description: s.summary,
+      name: s.listingTitle.trim() || s.title,
+      url: `${site.url.replace(/\/$/, "")}/services/${s.slug}`,
+      description: s.summary || s.intro,
     },
   })),
 };
@@ -52,30 +51,38 @@ export default function ServicesPage() {
       </section>
       <section className="pb-20">
         <div className="wrap grid gap-4">
-          {services.map((service, i) => (
-            <Reveal
-              key={service.id}
-              delay={i * 0.04}
-              className="grid gap-6 glass rounded-3xl p-8 md:grid-cols-[0.9fr_1.4fr_auto] md:items-start"
-            >
-              <div>
-                <h2 className="text-2xl font-semibold tracking-[-0.03em]">
-                  {service.title}
-                </h2>
-                <p className="mt-2 font-semibold text-beam">{service.from}</p>
-              </div>
-              <div>
-                <p className="text-fg/58">{service.summary}</p>
-                <div className="mt-3 text-[15px] text-fg/60"><RichContent html={service.detail} /></div>
-              </div>
-              <Link
-                href={publicPathForCmsService(service.id) ?? "/contact"}
-                className="btn btn-ghost w-fit"
+          {cmsServiceRecords.length === 0 ? (
+            <p className="text-[16px] text-fg/55">No services published yet.</p>
+          ) : (
+            cmsServiceRecords.map((service, i) => (
+              <Reveal
+                key={service.slug}
+                delay={i * 0.04}
+                className="grid gap-6 glass rounded-3xl p-8 md:grid-cols-[0.9fr_1.4fr_auto] md:items-start"
               >
-                {publicPathForCmsService(service.id) ? "View service" : "Enquire"}
-              </Link>
-            </Reveal>
-          ))}
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-[-0.03em]">
+                    {service.listingTitle.trim() || service.title}
+                  </h2>
+                  <p className="mt-2 font-semibold text-beam">{service.from}</p>
+                </div>
+                <div>
+                  <p className="text-fg/58">{service.summary || service.intro}</p>
+                  {service.detail ? (
+                    <div className="mt-3 text-[15px] text-fg/60">
+                      <RichContent html={service.detail} />
+                    </div>
+                  ) : null}
+                </div>
+                <Link
+                  href={`/services/${service.slug}`}
+                  className="btn btn-ghost w-fit"
+                >
+                  View service
+                </Link>
+              </Reveal>
+            ))
+          )}
         </div>
         <div className="wrap mt-16">
           <span className="tag">Included as standard</span>
@@ -105,7 +112,6 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        {/* FAQ section with structured data already injected in layout */}
         <div className="wrap mt-20">
           <span className="tag">Questions</span>
           <h2 className="display mt-3 text-[clamp(28px,3.5vw,44px)]">Common questions</h2>

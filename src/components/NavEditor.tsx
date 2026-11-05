@@ -6,15 +6,14 @@
  * Features:
  *   • Reorder top-level items via drag & drop
  *   • Reorder sub-nav items within their parent
- *   • Add / remove items at both levels
- *   • Edit label and href inline
- *   • Hide items without deleting them (eye toggle)
- *   • Services item noted as having the auto mega-menu
+ *   • Add / remove / hide items at both levels
+ *   • Select an existing page or enter a custom path
+ *   • Jump to that page’s CMS editor
  *
  * Uses @dnd-kit/core + @dnd-kit/sortable
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -30,24 +29,90 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { NavItem } from "@/lib/content";
+import { isServicesNavItem, type NavItem } from "@/lib/content";
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+export type NavPageOption = {
+  label: string;
+  href: string;
+  group: string;
+};
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-// ── Sub-item row ───────────────────────────────────────────────────────────────
+function PagePicker({
+  href,
+  options,
+  onChange,
+}: {
+  href: string;
+  options: NavPageOption[];
+  onChange: (href: string, label?: string) => void;
+}) {
+  const matched = options.find((o) => o.href === href);
+  const selectValue = matched ? matched.href : "__custom__";
+  const groups = useMemo(() => {
+    const map = new Map<string, NavPageOption[]>();
+    for (const option of options) {
+      const list = map.get(option.group) ?? [];
+      list.push(option);
+      map.set(option.group, list);
+    }
+    return [...map.entries()];
+  }, [options]);
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center">
+      <select
+        value={selectValue}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (next === "__custom__") {
+            onChange(href === matched?.href ? "/" : href);
+            return;
+          }
+          const option = options.find((o) => o.href === next);
+          onChange(next, option?.label);
+        }}
+        className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none focus:border-[#1857EC] sm:max-w-[220px]"
+      >
+        {groups.map(([group, items]) => (
+          <optgroup key={group} label={group}>
+            {items.map((item) => (
+              <option key={`${group}-${item.href}`} value={item.href}>
+                {item.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        <option value="__custom__">Custom path…</option>
+      </select>
+      {(selectValue === "__custom__" || !matched) && (
+        <input
+          type="text"
+          value={href}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/path"
+          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/70 placeholder-white/20 outline-none focus:border-[#1857EC]"
+        />
+      )}
+    </div>
+  );
+}
 
 function SubItemRow({
   item,
+  options,
   onUpdate,
   onRemove,
+  onEditPage,
 }: {
   item: NavItem;
+  options: NavPageOption[];
   onUpdate: (updated: NavItem) => void;
   onRemove: () => void;
+  onEditPage?: (href: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -62,9 +127,8 @@ function SubItemRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="ml-8 flex items-center gap-2 rounded-xl border border-white/8 bg-white/3 px-3 py-2"
+      className="ml-8 flex flex-wrap items-center gap-2 rounded-xl border border-white/8 bg-white/3 px-3 py-2"
     >
-      {/* Drag handle */}
       <button
         type="button"
         {...attributes}
@@ -86,15 +150,28 @@ function SubItemRow({
         placeholder="Label"
         className="w-28 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white placeholder-white/20 outline-none focus:border-[#1857EC]"
       />
-      <input
-        type="text"
-        value={item.href}
-        onChange={(e) => onUpdate({ ...item, href: e.target.value })}
-        placeholder="/path"
-        className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white/70 placeholder-white/20 outline-none focus:border-[#1857EC]"
+      <PagePicker
+        href={item.href}
+        options={options}
+        onChange={(href, label) =>
+          onUpdate({
+            ...item,
+            href,
+            ...(label && (item.label === "New link" || item.label === "New page") ? { label } : {}),
+          })
+        }
       />
 
-      {/* Hide toggle */}
+      {onEditPage && (
+        <button
+          type="button"
+          onClick={() => onEditPage(item.href)}
+          className="text-[11px] text-[#60a5fa] hover:underline"
+        >
+          Edit page
+        </button>
+      )}
+
       <button
         type="button"
         title={item.hidden ? "Hidden — click to show" : "Visible — click to hide"}
@@ -104,7 +181,6 @@ function SubItemRow({
         {item.hidden ? "🙈" : "👁"}
       </button>
 
-      {/* Remove */}
       <button
         type="button"
         onClick={onRemove}
@@ -117,18 +193,22 @@ function SubItemRow({
   );
 }
 
-// ── Top-level item row ─────────────────────────────────────────────────────────
-
 function TopItemRow({
   item,
+  options,
   onUpdate,
   onRemove,
+  onEditPage,
 }: {
   item: NavItem;
+  options: NavPageOption[];
   onUpdate: (updated: NavItem) => void;
   onRemove: () => void;
+  onEditPage?: (href: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(
+    () => isServicesNavItem(item) || (item.children?.length ?? 0) > 0,
+  );
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -138,9 +218,7 @@ function TopItemRow({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const isMegaMenu = item.href === "/services";
-
-  // ── Sub-item DnD ──
+  const isMegaMenu = isServicesNavItem(item);
   const subSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const handleSubDragEnd = useCallback((event: DragEndEvent) => {
@@ -171,15 +249,13 @@ function TopItemRow({
 
   return (
     <div ref={setNodeRef} style={style} className="space-y-1.5">
-      {/* Main row */}
       <div
-        className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 ${
+        className={`flex flex-wrap items-center gap-2 rounded-2xl border px-3 py-2.5 ${
           item.hidden
             ? "border-white/5 bg-white/2 opacity-50"
             : "border-white/10 bg-white/5"
         }`}
       >
-        {/* Drag handle */}
         <button
           type="button"
           {...attributes}
@@ -201,22 +277,34 @@ function TopItemRow({
           placeholder="Label"
           className="w-28 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm font-medium text-white placeholder-white/20 outline-none focus:border-[#1857EC]"
         />
-        <input
-          type="text"
-          value={item.href}
-          onChange={(e) => onUpdate({ ...item, href: e.target.value })}
-          placeholder="/path"
-          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/70 placeholder-white/20 outline-none focus:border-[#1857EC]"
+        <PagePicker
+          href={item.href}
+          options={options}
+          onChange={(href, label) =>
+            onUpdate({
+              ...item,
+              href,
+              ...(label && (item.label === "New page" || item.label === "New link") ? { label } : {}),
+            })
+          }
         />
 
-        {/* Mega menu badge */}
         {isMegaMenu && (
           <span className="rounded-full bg-[#1857EC]/25 px-2 py-0.5 text-[10px] font-semibold text-blue-300 whitespace-nowrap">
-            Mega menu
+            Services menu
           </span>
         )}
 
-        {/* Sub-nav expand/add toggle */}
+        {onEditPage && (
+          <button
+            type="button"
+            onClick={() => onEditPage(item.href)}
+            className="text-[11px] text-[#60a5fa] hover:underline"
+          >
+            Edit page
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -224,7 +312,7 @@ function TopItemRow({
           className="text-xs text-white/30 hover:text-white/70"
         >
           {(item.children?.length ?? 0) > 0 ? (
-            <span className={`transition-transform inline-block ${expanded ? "rotate-90" : ""}`}>▶</span>
+            <span className={`inline-block transition-transform ${expanded ? "rotate-90" : ""}`}>▶</span>
           ) : (
             <span className="text-[10px]">sub</span>
           )}
@@ -235,7 +323,6 @@ function TopItemRow({
           )}
         </button>
 
-        {/* Hide toggle */}
         <button
           type="button"
           title={item.hidden ? "Hidden — click to show" : "Visible — click to hide"}
@@ -245,7 +332,6 @@ function TopItemRow({
           {item.hidden ? "🙈" : "👁"}
         </button>
 
-        {/* Remove */}
         <button
           type="button"
           onClick={onRemove}
@@ -256,12 +342,12 @@ function TopItemRow({
         </button>
       </div>
 
-      {/* Sub-nav */}
       {expanded && (
         <div className="space-y-1.5 pb-1">
           {isMegaMenu && (
-            <p className="ml-8 text-[11px] text-blue-300/60">
-              ℹ️ Services uses the auto-generated mega menu. Sub-links here appear in the mobile accordion only.
+            <p className="ml-8 text-[11px] text-blue-300/70">
+              Nested links here become the desktop mega menu and the mobile accordion.
+              Adding a service can offer to append one item — it will not duplicate the whole list on save.
             </p>
           )}
           <DndContext
@@ -277,8 +363,10 @@ function TopItemRow({
                 <SubItemRow
                   key={child.id}
                   item={child}
+                  options={options}
                   onUpdate={(u) => updateChild(idx, u)}
                   onRemove={() => removeChild(idx)}
+                  onEditPage={onEditPage}
                 />
               ))}
             </SortableContext>
@@ -288,7 +376,7 @@ function TopItemRow({
             onClick={addChild}
             className="ml-8 text-xs text-white/35 hover:text-white/60"
           >
-            + Add sub-link
+            + Add nested link
           </button>
         </div>
       )}
@@ -296,14 +384,16 @@ function TopItemRow({
   );
 }
 
-// ── Main NavEditor ─────────────────────────────────────────────────────────────
-
 export function NavEditor({
   items,
   onChange,
+  pageOptions,
+  onEditPage,
 }: {
   items: NavItem[];
   onChange: (items: NavItem[]) => void;
+  pageOptions: NavPageOption[];
+  onEditPage?: (href: string) => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -334,12 +424,20 @@ export function NavEditor({
   return (
     <div className="space-y-2">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs text-white/40">Drag rows to reorder. Click ▶ / "sub" to manage sub-navigation.</p>
+        <p className="text-xs text-white/40">
+          Drag rows to reorder. Click ▶ / “sub” to manage nested dropdowns. Pick a page or type a custom path.
+        </p>
         <div className="flex items-center gap-3 text-[11px] text-white/35">
           <span>👁 visible</span>
           <span>🙈 hidden</span>
         </div>
       </div>
+
+      {items.length === 0 && (
+        <p className="rounded-xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-white/40">
+          No menu items. The public header will be empty until you add one.
+        </p>
+      )}
 
       <DndContext
         sensors={sensors}
@@ -354,8 +452,10 @@ export function NavEditor({
             <TopItemRow
               key={item.id}
               item={item}
+              options={pageOptions}
               onUpdate={(u) => updateItem(idx, u)}
               onRemove={() => removeItem(idx)}
+              onEditPage={onEditPage}
             />
           ))}
         </SortableContext>

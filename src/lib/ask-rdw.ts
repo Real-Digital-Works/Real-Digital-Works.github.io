@@ -7,11 +7,10 @@ import {
   quoteExtras,
   quoteServices,
   sectors,
-  services,
   site,
   stack,
 } from "@/lib/content";
-import { serviceCategories, servicePages } from "@/lib/services-data";
+import { homeServices, serviceCategories, servicePages } from "@/lib/services-data";
 
 export type ChatRole = "rdw" | "you";
 export type ChatTurn = { from: ChatRole; text: string };
@@ -114,7 +113,7 @@ export function replyWandered(reply: string): boolean {
 
 export function buildFactsBlock(): string {
   const address = site.address.join(", ");
-  const serviceLines = services
+  const serviceLines = homeServices
     .map((s) => `- ${s.title} (${s.from}): ${s.summary} ${s.detail}`)
     .join("\n");
 

@@ -71,6 +71,9 @@ export interface ServicePageSeo {
 
 export type ServicePagesSeoMap = Record<string, ServicePageSeo>;
 
+export const SERVICE_CATEGORIES = ["Build", "Grow", "Create", "Support"] as const;
+export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
+
 /** Editable body + SEO for a public /services/[slug] page */
 export interface CmsServicePage {
   title: string;
@@ -84,6 +87,21 @@ export interface CmsServicePage {
   seoTitle: string;
   seoDescription: string;
   keywords: string[];
+  listingTitle?: string;
+  summary?: string;
+  detail?: string;
+  category?: ServiceCategory;
+  showOnHome?: boolean;
+}
+
+/** Canonical CMS row for one service — listing + individual page */
+export interface CmsServiceRecord extends CmsServicePage {
+  slug: string;
+  category: ServiceCategory;
+  listingTitle: string;
+  summary: string;
+  detail: string;
+  showOnHome: boolean;
 }
 
 export type ServicePagesCmsMap = Record<string, CmsServicePage>;
@@ -197,6 +215,11 @@ export interface Content {
   servicePagesSeo?: ServicePagesSeoMap;
   /** Full CMS body for each public /services/[slug] page */
   servicePagesContent?: ServicePagesCmsMap;
+  /**
+   * Canonical ordered service list. Missing → seed the original 16 pages.
+   * An empty array is a real value (user deleted every service).
+   */
+  servicePagesList?: CmsServiceRecord[];
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -250,8 +273,8 @@ export function mergeWorkSeo(raw?: Partial<PageSeo> | null): PageSeo {
   };
 }
 
-/** URL-safe slug for /work/{slug}. Empty titles become "case-study". */
-export function slugifyProjectTitle(title: string): string {
+/** URL-safe slug. Empty titles become `fallback`. */
+export function slugifyTitle(title: string, fallback = ""): string {
   const slug = title
     .toLowerCase()
     .trim()
@@ -259,16 +282,21 @@ export function slugifyProjectTitle(title: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
-  return slug;
+  return slug || fallback;
 }
 
-/** Keep a slug unique within the case-study list. Pass `currentIndex` so an item can keep its own slug. */
-export function uniqueProjectSlug(
+/** URL-safe slug for /work/{slug}. Empty titles become "case-study". */
+export function slugifyProjectTitle(title: string): string {
+  return slugifyTitle(title, "case-study");
+}
+
+function uniqueSlug(
   desired: string,
   existing: string[],
-  currentIndex?: number,
+  currentIndex: number | undefined,
+  emptyFallback: string,
 ): string {
-  const base = slugifyProjectTitle(desired) || "case-study";
+  const base = slugifyTitle(desired, emptyFallback);
   const taken = new Set(
     existing
       .filter((_, i) => i !== currentIndex)
@@ -279,6 +307,29 @@ export function uniqueProjectSlug(
   let n = 2;
   while (taken.has(`${base}-${n}`)) n += 1;
   return `${base}-${n}`;
+}
+
+/** Keep a slug unique within the case-study list. Pass `currentIndex` so an item can keep its own slug. */
+export function uniqueProjectSlug(
+  desired: string,
+  existing: string[],
+  currentIndex?: number,
+): string {
+  return uniqueSlug(desired, existing, currentIndex, "case-study");
+}
+
+/** URL-safe slug for /services/{slug}. Empty titles become "service". */
+export function slugifyServiceTitle(title: string): string {
+  return slugifyTitle(title, "service");
+}
+
+/** Keep a slug unique within the CMS service list. */
+export function uniqueServiceSlug(
+  desired: string,
+  existing: string[],
+  currentIndex?: number,
+): string {
+  return uniqueSlug(desired, existing, currentIndex, "service");
 }
 
 export function createBlankProject(existingSlugs: string[]): Project {
@@ -366,6 +417,28 @@ export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
 export const servicePagesSeo: ServicePagesSeoMap = content.servicePagesSeo ?? {};
 export const servicePagesContent: ServicePagesCmsMap = content.servicePagesContent ?? {};
+export const servicePagesList = content.servicePagesList;
+
+export function isServiceCategory(value: unknown): value is ServiceCategory {
+  return SERVICE_CATEGORIES.includes(value as ServiceCategory);
+}
+
+function newNavId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function normalizeNavItem(item: Partial<NavItem> | null | undefined): NavItem {
+  const children = Array.isArray(item?.children)
+    ? item.children.map((child) => normalizeNavItem(child))
+    : undefined;
+  return {
+    id: pickStr(item?.id, newNavId()),
+    label: pickStr(item?.label, "Untitled"),
+    href: pickStr(item?.href, "/"),
+    ...(item?.hidden ? { hidden: true } : {}),
+    ...(children ? { children } : {}),
+  };
+}
 
 /** Default nav — used when no CMS nav has been saved yet */
 export const DEFAULT_NAV_ITEMS: NavItem[] = [
@@ -378,10 +451,82 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
   { id: "contact",  label: "Contact",  href: "/contact" },
 ];
 
-export const navItems: NavItem[] =
-  content.navItems && content.navItems.length > 0
-    ? content.navItems
-    : DEFAULT_NAV_ITEMS;
+/**
+ * Merge CMS nav. An empty array is a real value (user deleted every item).
+ * Seed is used only when the list is missing entirely, not when it is empty.
+ */
+export function mergeNavItems(raw?: NavItem[] | null): NavItem[] {
+  if (!Array.isArray(raw)) return DEFAULT_NAV_ITEMS.map((item) => normalizeNavItem(item));
+  return raw.map((item) => normalizeNavItem(item));
+}
+
+export function isServicesNavItem(item: NavItem): boolean {
+  return item.href === "/services" || item.id === "services";
+}
+
+/** Fill Services children from CMS pages only when children were never saved. */
+export function hydrateServicesNavChildren(
+  items: NavItem[],
+  pages: { slug: string; title: string }[],
+): NavItem[] {
+  return items.map((item) => {
+    if (!isServicesNavItem(item) || item.children !== undefined) return item;
+    return {
+      ...item,
+      children: pages.map((page) => ({
+        id: `svc-${page.slug}`,
+        label: page.title,
+        href: `/services/${page.slug}`,
+      })),
+    };
+  });
+}
+
+export function navContainsHref(items: NavItem[], href: string): boolean {
+  return items.some(
+    (item) =>
+      item.href === href ||
+      (item.children ? navContainsHref(item.children, href) : false),
+  );
+}
+
+export function appendNavChild(
+  items: NavItem[],
+  parentHref: string,
+  child: NavItem,
+): NavItem[] {
+  return items.map((item) => {
+    if (item.href !== parentHref) {
+      return item.children
+        ? { ...item, children: appendNavChild(item.children, parentHref, child) }
+        : item;
+    }
+    const children = item.children ?? [];
+    if (children.some((c) => c.href === child.href)) return item;
+    return { ...item, children: [...children, child] };
+  });
+}
+
+export function rewriteNavHrefs(items: NavItem[], from: string, to: string): NavItem[] {
+  if (!from || from === to) return items;
+  return items.map((item) => ({
+    ...item,
+    href: item.href === from ? to : item.href,
+    ...(item.children ? { children: rewriteNavHrefs(item.children, from, to) } : {}),
+  }));
+}
+
+export function removeNavHrefs(items: NavItem[], href: string): NavItem[] {
+  return items
+    .filter((item) => item.href !== href)
+    .map((item) =>
+      item.children
+        ? { ...item, children: removeNavHrefs(item.children, href) }
+        : item,
+    );
+}
+
+export const navItems: NavItem[] = mergeNavItems(content.navItems);
 
 /** Legacy flat nav — kept for backward compat with any remaining consumers */
 export const nav = navItems

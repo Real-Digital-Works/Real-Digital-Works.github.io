@@ -514,36 +514,94 @@ export function fieldLabel(path: string): string {
   if (path.startsWith("site.")) {
     const key = path.slice(5);
     const labels: Record<string, string> = {
-      phone: "Phone",
-      phoneHref: "Phone link",
-      email: "Email",
-      emailHref: "Email link",
+      phone: "Studio phone",
+      phoneHref: "Studio phone link",
+      email: "Studio email",
+      emailHref: "Studio email link",
       name: "Studio name",
       parent: "Parent company",
-      footerBlurb: "Footer description",
+      footerBlurb: "Studio description",
       copyright: "Copyright",
-      hours: "Hours",
+      hours: "Studio hours",
       tagline: "Tagline",
       whatsapp: "WhatsApp",
     };
     if (key.startsWith("address.")) {
-      return `Address line ${Number(key.split(".")[1]) + 1}`;
+      return `Studio address line ${Number(key.split(".")[1]) + 1}`;
     }
     return labels[key] ?? pretty(key);
   }
   if (path.startsWith("pageIntros.")) {
     const [, page, field] = path.split(".");
-    return `${pretty(page)} · ${pretty(field)}`;
+    const fieldName =
+      field === "headline" ? "heading" : field === "sub" ? "intro" : pretty(field);
+    return `${pretty(page)} ${fieldName}`;
   }
   if (path.startsWith("homeSections.")) {
-    return pretty(path.slice("homeSections.".length));
+    const key = path.slice("homeSections.".length);
+    const labels: Record<string, string> = {
+      scrollCue: "Scroll cue",
+      offerEyebrow: "Offer eyebrow",
+      offerTitle: "Offer heading",
+      offerOpen: "Open services label",
+      offerMobileEyebrow: "Offer mobile eyebrow",
+      unpack: "Unpack label",
+      deskEyebrow: "Enquiry desk eyebrow",
+      deskTitle: "Enquiry desk heading",
+      deskIntro: "Enquiry desk intro",
+      workEyebrow: "Work eyebrow",
+      openCase: "Open case label",
+      processEyebrow: "Process eyebrow",
+      faqEyebrow: "Questions eyebrow",
+      faqTitle: "Questions heading",
+    };
+    return labels[key] ?? pretty(key);
   }
   if (path.startsWith("footerCopy.")) {
-    return pretty(path.slice("footerCopy.".length).replace(/^col/, ""));
+    const key = path.slice("footerCopy.".length);
+    const labels: Record<string, string> = {
+      colStudio: "Studio heading",
+      colCompany: "Company heading",
+      colBuild: "Build heading",
+      colGrow: "Grow heading",
+      colCreate: "Create heading",
+      colSupport: "Support heading",
+    };
+    return labels[key] ?? pretty(key.replace(/^col/, ""));
   }
   if (path.startsWith("legal.")) {
     const [, page, field] = path.split(".");
-    return `${pretty(page)} ${pretty(field ?? "")}`.trim();
+    const pages: Record<string, string> = {
+      privacy: "Privacy",
+      terms: "Terms",
+      modernSlavery: "Modern slavery",
+    };
+    const fields: Record<string, string> = {
+      title: "heading",
+      body: "body",
+      seoTitle: "SEO title",
+      seoDescription: "SEO description",
+    };
+    return `${pages[page] ?? pretty(page)} ${fields[field] ?? pretty(field ?? "")}`.trim();
+  }
+  const faqMatch = path.match(/^faq\.(\d+)\.(q|a)$/);
+  if (faqMatch) {
+    return `Question ${Number(faqMatch[1]) + 1} ${faqMatch[2] === "q" ? "title" : "answer"}`;
+  }
+  const processMatch = path.match(/^process\.(\d+)\.(title|body)$/);
+  if (processMatch) {
+    return `Step ${Number(processMatch[1]) + 1} ${processMatch[2] === "title" ? "title" : "body"}`;
+  }
+  if (path.startsWith("hero.")) {
+    const key = path.slice(5);
+    const labels: Record<string, string> = {
+      eyebrow: "Eyebrow",
+      headline: "Heading",
+      sub: "Intro",
+      primaryCta: "Primary button",
+      secondaryCta: "Secondary button",
+    };
+    return labels[key] ?? pretty(key);
   }
   const last = path.split(".").pop() ?? path;
   return pretty(last);

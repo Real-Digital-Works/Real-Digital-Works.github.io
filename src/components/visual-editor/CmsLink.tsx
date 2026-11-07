@@ -23,6 +23,8 @@ type CmsLinkProps = {
   hrefKey?: string;
   target?: string;
   rel?: string;
+  /** Keep logo / rich children instead of replacing them with the plain label. */
+  preserveChildren?: boolean;
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
@@ -43,6 +45,7 @@ export function CmsLink({
   hrefKey,
   target,
   rel,
+  preserveChildren = false,
   onClick,
 }: CmsLinkProps) {
   const ctx = useVisualEditorOptional();
@@ -99,8 +102,8 @@ export function CmsLink({
         tabIndex={0}
         data-cms-cta={ctaId}
         data-cms-nav={navId}
+        data-cms-popup={popupId}
         aria-label={`Edit link ${label}`}
-        onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -113,7 +116,7 @@ export function CmsLink({
           }
         }}
       >
-        {label}
+        {preserveChildren ? children : label}
       </span>
     );
   }

@@ -142,7 +142,11 @@ export function StudioChat({
                 : "bg-fg/6 text-fg/82"
             }`}
           >
-            {msg.text}
+            {i === 0 && msg.from === "rdw" ? (
+              <CmsText path="popups.askRdw.greeting">{msg.text}</CmsText>
+            ) : (
+              msg.text
+            )}
           </div>
         ))}
         {busy ? (
@@ -160,19 +164,20 @@ export function StudioChat({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={placeholder}
+          data-cms-path={visual?.enabled ? "popups.askRdw.placeholder" : undefined}
           className="input-dark min-w-0 flex-1 rounded-full px-4 py-2.5 text-[15px]"
-          onFocus={() => visual?.selectPopup("askRdw")}
+          onFocus={() => visual?.selectPath("popups.askRdw.placeholder")}
         />
         <button
           className="btn btn-beam rounded-full px-4 py-2.5"
           type="submit"
-          onClick={() => visual?.selectPopup("askRdw")}
+          onClick={() => visual?.selectPath("popups.askRdw.submit")}
         >
-          {submitLabel}
+          <CmsText path="popups.askRdw.submit">{submitLabel}</CmsText>
         </button>
       </form>
       <p className="px-4 pb-3 text-[11px] text-fg/35">
-        {note}{" "}
+        <CmsText path="popups.askRdw.note">{note}</CmsText>{" "}
         <CmsLink
           popupId="askRdw"
           labelKey="ctaLabel"

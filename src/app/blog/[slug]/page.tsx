@@ -5,6 +5,7 @@ import { blogs, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -74,12 +75,22 @@ export default async function BlogPostPage({ params }: Props) {
               </span>
             ))}
           </div>
-          <h1 className="display mt-4 max-w-[22ch] text-[clamp(32px,5vw,60px)]">
+          <CmsText
+            path={`blogPost.${post.slug}.title`}
+            as="h1"
+            className="display mt-4 max-w-[22ch] text-[clamp(32px,5vw,60px)]"
+          >
             {post.title}
-          </h1>
-          {post.excerpt && (
-            <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/60">{post.excerpt}</p>
-          )}
+          </CmsText>
+          {post.excerpt ? (
+            <CmsText
+              path={`blogPost.${post.slug}.excerpt`}
+              as="p"
+              className="mt-4 max-w-[58ch] text-[16.5px] text-fg/60"
+            >
+              {post.excerpt}
+            </CmsText>
+          ) : null}
           <p className="mt-4 text-sm text-fg/35">
             {new Date(post.publishedAt).toLocaleDateString("en-GB", {
               day: "numeric",
@@ -92,10 +103,11 @@ export default async function BlogPostPage({ params }: Props) {
 
       <section className="pb-24">
         <div className="wrap">
-          <article
-            className="rdw-content max-w-[72ch]"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          <article className="rdw-legal-body rdw-content max-w-[72ch]">
+            <CmsText path={`blogPost.${post.slug}.content`} html>
+              {post.content}
+            </CmsText>
+          </article>
           <div className="mt-16 border-t border-line pt-10">
             <CmsLink ctaId="blog.brief" href="/contact" className="btn btn-beam">Start a brief</CmsLink>
             <CmsLink ctaId="blog.more" href="/blog" className="btn btn-ghost ml-4">More posts</CmsLink>

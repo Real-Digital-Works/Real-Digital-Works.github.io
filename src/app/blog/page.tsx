@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { blogs, site } from "@/lib/content";
+import { CmsText } from "@/components/visual-editor/CmsText";
+import { blogs, site, pageIntros } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 const blogDescription = `Insights, guides and studio news from ${site.name} — a London digital studio.`;
@@ -19,13 +20,23 @@ export default function BlogPage() {
     <>
       <section className="page-intro">
         <div className="wrap">
-          <span className="tag on-dark">Blog</span>
-          <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
-            Thinking out loud.
-          </h1>
-          <p className="mt-4 max-w-[54ch] text-[16.5px] text-fg/62">
-            Guides, opinions and studio updates from the Kennington team.
-          </p>
+          <span className="tag on-dark">
+            <CmsText path="pageIntros.blog.eyebrow">{pageIntros.blog.eyebrow}</CmsText>
+          </span>
+          <CmsText
+            path="pageIntros.blog.headline"
+            as="h1"
+            className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]"
+          >
+            {pageIntros.blog.headline}
+          </CmsText>
+          <CmsText
+            path="pageIntros.blog.sub"
+            as="p"
+            className="mt-4 max-w-[54ch] text-[16.5px] text-fg/62"
+          >
+            {pageIntros.blog.sub}
+          </CmsText>
         </div>
       </section>
 

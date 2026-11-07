@@ -4,16 +4,16 @@
  */
 
 import type { HTMLAttributes } from "react";
+import { sanitizeCmsHtml } from "@/lib/cms-html";
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
   html: string;
 }
 
 export function RichContent({ html, className = "", ...props }: Props) {
-  // If the content has no HTML tags (legacy plain text), wrap it in a <p> so
-  // it still renders visibly.
+  const cleaned = sanitizeCmsHtml(html).html;
   const processed =
-    html && !/<[a-z][\s\S]*>/i.test(html) ? `<p>${html}</p>` : html;
+    cleaned && !/<[a-z][\s\S]*>/i.test(cleaned) ? `<p>${cleaned}</p>` : cleaned;
 
   return (
     <div

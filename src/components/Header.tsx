@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Logo } from "./Logo";
@@ -95,9 +94,9 @@ export function Header() {
       }`}
     >
       <div className="wrap flex h-16 items-center gap-0.5">
-        <Link href="/" className="mr-auto">
+        <CmsLink ctaId="header.logo" href="/" className="mr-auto inline-flex" preserveChildren>
           <Logo />
-        </Link>
+        </CmsLink>
 
         {/* ── Desktop nav ── */}
         <nav className="hidden items-center gap-0.5 lg:flex">
@@ -118,7 +117,11 @@ export function Header() {
                   key={item.id}
                   ref={megaTriggerRef}
                   type="button"
-                  onClick={() => setMegaOpen((v) => !v)}
+                  data-cms-nav={visual?.enabled ? item.id : undefined}
+                  onClick={() => {
+                    visual?.selectNav(item.id);
+                    setMegaOpen((v) => !v);
+                  }}
                   className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
                     isActive || megaOpen
                       ? "bg-fg/10 text-fg"
@@ -143,7 +146,11 @@ export function Header() {
                   key={item.id}
                   ref={megaTriggerRef}
                   type="button"
-                  onClick={() => setMegaOpen((v) => !v)}
+                  data-cms-nav={visual?.enabled ? item.id : undefined}
+                  onClick={() => {
+                    visual?.selectNav(item.id);
+                    setMegaOpen((v) => !v);
+                  }}
                   className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
                     isActive || megaOpen
                       ? "bg-fg/10 text-fg"

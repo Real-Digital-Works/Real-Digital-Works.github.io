@@ -4,6 +4,7 @@ import type { ElementType, FocusEvent, MouseEvent, ReactNode } from "react";
 import { RichContent } from "@/components/RichContent";
 import seedContent, { type Content } from "@/lib/content";
 import { popupText } from "@/lib/cms-ui";
+import { sanitizeCmsHtml } from "@/lib/cms-html";
 import { useVisualEditorOptional } from "./VisualEditorProvider";
 
 export function useLiveDraft(): Content {
@@ -82,6 +83,28 @@ export function CmsText({
     .filter(Boolean)
     .join(" ");
 
+  if (html) {
+    const safe = sanitizeCmsHtml(value).html || value;
+    return (
+      <Tag
+        className={classes}
+        data-cms-path={path}
+        data-cms-html="true"
+        role="button"
+        tabIndex={0}
+        aria-label={`Edit ${path} in the inspector`}
+        onClick={(event: MouseEvent) => {
+          event.preventDefault();
+          event.stopPropagation();
+          ctx?.selectPath(path);
+        }}
+        onFocus={() => ctx?.selectPath(path)}
+      >
+        <RichContent html={safe} />
+      </Tag>
+    );
+  }
+
   return (
     <Tag
       className={classes}
@@ -90,21 +113,15 @@ export function CmsText({
       data-cms-path={path}
       role="textbox"
       aria-label={`Edit ${path}`}
-      onMouseDown={(event: MouseEvent) => event.stopPropagation()}
-      onClick={(event: MouseEvent) => {
-        event.preventDefault();
-        event.stopPropagation();
-        ctx?.selectPath(path);
-      }}
+      onClick={() => ctx?.selectPath(path)}
       onFocus={() => ctx?.selectPath(path)}
       onBlur={(event: FocusEvent<HTMLElement>) => {
-        const next = html
-          ? event.currentTarget.innerHTML
-          : (event.currentTarget.innerText ?? "").replace(/\u00a0/g, " ");
+        const next = (event.currentTarget.innerText ?? "").replace(/\u00a0/g, " ");
         if (next !== value) ctx?.setText(path, next);
       }}
-      {...(html ? { dangerouslySetInnerHTML: { __html: value } } : { children: value })}
-    />
+    >
+      {value}
+    </Tag>
   );
 }
 

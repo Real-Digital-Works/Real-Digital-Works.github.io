@@ -1,18 +1,33 @@
 import { Logo } from "./Logo";
-import { site } from "@/lib/content";
+import {
+  DEFAULT_COPYRIGHT,
+  DEFAULT_FOOTER_BLURB,
+  DEFAULT_FOOTER_COPY,
+  site,
+} from "@/lib/content";
 import { FOOTER_SERVICE_LINKS } from "@/lib/cms-ui";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
 
 const groups = ["Build", "Grow", "Create", "Support"] as const;
+const colPath: Record<(typeof groups)[number], string> = {
+  Build: "footerCopy.colBuild",
+  Grow: "footerCopy.colGrow",
+  Create: "footerCopy.colCreate",
+  Support: "footerCopy.colSupport",
+};
 
 export function Footer() {
+  const address = site.address?.length ? site.address : ["", "", ""];
   return (
-    <footer className="bg-void text-[15px] text-fg/62">
+    <footer className="relative z-20 bg-void text-[15px] text-fg/62">
       <div className="wrap py-16">
         <div className="grid gap-10 border-b border-line pb-10 md:grid-cols-4">
           {groups.map((group) => (
             <div key={group}>
-              <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">{group}</h4>
+              <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">
+                <CmsText path={colPath[group]}>{group}</CmsText>
+              </h4>
               {FOOTER_SERVICE_LINKS.filter((item) => item.group === group).map((item) => (
                 <CmsLink
                   key={item.id}
@@ -29,14 +44,17 @@ export function Footer() {
 
         <div className="grid gap-10 border-b border-line py-10 md:grid-cols-4">
           <div className="md:col-span-2">
-            <Logo variant="lockup" />
-            <p className="mt-4 max-w-[34ch] text-fg/55">
-              Websites, software, AI and motion. A Real Animation Works company,
-              from the Kennington studio.
-            </p>
+            <CmsLink ctaId="footer.logo" href="/" className="inline-flex" preserveChildren>
+              <Logo variant="lockup" />
+            </CmsLink>
+            <CmsText path="site.footerBlurb" as="p" className="mt-4 max-w-[34ch] text-fg/55">
+              {site.footerBlurb || DEFAULT_FOOTER_BLURB}
+            </CmsText>
           </div>
           <div>
-            <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">Company</h4>
+            <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">
+              <CmsText path="footerCopy.colCompany">{DEFAULT_FOOTER_COPY.colCompany}</CmsText>
+            </h4>
             <CmsLink ctaId="footer.about" href="/about" className="block py-1 hover:text-tech">About</CmsLink>
             <CmsLink ctaId="footer.work" href="/work" className="block py-1 hover:text-tech">Work</CmsLink>
             <CmsLink ctaId="footer.pricing" href="/pricing" className="block py-1 hover:text-tech">Pricing</CmsLink>
@@ -56,19 +74,34 @@ export function Footer() {
             </CmsLink>
           </div>
           <div>
-            <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">Studio</h4>
-            <a className="block py-1 hover:text-tech" href={site.phoneHref}>{site.phone}</a>
-            <a className="block py-1 hover:text-tech" href={site.emailHref}>{site.email}</a>
+            <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">
+              <CmsText path="footerCopy.colStudio">{DEFAULT_FOOTER_COPY.colStudio}</CmsText>
+            </h4>
+            <CmsLink ctaId="footer.phone" href={site.phoneHref} className="block py-1 hover:text-tech">
+              {site.phone}
+            </CmsLink>
+            <CmsLink ctaId="footer.email" href={site.emailHref} className="block py-1 hover:text-tech">
+              {site.email}
+            </CmsLink>
             <p className="py-2">
-              {site.address.map((line) => (
-                <span key={line} className="block">{line}</span>
+              {address.map((line, i) => (
+                <CmsText
+                  key={`address-${i}`}
+                  path={`site.address.${i}`}
+                  as="span"
+                  className="block"
+                >
+                  {line}
+                </CmsText>
               ))}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/55">
-          <span>© 2026 Real Digital Works</span>
+          <CmsText path="site.copyright" as="span">
+            {site.copyright || DEFAULT_COPYRIGHT}
+          </CmsText>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
             <CmsLink ctaId="footer.privacy" href="/privacy" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">
               Privacy Policy
@@ -80,7 +113,11 @@ export function Footer() {
               Modern Slavery Policy
             </CmsLink>
           </nav>
-          <span>A {site.parent} company</span>
+          <span>
+            A{" "}
+            <CmsText path="site.parent">{site.parent}</CmsText>
+            {" "}company
+          </span>
         </div>
       </div>
     </footer>

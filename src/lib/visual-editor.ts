@@ -4,12 +4,18 @@
  */
 import type { Content, PageSeo } from "@/lib/content";
 import {
+  DEFAULT_FOOTER_COPY,
+  DEFAULT_HOME_SECTIONS,
   mergeLegal,
   mergeNavItems,
+  mergePageIntros,
   mergeProjects,
+  mergeSite,
+  mergeStringMap,
   mergeWorkPage,
   mergeWorkSeo,
 } from "@/lib/content";
+import { CMS_HTML_ERROR, isHtmlCmsPath, sanitizeCmsHtml } from "@/lib/cms-html";
 import { mergeCmsMaps } from "@/lib/cms-ui";
 import {
   mergeServicePagesList,
@@ -180,15 +186,30 @@ export function getCmsValue(draft: Content, path: string): unknown {
     const row = draft.projects.find((item) => item.slug === slug);
     return rest.length ? getByPath(row, rest.join(".")) : row;
   }
+  if (path.startsWith("cmsPage.")) {
+    const [, slug, ...rest] = path.split(".");
+    const row = (draft.pages ?? []).find((item) => item.slug === slug);
+    return rest.length ? getByPath(row, rest.join(".")) : row;
+  }
+  if (path.startsWith("blogPost.")) {
+    const [, slug, ...rest] = path.split(".");
+    const row = (draft.blogs ?? []).find((item) => item.slug === slug);
+    return rest.length ? getByPath(row, rest.join(".")) : row;
+  }
   return getByPath(draft, path);
 }
 
 export function setCmsText(draft: Content, path: string, value: string): Content {
+  let nextValue = value;
+  if (isHtmlCmsPath(path)) {
+    const cleaned = sanitizeCmsHtml(value);
+    if (cleaned.valid) nextValue = cleaned.html;
+  }
   if (path.startsWith("svc.")) {
     const [, slug, ...rest] = path.split(".");
     const list = (draft.servicePagesList ?? []).map((row) => {
       if (row.slug !== slug) return row;
-      return setOnClone(row, rest.join("."), value) as typeof row;
+      return setOnClone(row, rest.join("."), nextValue) as typeof row;
     });
     return { ...draft, servicePagesList: list };
   }
@@ -196,9 +217,25 @@ export function setCmsText(draft: Content, path: string, value: string): Content
     const [, slug, ...rest] = path.split(".");
     const projects = draft.projects.map((row) => {
       if (row.slug !== slug) return row;
-      return setOnClone(row, rest.join("."), value) as typeof row;
+      return setOnClone(row, rest.join("."), nextValue) as typeof row;
     });
     return { ...draft, projects };
+  }
+  if (path.startsWith("cmsPage.")) {
+    const [, slug, ...rest] = path.split(".");
+    const pages = (draft.pages ?? []).map((row) => {
+      if (row.slug !== slug) return row;
+      return setOnClone(row, rest.join("."), nextValue) as typeof row;
+    });
+    return { ...draft, pages };
+  }
+  if (path.startsWith("blogPost.")) {
+    const [, slug, ...rest] = path.split(".");
+    const blogs = (draft.blogs ?? []).map((row) => {
+      if (row.slug !== slug) return row;
+      return setOnClone(row, rest.join("."), nextValue) as typeof row;
+    });
+    return { ...draft, blogs };
   }
   if (path.endsWith(".keywords") && typeof getByPath(draft, path) !== "string") {
     const keywords = value
@@ -207,7 +244,11 @@ export function setCmsText(draft: Content, path: string, value: string): Content
       .filter(Boolean);
     return setOnClone(draft, path, keywords) as Content;
   }
-  return setOnClone(draft, path, value) as Content;
+  let next = setOnClone(draft, path, nextValue) as Content;
+  if (path === "site.email") {
+    next = setOnClone(next, "site.emailHref", `mailto:${nextValue.trim()}`) as Content;
+  }
+  return next;
 }
 
 export type VisualSeoTarget = {
@@ -358,7 +399,7 @@ export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown>
   const liveSeo = (d.seo as Content["seo"] | undefined) ?? seed.seo;
   return {
     ...seed,
-    site: (d.site as Content["site"]) ?? seed.site,
+    site: mergeSite((d.site as Content["site"]) ?? seed.site, seed.site),
     seo: {
       ...seed.seo,
       ...liveSeo,
@@ -388,6 +429,17 @@ export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown>
     servicePagesSeo: recordsToSeoMap(list),
     ctas: mergeCmsMaps((d.ctas as Content["ctas"]) ?? seed.ctas),
     popups: mergeCmsMaps((d.popups as Content["popups"]) ?? seed.popups),
+    pageIntros: mergePageIntros(
+      (d.pageIntros as Content["pageIntros"]) ?? seed.pageIntros,
+    ),
+    homeSections: mergeStringMap(
+      DEFAULT_HOME_SECTIONS,
+      (d.homeSections as Content["homeSections"]) ?? seed.homeSections,
+    ),
+    footerCopy: mergeStringMap(
+      DEFAULT_FOOTER_COPY,
+      (d.footerCopy as Content["footerCopy"]) ?? seed.footerCopy,
+    ),
   };
 }
 
@@ -409,12 +461,90 @@ export function visualSavePayload(draft: Content) {
     disciplines: draft.disciplines,
     legal: draft.legal,
     navItems: draft.navItems,
+    blogs: draft.blogs,
+    pages: draft.pages,
     ctas: draft.ctas ?? {},
     popups: draft.popups ?? {},
+    pageIntros: draft.pageIntros ?? mergePageIntros(null),
+    homeSections: draft.homeSections ?? DEFAULT_HOME_SECTIONS,
+    footerCopy: draft.footerCopy ?? DEFAULT_FOOTER_COPY,
   };
 }
 
+export function validateDraftHtml(draft: Content): string | null {
+  const paths: string[] = ["hero.sub"];
+  (draft.process ?? []).forEach((_, i) => paths.push(`process.${i}.body`));
+  (draft.faq ?? []).forEach((_, i) => paths.push(`faq.${i}.a`));
+  (draft.disciplines ?? []).forEach((_, i) => paths.push(`disciplines.${i}.body`));
+  for (const key of ["privacy", "terms", "modernSlavery"] as const) {
+    paths.push(`legal.${key}.body`);
+  }
+  for (const project of draft.projects ?? []) {
+    paths.push(`project.${project.slug}.problem`, `project.${project.slug}.work`, `project.${project.slug}.outcome`);
+  }
+  for (const row of draft.servicePagesList ?? []) {
+    paths.push(`svc.${row.slug}.detail`);
+  }
+  for (const blog of draft.blogs ?? []) {
+    paths.push(`blogs.${(draft.blogs ?? []).indexOf(blog)}.content`);
+  }
+  for (const page of draft.pages ?? []) {
+    paths.push(`pages.${(draft.pages ?? []).indexOf(page)}.content`);
+  }
+  for (const path of paths) {
+    if (!isHtmlCmsPath(path)) continue;
+    const value = getCmsText(draft, path);
+    if (!value) continue;
+    const result = sanitizeCmsHtml(value);
+    if (!result.valid) return result.error ?? CMS_HTML_ERROR;
+  }
+  return null;
+}
+
 export function fieldLabel(path: string): string {
+  const pretty = (value: string) =>
+    value
+      .replace(/([A-Z])/g, " $1")
+      .replace(/[-_]/g, " ")
+      .replace(/^./, (c) => c.toUpperCase());
+  if (path.startsWith("svc.")) {
+    const [, slug, ...rest] = path.split(".");
+    return `${pretty(rest[rest.length - 1] ?? slug)} · ${pretty((slug ?? "").replace(/-/g, " "))}`;
+  }
+  if (path.startsWith("site.")) {
+    const key = path.slice(5);
+    const labels: Record<string, string> = {
+      phone: "Phone",
+      phoneHref: "Phone link",
+      email: "Email",
+      emailHref: "Email link",
+      name: "Studio name",
+      parent: "Parent company",
+      footerBlurb: "Footer description",
+      copyright: "Copyright",
+      hours: "Hours",
+      tagline: "Tagline",
+      whatsapp: "WhatsApp",
+    };
+    if (key.startsWith("address.")) {
+      return `Address line ${Number(key.split(".")[1]) + 1}`;
+    }
+    return labels[key] ?? pretty(key);
+  }
+  if (path.startsWith("pageIntros.")) {
+    const [, page, field] = path.split(".");
+    return `${pretty(page)} · ${pretty(field)}`;
+  }
+  if (path.startsWith("homeSections.")) {
+    return pretty(path.slice("homeSections.".length));
+  }
+  if (path.startsWith("footerCopy.")) {
+    return pretty(path.slice("footerCopy.".length).replace(/^col/, ""));
+  }
+  if (path.startsWith("legal.")) {
+    const [, page, field] = path.split(".");
+    return `${pretty(page)} ${pretty(field ?? "")}`.trim();
+  }
   const last = path.split(".").pop() ?? path;
-  return last.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+  return pretty(last);
 }

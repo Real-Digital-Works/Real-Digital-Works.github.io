@@ -19,9 +19,11 @@ export function LegalDocument({
         >
           {page.title}
         </CmsText>
-        <CmsText path={`legal.${field}.body`} as="div" className="mt-6 text-mid" html>
-          {page.body}
-        </CmsText>
+        <article className="rdw-legal-body mt-6 text-mid">
+          <CmsText path={`legal.${field}.body`} as="div" html>
+            {page.body}
+          </CmsText>
+        </article>
       </div>
     </section>
   );

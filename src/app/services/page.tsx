@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { CmsText } from "@/components/visual-editor/CmsText";
-import { seo, faq } from "@/lib/content";
+import { seo, faq, pageIntros } from "@/lib/content";
 import { canonicalUrl } from "@/lib/canonical-url";
 import { cmsServiceRecords } from "@/lib/services-data";
 import { brandedTitle, shareTitle } from "@/lib/seo";
@@ -38,16 +38,25 @@ export default function ServicesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
       />
-      <section className="page-intro">
+      <section className="page-intro relative z-10">
         <div className="wrap">
-          <span className="tag on-dark">Services</span>
-          <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
-            Everything, or just the bit you are missing.
-          </h1>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62">
-            Take one service or the lot. Most clients start with a website and
-            add software, search or motion as they grow.
-          </p>
+          <span className="tag on-dark">
+            <CmsText path="pageIntros.services.eyebrow">{pageIntros.services.eyebrow}</CmsText>
+          </span>
+          <CmsText
+            path="pageIntros.services.headline"
+            as="h1"
+            className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]"
+          >
+            {pageIntros.services.headline}
+          </CmsText>
+          <CmsText
+            path="pageIntros.services.sub"
+            as="p"
+            className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62"
+          >
+            {pageIntros.services.sub}
+          </CmsText>
         </div>
       </section>
       <section className="pb-20">
@@ -92,7 +101,9 @@ export default function ServicesPage() {
                   href={`/services/${service.slug}`}
                   className="btn btn-ghost w-fit"
                 >
-                  View service
+                  <CmsText path="pageIntros.services.viewLabel">
+                    {pageIntros.services.viewLabel ?? "View service"}
+                  </CmsText>
                 </Link>
               </Reveal>
             ))

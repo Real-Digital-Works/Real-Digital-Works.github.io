@@ -24,10 +24,12 @@ import {
   readVisualDevBypass,
   readVisualEditorFlag,
   setCmsText,
+  validateDraftHtml,
   VISUAL_EDITOR_EXIT_HREF,
   VISUAL_HIDDEN_KEY,
   visualSavePayload,
 } from "@/lib/visual-editor";
+import { isVisualChromeEvent, pickCmsHit } from "./hit-test";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -177,6 +179,28 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     [selectPopup],
   );
 
+  useEffect(() => {
+    if (!enabled) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      if (isVisualChromeEvent(event.target)) return;
+      const hit = pickCmsHit(event.clientX, event.clientY);
+      if (!hit) return;
+      if (hit.kind === "text") selectPath(hit.id);
+      else if (hit.kind === "link") selectLink(hit.id);
+      else if (hit.kind === "nav") selectNav(hit.id);
+      else selectPopup(hit.id);
+      event.stopPropagation();
+      if (hit.kind === "text" && !hit.html) {
+        queueMicrotask(() => hit.el.focus());
+      } else {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [enabled, selectPath, selectLink, selectNav, selectPopup]);
+
   const patchDraft = useCallback((next: Content) => {
     setDraft(next);
     setDirty(true);
@@ -193,6 +217,12 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       if (!user) {
         setStatus("error");
         setStatusMessage("Sign in at /admin/login to save. Dev preview cannot write production CMS.");
+        return false;
+      }
+      const htmlError = validateDraftHtml(draft);
+      if (htmlError) {
+        setStatus("error");
+        setStatusMessage(htmlError);
         return false;
       }
       setStatus("saving");

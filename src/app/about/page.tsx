@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
-import { disciplines, seo } from "@/lib/content";
+import { disciplines, seo, pageIntros } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -20,17 +20,22 @@ export default function AboutPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(720px_320px_at_80%_0%,rgba(24,87,236,.22),transparent_60%)]" />
         <div className="wrap relative">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-            Studio
+            <CmsText path="pageIntros.about.eyebrow">{pageIntros.about.eyebrow}</CmsText>
           </p>
-          <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
-            A motion house that learned to ship software.
-          </h1>
-          <p className="mt-4 max-w-[60ch] text-[16.5px] text-fg/58">
-            Real Digital Works is the build arm of Real Animation Works — the
-            Kennington studio that has taught animation, CAD and visualisation
-            since 2009. Same address. A new product: websites, AI desks,
-            applications.
-          </p>
+          <CmsText
+            path="pageIntros.about.headline"
+            as="h1"
+            className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]"
+          >
+            {pageIntros.about.headline}
+          </CmsText>
+          <CmsText
+            path="pageIntros.about.sub"
+            as="p"
+            className="mt-4 max-w-[60ch] text-[16.5px] text-fg/58"
+          >
+            {pageIntros.about.sub}
+          </CmsText>
         </div>
       </section>
       <section className="pb-20">

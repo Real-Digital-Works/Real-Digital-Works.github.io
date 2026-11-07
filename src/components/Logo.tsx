@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { CmsText } from "@/components/visual-editor/CmsText";
 
 type LogoProps = {
   className?: string;
@@ -32,9 +33,9 @@ export function Logo({ className = "", variant = "nav" }: LogoProps) {
           priority
         />
       </span>
-      <span className="hidden text-[16.5px] font-medium tracking-[-0.03em] whitespace-nowrap text-fg sm:inline">
-        Real <span className="font-semibold text-tech">Digital</span> Works
-      </span>
+      <CmsText path="site.name" className="hidden text-[16.5px] font-medium tracking-[-0.03em] whitespace-nowrap text-fg sm:inline">
+        Real Digital Works
+      </CmsText>
     </span>
   );
 }

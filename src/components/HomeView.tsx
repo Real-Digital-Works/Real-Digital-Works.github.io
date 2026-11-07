@@ -11,10 +11,26 @@ import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
 import { StudioChat } from "@/components/StudioChat";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
-import { CmsText, useDraftArray, useDraftServicesHome } from "@/components/visual-editor/CmsText";
-import { process as seedProcess, projects, proof as seedProof, stack, hero } from "@/lib/content";
+import {
+  CmsText,
+  useDraftArray,
+  useDraftServicesHome,
+  useLiveDraft,
+} from "@/components/visual-editor/CmsText";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
+import {
+  DEFAULT_HOME_SECTIONS,
+  process as seedProcess,
+  projects,
+  proof as seedProof,
+  stack,
+  hero,
+  type ProcessStep,
+  type Project,
+  type ProofStat,
+  type Service,
+} from "@/lib/content";
 import { homeServices as seedHomeServices } from "@/lib/services-data";
-import type { ProcessStep, ProofStat, Service } from "@/lib/content";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -24,16 +40,20 @@ export function HomeView() {
   const track = useRef<HTMLDivElement>(null);
   const indexEl = useRef<HTMLSpanElement>(null);
   const barEl = useRef<HTMLSpanElement>(null);
+  const visualOn = Boolean(useVisualEditorOptional()?.enabled);
+  const draft = useLiveDraft();
+  const home = { ...DEFAULT_HOME_SECTIONS, ...(draft.homeSections ?? {}) };
   const proof = useDraftArray<ProofStat>("proof", seedProof);
   const process = useDraftArray<ProcessStep>("process", seedProcess);
   const homeServices = useDraftServicesHome<Service>(seedHomeServices);
-  const featured = projects[0];
+  const liveProjects = useDraftArray<Project>("projects", projects);
+  const featured = liveProjects[0];
   const featuredMark = featured?.title.trim().split(/\s+/)[0] ?? "";
 
   useGSAP(
     () => {
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduce) return;
+      if (reduce || visualOn) return;
 
       gsap.to(".hero-grid", {
         yPercent: 22,
@@ -162,7 +182,7 @@ export function HomeView() {
         );
       });
     },
-    { scope: root },
+    { scope: root, dependencies: [visualOn] },
   );
 
   return (
@@ -232,7 +252,7 @@ export function HomeView() {
             ))}
           </div>
           <p className="scroll-cue pb-4 text-center font-mono text-[11px] tracking-[0.18em] text-fg/45 uppercase">
-            Scroll — the offer is below
+            <CmsText path="homeSections.scrollCue">{home.scrollCue}</CmsText>
           </p>
         </div>
       </section>
@@ -244,10 +264,10 @@ export function HomeView() {
           <div className="wrap mb-6 flex items-end justify-between gap-6">
             <div>
               <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-                Keep scrolling
+                <CmsText path="homeSections.offerEyebrow">{home.offerEyebrow}</CmsText>
               </p>
               <h2 className="display mt-2 text-[clamp(26px,3.6vw,42px)]">
-                One line at a time.
+                <CmsText path="homeSections.offerTitle">{home.offerTitle}</CmsText>
               </h2>
             </div>
             <p className="font-mono text-[13px] text-fg/40">
@@ -278,7 +298,7 @@ export function HomeView() {
                     <CmsText path={`svc.${service.id}.summary`}>{service.summary}</CmsText>
                   </p>
                   <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase">
-                    Open services →
+                    <CmsText path="homeSections.offerOpen">{home.offerOpen}</CmsText>
                   </p>
                 </div>
               </Link>
@@ -289,7 +309,9 @@ export function HomeView() {
               <span ref={barEl} />
             </div>
             <div className="mt-3 flex justify-between text-[12px]">
-              <span className="font-mono text-fg/30 uppercase">Unpack</span>
+              <span className="font-mono text-fg/30 uppercase">
+                <CmsText path="homeSections.unpack">{home.unpack}</CmsText>
+              </span>
               <CmsLink ctaId="home.allServices" href="/services" className="font-semibold tracking-[0.08em] text-cyan uppercase">
                 All services →
               </CmsLink>
@@ -301,8 +323,12 @@ export function HomeView() {
       {/* Mobile vertical stack — replaces GSAP horizontal scroll on small screens */}
       <section className={`border-t border-line py-12 ${homeServices.length > 0 ? "md:hidden" : "hidden"}`}>
         <div className="wrap">
-          <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">What we do</p>
-          <h2 className="display mt-2 text-[28px]">One line at a time.</h2>
+          <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
+            <CmsText path="homeSections.offerMobileEyebrow">{home.offerMobileEyebrow}</CmsText>
+          </p>
+          <h2 className="display mt-2 text-[28px]">
+            <CmsText path="homeSections.offerTitle">{home.offerTitle}</CmsText>
+          </h2>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {homeServices.map((service, i) => (
               <Link
@@ -332,41 +358,52 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="desk-block border-t border-line py-20 md:py-24">
+      <section className="desk-block relative z-10 border-t border-line py-20 md:py-24">
         <div className="wrap grid items-start gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
           <div>
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-              Then try it
+              <CmsText path="homeSections.deskEyebrow">{home.deskEyebrow}</CmsText>
             </p>
-            <h2 className="display mt-3 max-w-[12ch] text-[clamp(28px,4vw,48px)]">
-              The enquiry desk.
-            </h2>
-            <p className="mt-4 max-w-[46ch] text-[15.5px] text-fg/55">
-              This is the pattern we ship: answers first, then a human. Ask it
-              about a website, an app, search, or motion.
-            </p>
+            <CmsText
+              path="homeSections.deskTitle"
+              as="h2"
+              className="display mt-3 max-w-[12ch] text-[clamp(28px,4vw,48px)]"
+            >
+              {home.deskTitle}
+            </CmsText>
+            <CmsText
+              path="homeSections.deskIntro"
+              as="p"
+              className="mt-4 max-w-[46ch] text-[15.5px] text-fg/55"
+            >
+              {home.deskIntro}
+            </CmsText>
           </div>
           <StudioChat />
         </div>
       </section>
 
       {featured && (
-      <section className="work-block pb-20 md:pb-24">
+      <section className="work-block relative z-10 pb-20 md:pb-24">
         <div className="wrap">
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
               <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-                Then the proof
+                <CmsText path="homeSections.workEyebrow">{home.workEyebrow}</CmsText>
               </p>
-              <h2 className="display mt-2 text-[clamp(28px,4vw,48px)]">
+              <CmsText
+                path={`project.${featured.slug}.title`}
+                as="h2"
+                className="display mt-2 text-[clamp(28px,4vw,48px)]"
+              >
                 {featured.title}
-              </h2>
+              </CmsText>
             </div>
             <CmsLink ctaId="home.allWork" href="/work" className="btn btn-outline-light hidden sm:inline-flex">
               All work
             </CmsLink>
           </div>
-          <Link href={`/work/${featured.slug}`} className="work-stage group block">
+          <div className="work-stage group">
             <div className="overflow-hidden rounded-[24px] border border-line">
               <div className="grid md:grid-cols-[1.15fr_0.85fr]">
                 <div
@@ -384,7 +421,9 @@ export function HomeView() {
                   }
                 >
                   <p className="font-mono text-[11px] tracking-[0.22em] text-white/55 uppercase">
-                    {featured.status} · {featured.kind}
+                    <CmsText path={`project.${featured.slug}.status`}>{featured.status}</CmsText>
+                    {" · "}
+                    <CmsText path={`project.${featured.slug}.kind`}>{featured.kind}</CmsText>
                   </p>
                   {featuredMark && (
                     <p className="absolute bottom-8 left-8 font-serif text-[64px] leading-none text-[#f4efe6] italic md:bottom-10 md:left-10 md:text-[80px]">
@@ -396,13 +435,17 @@ export function HomeView() {
                   <p className="text-[16.5px] leading-relaxed text-fg/68">
                     <CmsText path={`project.${featured.slug}.summary`}>{featured.summary}</CmsText>
                   </p>
-                  <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
-                    Open the case →
-                  </p>
+                  <CmsLink
+                    ctaId="home.openCase"
+                    href={`/work/${featured.slug}`}
+                    className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg"
+                  >
+                    {home.openCase}
+                  </CmsLink>
                 </div>
               </div>
             </div>
-          </Link>
+          </div>
         </div>
       </section>
       )}
@@ -410,7 +453,7 @@ export function HomeView() {
       <section className="ship-block border-y border-line py-20 md:py-24">
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-            How it ships
+            <CmsText path="homeSections.processEyebrow">{home.processEyebrow}</CmsText>
           </p>
           <div className="mt-10 grid gap-10 md:grid-cols-4 md:gap-0">
             {process.map((step, i) => (
@@ -442,11 +485,15 @@ export function HomeView() {
         <div className="wrap grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
-              First questions
+              <CmsText path="homeSections.faqEyebrow">{home.faqEyebrow}</CmsText>
             </p>
-            <h2 className="display mt-3 text-[clamp(28px,3.6vw,44px)]">
-              Price, time, lock-in.
-            </h2>
+            <CmsText
+              path="homeSections.faqTitle"
+              as="h2"
+              className="display mt-3 text-[clamp(28px,3.6vw,44px)]"
+            >
+              {home.faqTitle}
+            </CmsText>
           </div>
           <Faq />
         </div>

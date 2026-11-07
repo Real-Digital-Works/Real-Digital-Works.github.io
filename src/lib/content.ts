@@ -23,7 +23,83 @@ export interface SiteInfo {
   address: string[];
   hours: string;
   url: string;
+  /** Paragraph under the footer lockup. Empty falls back to the live site copy. */
+  footerBlurb?: string;
+  /** Bottom-left footer line, e.g. © 2026 Real Digital Works */
+  copyright?: string;
 }
+
+export interface PageIntro {
+  eyebrow: string;
+  headline: string;
+  sub: string;
+  viewLabel?: string;
+}
+
+export const DEFAULT_FOOTER_BLURB =
+  "Websites, software, AI and motion. A Real Animation Works company, from the Kennington studio.";
+export const DEFAULT_COPYRIGHT = "© 2026 Real Digital Works";
+
+export const DEFAULT_FOOTER_COPY: Record<string, string> = {
+  colBuild: "Build",
+  colGrow: "Grow",
+  colCreate: "Create",
+  colSupport: "Support",
+  colCompany: "Company",
+  colStudio: "Studio",
+};
+
+export const DEFAULT_HOME_SECTIONS: Record<string, string> = {
+  scrollCue: "Scroll — the offer is below",
+  offerEyebrow: "Keep scrolling",
+  offerTitle: "One line at a time.",
+  offerOpen: "Open services →",
+  offerMobileEyebrow: "What we do",
+  unpack: "Unpack",
+  deskEyebrow: "Then try it",
+  deskTitle: "The enquiry desk.",
+  deskIntro:
+    "This is the pattern we ship: answers first, then a human. Ask it about a website, an app, search, or motion.",
+  workEyebrow: "Then the proof",
+  openCase: "Open the case →",
+  processEyebrow: "How it ships",
+  faqEyebrow: "First questions",
+  faqTitle: "Price, time, lock-in.",
+};
+
+export const DEFAULT_PAGE_INTROS: Record<string, PageIntro> = {
+  contact: {
+    eyebrow: "Contact",
+    headline: "Tell us what is not working.",
+    sub: "One working day for a reply. If we are not right for the job we will say so. The form goes to the studio.",
+  },
+  about: {
+    eyebrow: "Studio",
+    headline: "A motion house that learned to ship software.",
+    sub: "Real Digital Works is the build arm of Real Animation Works — the Kennington studio that has taught animation, CAD and visualisation since 2009. Same address. A new product: websites, AI desks, applications.",
+  },
+  pricing: {
+    eyebrow: "Pricing",
+    headline: "Know the number before you call.",
+    sub: "Tick what you need. The estimate updates as you go. Starting ranges for review, not a contract.",
+  },
+  blog: {
+    eyebrow: "Blog",
+    headline: "Thinking out loud.",
+    sub: "Guides, opinions and studio updates from the Kennington team.",
+  },
+  services: {
+    eyebrow: "Services",
+    headline: "Everything, or just the bit you are missing.",
+    sub: "Take one service or the lot. Most clients start with a website and add software, search or motion as they grow.",
+    viewLabel: "View service",
+  },
+  notfound: {
+    eyebrow: "404",
+    headline: "Page not found",
+    sub: "That address is not on this site. Try the homepage, or send a brief if you were looking for a piece of work.",
+  },
+};
 
 export interface PageSeo {
   title: string;
@@ -246,6 +322,12 @@ export interface Content {
   ctas?: Record<string, { label?: string; href?: string }>;
   /** Copy for Ask RDW, quote builder, contact brief, ⌘K, and overlays. */
   popups?: Record<string, Record<string, string>>;
+  /** H1 + intro on listing pages (contact, about, services, …). */
+  pageIntros?: Record<string, PageIntro>;
+  /** Home mid-page section copy (enquiry desk, process, FAQ heading, …). */
+  homeSections?: Record<string, string>;
+  /** Footer column headings. */
+  footerCopy?: Record<string, string>;
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -254,6 +336,60 @@ const content = raw as Content;
 
 function pickStr(value: string | undefined, fallback: string): string {
   return value?.trim() ? value : fallback;
+}
+
+export function mergeStringMap(
+  seed: Record<string, string>,
+  raw?: Record<string, string> | null,
+): Record<string, string> {
+  const next = { ...seed };
+  if (!raw || typeof raw !== "object") return next;
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === "string" && value.trim()) next[key] = value;
+  }
+  return next;
+}
+
+export function mergePageIntros(
+  raw?: Record<string, Partial<PageIntro>> | null,
+): Record<string, PageIntro> {
+  const next: Record<string, PageIntro> = {};
+  for (const [key, seed] of Object.entries(DEFAULT_PAGE_INTROS)) {
+    const row = raw?.[key];
+    next[key] = {
+      eyebrow: pickStr(row?.eyebrow, seed.eyebrow),
+      headline: pickStr(row?.headline, seed.headline),
+      sub: pickStr(row?.sub, seed.sub),
+      ...(seed.viewLabel || row?.viewLabel
+        ? { viewLabel: pickStr(row?.viewLabel, seed.viewLabel ?? "View service") }
+        : {}),
+    };
+  }
+  return next;
+}
+
+export function mergeSite(raw?: Partial<SiteInfo> | null, seed: SiteInfo = content.site): SiteInfo {
+  const addressRaw = Array.isArray(raw?.address) ? raw.address : seed.address;
+  const address = (addressRaw.length ? addressRaw : seed.address).map((line, i) =>
+    pickStr(typeof line === "string" ? line : "", seed.address[i] ?? ""),
+  );
+  return {
+    name: pickStr(raw?.name, seed.name),
+    parent: pickStr(raw?.parent, seed.parent),
+    tagline: pickStr(raw?.tagline, seed.tagline),
+    description: pickStr(raw?.description, seed.description),
+    phone: pickStr(raw?.phone, seed.phone),
+    phoneHref: pickStr(raw?.phoneHref, seed.phoneHref),
+    whatsapp: pickStr(raw?.whatsapp, seed.whatsapp),
+    whatsappHref: pickStr(raw?.whatsappHref, seed.whatsappHref),
+    email: pickStr(raw?.email, seed.email),
+    emailHref: pickStr(raw?.emailHref, seed.emailHref),
+    address: address.length ? address : seed.address,
+    hours: pickStr(raw?.hours, seed.hours),
+    url: pickStr(raw?.url, seed.url),
+    footerBlurb: pickStr(raw?.footerBlurb, seed.footerBlurb ?? DEFAULT_FOOTER_BLURB),
+    copyright: pickStr(raw?.copyright, seed.copyright ?? DEFAULT_COPYRIGHT),
+  };
 }
 
 function presentStr(raw: Partial<LegalPageContent> | null | undefined, key: keyof LegalPageContent, fallback: string): string {
@@ -476,7 +612,10 @@ export function mergeProjects(raw?: Project[] | null): Project[] {
   });
 }
 
-export const site = content.site;
+export const site = mergeSite(content.site);
+export const pageIntros = mergePageIntros(content.pageIntros);
+export const homeSections = mergeStringMap(DEFAULT_HOME_SECTIONS, content.homeSections);
+export const footerCopy = mergeStringMap(DEFAULT_FOOTER_COPY, content.footerCopy);
 export const seo: SeoMap = {
   ...content.seo,
   work: mergeWorkSeo(content.seo?.work),

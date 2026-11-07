@@ -14,6 +14,8 @@ import {
   resolveCta,
   type PopupField,
 } from "@/lib/cms-ui";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { isHtmlCmsPath, sanitizeCmsHtml } from "@/lib/cms-html";
 import { fieldLabel, resolveVisualSeo, VISUAL_PAGES } from "@/lib/visual-editor";
 import { useVisualEditor } from "./VisualEditorProvider";
 
@@ -416,22 +418,38 @@ export function VisualEditorChrome() {
 
 function TextInspector({ path }: { path: string }) {
   const ctx = useVisualEditor();
+  const rich = isHtmlCmsPath(path);
   return (
     <div>
-      <p className="rdw-ve-kicker">Text</p>
+      <p className="rdw-ve-kicker">{rich ? "Formatted text" : "Text"}</p>
       <h2>{fieldLabel(path)}</h2>
       <p className="rdw-ve-note">
-        Click the outlined copy on the page and type. Save &amp; Deploy writes it to cms/content.
+        {rich
+          ? "Use the buttons for bold, lists and links. You do not need to type HTML."
+          : "Click the outlined copy on the page and type, or edit it here."}
       </p>
-      <label className="rdw-ve-label">
-        Value
-        <textarea
-          className="rdw-ve-input rdw-ve-textarea"
-          rows={4}
-          value={ctx.getText(path)}
-          onChange={(event) => ctx.setText(path, event.target.value)}
+      {rich ? (
+        <RichTextEditor
+          content={ctx.getText(path)}
+          onChange={(html) => {
+            const cleaned = sanitizeCmsHtml(html);
+            if (cleaned.valid) ctx.setText(path, cleaned.html);
+          }}
+          placeholder="Write the page copy…"
+          minHeight="180px"
+          strict
         />
-      </label>
+      ) : (
+        <label className="rdw-ve-label">
+          Value
+          <textarea
+            className="rdw-ve-input rdw-ve-textarea"
+            rows={4}
+            value={ctx.getText(path)}
+            onChange={(event) => ctx.setText(path, event.target.value)}
+          />
+        </label>
+      )}
     </div>
   );
 }
@@ -511,8 +529,12 @@ function PopupInspector({ id }: { id: string }) {
 
 const visualEditorCss = `
 html[data-rdw-visual] body { padding-top: 96px; }
+@media (min-width: 900px) {
+  html[data-rdw-visual] body { padding-right: 352px; }
+}
 .rdw-ve-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 80;
+  pointer-events: auto;
   display: flex; flex-direction: column; gap: 6px;
   padding: 8px 14px 10px;
   background: rgba(12, 16, 24, 0.94);
@@ -564,6 +586,7 @@ html[data-rdw-visual] body { padding-top: 96px; }
   position: fixed; top: 108px; right: 12px; z-index: 82;
   width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 128px);
   overflow: auto; padding: 16px 16px 20px;
+  pointer-events: auto;
   background: rgba(15, 23, 42, 0.96); color: #F8FAFC;
   border: 1px solid rgba(24,87,236,.4); border-radius: 16px;
   box-shadow: 0 18px 50px rgba(0,0,0,.35);
@@ -606,10 +629,13 @@ html[data-rdw-visual] body { padding-top: 96px; }
 .rdw-ve-serp-title { color: #1D4ED8; font-size: 18px; margin: 0; line-height: 1.3; }
 .rdw-ve-serp-desc { color: #64748B; font-size: 13px; margin: 6px 0 0; line-height: 1.45; }
 .rdw-ve-note { font-size: 12px; line-height: 1.5; color: #94A3B8; }
+.rdw-legal-body { overflow: hidden; contain: content; isolation: isolate; }
 .rdw-cms-field {
+  position: relative; z-index: 1;
   outline: 1px dashed rgba(24,87,236,.0); outline-offset: 3px;
   cursor: text; border-radius: 4px; transition: outline-color 150ms ease, background 150ms ease;
 }
+.rdw-cms-field[data-cms-html="true"] { cursor: pointer; }
 .rdw-cms-field:hover { outline-color: rgba(24,87,236,.55); background: rgba(24,87,236,.08); }
 .rdw-cms-field:focus, .rdw-cms-field-selected {
   outline: 2px solid #1857EC; background: rgba(24,87,236,.12);

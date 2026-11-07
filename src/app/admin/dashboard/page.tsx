@@ -1064,6 +1064,34 @@ export default function AdminDashboard() {
                   <Field label="WhatsApp (display)" value={siteData.whatsapp} onChange={(v) => { setSiteData((p) => ({ ...p, whatsapp: v })); markUnsaved(); }} />
                   <Field label="Email" value={siteData.email} onChange={(v) => { setSiteData((p) => ({ ...p, email: v, emailHref: `mailto:${v}` })); markUnsaved(); }} />
                   <Field label="Business hours" value={siteData.hours} onChange={(v) => { setSiteData((p) => ({ ...p, hours: v })); markUnsaved(); }} />
+                  {(siteData.address ?? []).map((line, i) => (
+                    <Field
+                      key={`address-${i}`}
+                      label={`Address line ${i + 1}`}
+                      value={line}
+                      onChange={(v) => {
+                        setSiteData((p) => {
+                          const address = [...(p.address ?? [])];
+                          address[i] = v;
+                          return { ...p, address };
+                        });
+                        markUnsaved();
+                      }}
+                    />
+                  ))}
+                  <Field
+                    label="Footer description"
+                    value={siteData.footerBlurb ?? ""}
+                    textarea
+                    onChange={(v) => { setSiteData((p) => ({ ...p, footerBlurb: v })); markUnsaved(); }}
+                    hint="Shown under the logo in the footer."
+                  />
+                  <Field
+                    label="Copyright line"
+                    value={siteData.copyright ?? ""}
+                    onChange={(v) => { setSiteData((p) => ({ ...p, copyright: v })); markUnsaved(); }}
+                    hint="Bottom-left footer, e.g. © 2026 Real Digital Works."
+                  />
                 </Card>
               </>
             )}

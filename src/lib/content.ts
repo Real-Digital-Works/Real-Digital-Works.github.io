@@ -191,6 +191,26 @@ export interface NavItem {
   children?: NavItem[];  // sub-navigation (max 1 level deep)
 }
 
+/** CMS body + SEO for Privacy, Terms, and Modern Slavery */
+export interface LegalPageContent {
+  title: string;
+  body: string;
+  seoTitle: string;
+  seoDescription: string;
+}
+
+export interface LegalContent {
+  privacy: LegalPageContent;
+  terms: LegalPageContent;
+  modernSlavery: LegalPageContent;
+}
+
+export const LEGAL_HREFS = {
+  privacy: "/privacy",
+  terms: "/terms",
+  modernSlavery: "/modern-slavery",
+} as const;
+
 export interface Content {
   version: number;
   lastUpdated: string;
@@ -210,6 +230,8 @@ export interface Content {
   stack: string[];
   blogs: BlogPost[];
   pages: DynamicPage[];
+  /** Privacy, Terms, Modern Slavery — missing keys fall back to seed copy */
+  legal?: LegalContent;
   navItems?: NavItem[];
   /** Per-slug SEO for public /services/[slug] pages (kept in sync with servicePagesContent) */
   servicePagesSeo?: ServicePagesSeoMap;
@@ -228,6 +250,14 @@ const content = raw as Content;
 
 function pickStr(value: string | undefined, fallback: string): string {
   return value?.trim() ? value : fallback;
+}
+
+function presentStr(raw: Partial<LegalPageContent> | null | undefined, key: keyof LegalPageContent, fallback: string): string {
+  if (!raw || typeof raw !== "object" || !Object.prototype.hasOwnProperty.call(raw, key)) {
+    return fallback;
+  }
+  const value = raw[key];
+  return typeof value === "string" ? value : fallback;
 }
 
 export const DEFAULT_WORK_PAGE: WorkPageContent = {
@@ -259,6 +289,51 @@ export function mergeWorkPage(raw?: Partial<WorkPageContent> | null): WorkPageCo
     eyebrow: pickStr(raw?.eyebrow, DEFAULT_WORK_PAGE.eyebrow),
     headline: pickStr(raw?.headline, DEFAULT_WORK_PAGE.headline),
     sub: pickStr(raw?.sub, DEFAULT_WORK_PAGE.sub),
+  };
+}
+
+export const DEFAULT_LEGAL: LegalContent = {
+  privacy: {
+    title: "Privacy",
+    seoTitle: "Privacy policy",
+    seoDescription:
+      "How Real Digital Works uses enquiry details you send us, and how to ask for a copy or deletion.",
+    body: `<p>Real Digital Works collects the name, contact details and message you submit on this website so we can reply to your enquiry. We do not sell that information, and we do not use it for advertising lists.</p><p>Enquiries are stored so the studio can follow up. If you want a copy of what we hold, or you want it deleted, email info@realdigitalworks.com or call 020 7720 2581.</p><p>A fuller policy covering cookies, analytics and retention periods will replace this notice. Until then, treat the paragraph above as the current practice.</p>`,
+  },
+  terms: {
+    title: "Terms",
+    seoTitle: "Terms of use",
+    seoDescription:
+      "How to use the Real Digital Works website, and how to get a written agreement for project work.",
+    body: `<p>These pages explain how we use this website. They are not a substitute for a written proposal or contract on a paid project.</p><p>Real Digital Works is the digital studio of Real Animation Works, based at Kennington Business Park, Lincoln House LG-02, London SW9 6DE.</p><p>If you need terms for a brief, a quote, intellectual property, or how we work with clients, email info@realdigitalworks.com or call 020 7720 2581 and we will send them in writing.</p>`,
+  },
+  modernSlavery: {
+    title: "Modern Slavery Policy",
+    seoTitle: "Modern Slavery Policy",
+    seoDescription:
+      "Modern slavery policy for Real Digital Works, covering our Kennington studio, suppliers, and how to raise a concern. Full policy forthcoming.",
+    body: `<p>Policy forthcoming.</p><p>Real Digital Works, Kennington Business Park, Lincoln House LG-02, London SW9 6DE.</p><p>Until the full policy is published, email info@realdigitalworks.com or call 020 7720 2581.</p>`,
+  },
+};
+
+export function mergeLegalPage(
+  raw: Partial<LegalPageContent> | null | undefined,
+  fallback: LegalPageContent,
+): LegalPageContent {
+  if (!raw || typeof raw !== "object") return { ...fallback };
+  return {
+    title: presentStr(raw, "title", fallback.title),
+    body: presentStr(raw, "body", fallback.body),
+    seoTitle: presentStr(raw, "seoTitle", fallback.seoTitle),
+    seoDescription: presentStr(raw, "seoDescription", fallback.seoDescription),
+  };
+}
+
+export function mergeLegal(raw?: Partial<LegalContent> | null): LegalContent {
+  return {
+    privacy: mergeLegalPage(raw?.privacy, DEFAULT_LEGAL.privacy),
+    terms: mergeLegalPage(raw?.terms, DEFAULT_LEGAL.terms),
+    modernSlavery: mergeLegalPage(raw?.modernSlavery, DEFAULT_LEGAL.modernSlavery),
   };
 }
 
@@ -415,6 +490,7 @@ export const sectors = content.sectors;
 export const stack = content.stack;
 export const blogs: BlogPost[] = content.blogs ?? [];
 export const pages: DynamicPage[] = content.pages ?? [];
+export const legal: LegalContent = mergeLegal(content.legal);
 export const servicePagesSeo: ServicePagesSeoMap = content.servicePagesSeo ?? {};
 export const servicePagesContent: ServicePagesCmsMap = content.servicePagesContent ?? {};
 export const servicePagesList = content.servicePagesList;

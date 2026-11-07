@@ -4,7 +4,7 @@
  * Admin dashboard — content editor.
  *
  * Tabs:
- *   Site Info | SEO | Hero | Services | Work | FAQ | Pricing | Projects | Blog | Pages | Deploy
+ *   Site Info | SEO | Hero | Services | Work | FAQ | Pricing | Projects | Blog | Pages | Legal | Deploy
  */
 
 import { useEffect, useState, useCallback, type ChangeEvent } from "react";
@@ -39,6 +39,7 @@ import content, {
   appendNavChild,
   createBlankProject,
   hydrateServicesNavChildren,
+  mergeLegal,
   mergeNavItems,
   mergeProjects,
   mergeWorkPage,
@@ -65,6 +66,8 @@ import type {
   ProcessStep,
   Discipline,
   NavItem,
+  LegalContent,
+  LegalPageContent,
 } from "@/lib/content";
 import {
   createBlankService,
@@ -93,6 +96,7 @@ type Tab =
   | "nav"
   | "blog"
   | "pages"
+  | "legal"
   | "users"
   | "deploy";
 
@@ -346,6 +350,7 @@ export default function AdminDashboard() {
   );
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
+  const [legalData, setLegalData] = useState<LegalContent>(() => mergeLegal(content.legal));
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
@@ -396,6 +401,7 @@ export default function AdminDashboard() {
     if (Array.isArray(d.projects)) setProjectsData(mergeProjects(d.projects as Project[]));
     if (d.process) setProcessData(d.process as ProcessStep[]);
     if (d.disciplines) setDisciplinesData(d.disciplines as Discipline[]);
+    setLegalData(mergeLegal(d.legal as Partial<LegalContent> | undefined));
     if (Array.isArray(d.navItems)) {
       setNavData(hydrateServicesNavChildren(mergeNavItems(d.navItems as NavItem[]), nextServices));
     } else {
@@ -678,6 +684,7 @@ export default function AdminDashboard() {
       projects: projectsData,
       process: processData,
       disciplines: disciplinesData,
+      legal: legalData,
       navItems: navData,
       updatedAt: serverTimestamp(),
     };
@@ -815,6 +822,9 @@ export default function AdminDashboard() {
     { group: "Site", label: "Blog", href: "/blog" },
     { group: "Site", label: "About", href: "/about" },
     { group: "Site", label: "Contact", href: "/contact" },
+    { group: "Legal", label: "Privacy Policy", href: "/privacy" },
+    { group: "Legal", label: "Terms", href: "/terms" },
+    { group: "Legal", label: "Modern Slavery Policy", href: "/modern-slavery" },
     ...servicePagesList.map((svc) => ({
       group: "Services",
       label: svc.title || svc.slug,
@@ -874,6 +884,10 @@ export default function AdminDashboard() {
       setTab("site");
       return;
     }
+    if (href === "/privacy" || href === "/terms" || href === "/modern-slavery") {
+      setTab("legal");
+      return;
+    }
     if (href === "/blog" || href.startsWith("/blog/")) {
       const blogSlug = href.startsWith("/blog/") ? href.slice("/blog/".length).replace(/\/$/, "") : "";
       const post = blogSlug ? blogsData.find((b) => b.slug === blogSlug) : null;
@@ -911,6 +925,7 @@ export default function AdminDashboard() {
     { id: "nav", label: "🧭 Navigation" },
     { id: "blog", label: "✍ Blog" },
     { id: "pages", label: "📄 Pages" },
+    { id: "legal", label: "Legal" },
     { id: "users", label: "👥 Users" },
     { id: "deploy", label: "⚡ Deploy" },
   ];
@@ -1701,6 +1716,63 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )}
+              </>
+            )}
+
+            {/* ── LEGAL ── */}
+            {tab === "legal" && (
+              <>
+                <SectionTitle
+                  title="Legal pages"
+                  sub="Privacy, Terms and Modern Slavery. Shown in the footer and at /privacy, /terms and /modern-slavery. Save & Deploy publishes them like every other CMS page."
+                />
+                {(
+                  [
+                    { key: "privacy", href: "/privacy", label: "Privacy Policy" },
+                    { key: "terms", href: "/terms", label: "Terms" },
+                    { key: "modernSlavery", href: "/modern-slavery", label: "Modern Slavery Policy" },
+                  ] as const
+                ).map((item) => {
+                  const page = legalData[item.key];
+                  const patch = (next: Partial<LegalPageContent>) => {
+                    setLegalData((current) => ({
+                      ...current,
+                      [item.key]: { ...current[item.key], ...next },
+                    }));
+                    markUnsaved();
+                  };
+                  return (
+                    <Card key={item.key} className="space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white/80">{item.label}</h3>
+                        <span className="font-mono text-[11px] text-white/40">{item.href}</span>
+                      </div>
+                      <Field label="Page title" value={page.title} onChange={(v) => patch({ title: v })} hint="Visible H1 on the public page." />
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Body</label>
+                        <RichTextEditor
+                          content={page.body}
+                          onChange={(html) => patch({ body: html })}
+                          placeholder="Write the legal copy…"
+                          minHeight="220px"
+                        />
+                      </div>
+                      <Field
+                        label="SEO title"
+                        value={page.seoTitle}
+                        onChange={(v) => patch({ seoTitle: v })}
+                        hint="Browser tab and Google title. 50–60 characters ideal."
+                      />
+                      <Field
+                        label="Meta description"
+                        value={page.seoDescription}
+                        textarea
+                        onChange={(v) => patch({ seoDescription: v })}
+                        hint="Google snippet. 130–160 characters ideal."
+                      />
+                    </Card>
+                  );
+                })}
               </>
             )}
 

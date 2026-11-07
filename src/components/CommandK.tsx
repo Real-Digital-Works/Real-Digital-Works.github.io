@@ -43,9 +43,17 @@ export function CommandK() {
     };
   }, []);
 
-  const items = flattenNav(navItems).filter((item) =>
-    item.label.toLowerCase().includes(q.toLowerCase()),
-  );
+  const legalItems = [
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Modern Slavery Policy", href: "/modern-slavery" },
+  ];
+  const seen = new Set<string>();
+  const items = [...flattenNav(navItems), ...legalItems].filter((item) => {
+    if (seen.has(item.href)) return false;
+    seen.add(item.href);
+    return item.label.toLowerCase().includes(q.toLowerCase());
+  });
 
   if (!open) return null;
 

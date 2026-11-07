@@ -1,32 +1,21 @@
 import type { Metadata } from "next";
-import { site } from "@/lib/content";
+import { LegalDocument } from "@/components/LegalDocument";
+import { legal } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
-const policyTitle = "Modern Slavery Policy";
-const policyDescription =
-  "Modern slavery policy for Real Digital Works, covering our Kennington studio, suppliers, and how to raise a concern. Full policy forthcoming.";
+const page = legal.modernSlavery;
+const metaTitle = page.seoTitle.trim() || page.title.trim() || "Modern Slavery Policy";
+const metaDescription =
+  page.seoDescription.trim() ||
+  "Modern slavery policy for Real Digital Works, covering our Kennington studio, suppliers, and how to raise a concern.";
 
 export const metadata: Metadata = {
-  title: brandedTitle(policyTitle),
-  description: policyDescription,
+  title: brandedTitle(metaTitle),
+  description: metaDescription,
   alternates: { canonical: "/modern-slavery" },
-  ...shareTitle(policyTitle, policyDescription, { url: "/modern-slavery" }),
+  ...shareTitle(metaTitle, metaDescription, { url: "/modern-slavery" }),
 };
 
 export default function ModernSlaveryPage() {
-  return (
-    <section className="py-24">
-      <div className="wrap max-w-[68ch]">
-        <span className="tag">Legal</span>
-        <h1 className="display mt-4 text-[clamp(36px,5vw,56px)]">Modern Slavery Policy</h1>
-        <p className="mt-6 text-mid">Policy forthcoming.</p>
-        <p className="mt-4 text-mid">
-          Real Digital Works, {site.address.join(", ")}.
-        </p>
-        <p className="mt-4 text-mid">
-          Until the full policy is published, email {site.email} or call {site.phone}.
-        </p>
-      </div>
-    </section>
-  );
+  return <LegalDocument page={page} />;
 }

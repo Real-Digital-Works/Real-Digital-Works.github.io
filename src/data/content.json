@@ -373,6 +373,26 @@
   ],
   "blogs": [],
   "pages": [],
+  "legal": {
+    "privacy": {
+      "title": "Privacy",
+      "seoTitle": "Privacy policy",
+      "seoDescription": "How Real Digital Works uses enquiry details you send us, and how to ask for a copy or deletion.",
+      "body": "<p>Real Digital Works collects the name, contact details and message you submit on this website so we can reply to your enquiry. We do not sell that information, and we do not use it for advertising lists.</p><p>Enquiries are stored so the studio can follow up. If you want a copy of what we hold, or you want it deleted, email info@realdigitalworks.com or call 020 7720 2581.</p><p>A fuller policy covering cookies, analytics and retention periods will replace this notice. Until then, treat the paragraph above as the current practice.</p>"
+    },
+    "terms": {
+      "title": "Terms",
+      "seoTitle": "Terms of use",
+      "seoDescription": "How to use the Real Digital Works website, and how to get a written agreement for project work.",
+      "body": "<p>These pages explain how we use this website. They are not a substitute for a written proposal or contract on a paid project.</p><p>Real Digital Works is the digital studio of Real Animation Works, based at Kennington Business Park, Lincoln House LG-02, London SW9 6DE.</p><p>If you need terms for a brief, a quote, intellectual property, or how we work with clients, email info@realdigitalworks.com or call 020 7720 2581 and we will send them in writing.</p>"
+    },
+    "modernSlavery": {
+      "title": "Modern Slavery Policy",
+      "seoTitle": "Modern Slavery Policy",
+      "seoDescription": "Modern slavery policy for Real Digital Works, covering our Kennington studio, suppliers, and how to raise a concern. Full policy forthcoming.",
+      "body": "<p>Policy forthcoming.</p><p>Real Digital Works, Kennington Business Park, Lincoln House LG-02, London SW9 6DE.</p><p>Until the full policy is published, email info@realdigitalworks.com or call 020 7720 2581.</p>"
+    }
+  },
   "servicePagesContent": {},
   "servicePagesSeo": {
     "web-design": {

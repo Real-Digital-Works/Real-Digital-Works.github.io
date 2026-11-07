@@ -9,7 +9,7 @@ type Props = { params: Promise<{ page: string }> };
 // Reserved slugs — never hit this catch-all
 const RESERVED = new Set([
   "work", "services", "pricing", "about", "contact",
-  "blog", "admin", "privacy", "modern-slavery", "sitemap.xml", "robots.txt",
+  "blog", "admin", "privacy", "terms", "modern-slavery", "sitemap.xml", "robots.txt",
 ]);
 
 export async function generateStaticParams() {

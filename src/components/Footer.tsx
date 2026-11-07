@@ -75,6 +75,9 @@ export function Footer() {
             <Link className="block py-1 hover:text-tech" href="/work">Work</Link>
             <Link className="block py-1 hover:text-tech" href="/pricing">Pricing</Link>
             <Link className="block py-1 hover:text-tech" href="/contact">Contact</Link>
+            <Link className="block py-1 hover:text-tech" href="/privacy">Privacy Policy</Link>
+            <Link className="block py-1 hover:text-tech" href="/terms">Terms</Link>
+            <Link className="block py-1 hover:text-tech" href="/modern-slavery">Modern Slavery Policy</Link>
             <a className="block py-1 hover:text-tech" href="https://www.realanimationworks.com" target="_blank" rel="noreferrer">{site.parent}</a>
           </div>
           <div>
@@ -90,12 +93,13 @@ export function Footer() {
         </div>
 
         {/* Bottom row — F3 */}
-        <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/45">
+        <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/55">
           <span>© 2026 Real Digital Works</span>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-tech">Privacy Policy</Link>
-            <Link href="/modern-slavery" className="hover:text-tech">Modern Slavery Policy</Link>
-          </div>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link href="/privacy" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Privacy Policy</Link>
+            <Link href="/terms" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Terms</Link>
+            <Link href="/modern-slavery" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Modern Slavery Policy</Link>
+          </nav>
           <span>A {site.parent} company</span>
         </div>
       </div>

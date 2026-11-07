@@ -15,6 +15,7 @@ import { auth, firebaseConfigured } from "@/lib/firebase";
 import seedContent, { type Content } from "@/lib/content";
 import { cmsContentDoc, saveLiveCmsContent } from "@/lib/cms-save";
 import type { CmsSaveSource } from "@/lib/cms-versions";
+import { logFirestoreIssue } from "@/lib/firestore-errors";
 import {
   clearVisualDevBypass,
   clearVisualEditorFlag,
@@ -118,7 +119,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
         if (cancelled || !snap.exists()) return;
         setDraft(hydrateVisualDraft(seedContent, snap.data()));
       } catch (error) {
-        console.error("Visual editor: failed to load cms/content", error);
+        logFirestoreIssue("visual editor cms/content read", error);
       }
     })();
     return () => {
@@ -155,7 +156,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       setStatus("saving");
       setStatusMessage(source === "save-and-deploy" ? "Saving…" : "Saving to cms/content…");
       try {
-        await saveLiveCmsContent({
+        const result = await saveLiveCmsContent({
           payload: visualSavePayload(draft),
           source,
           createdBy: { uid: user?.uid ?? null, email: user?.email ?? null },
@@ -163,13 +164,17 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
         });
         setDirty(false);
         setStatus("saved");
-        setStatusMessage("Saved to Firestore (cms/content + version snapshot).");
+        setStatusMessage(
+          result.versionSaved
+            ? "Saved to Firestore (cms/content + version snapshot)."
+            : "Saved to cms/content. Version snapshot skipped (permissions).",
+        );
         window.setTimeout(() => {
           setStatus((s) => (s === "saved" ? "idle" : s));
         }, 3200);
         return true;
       } catch (error) {
-        console.error(error);
+        logFirestoreIssue("visual editor cms/content write", error);
         setStatus("error");
         setStatusMessage(error instanceof Error ? error.message : "Save failed");
         return false;

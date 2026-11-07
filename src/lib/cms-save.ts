@@ -7,6 +7,7 @@ import {
   type CmsSaveSource,
   type CmsVersionCreatedBy,
 } from "@/lib/cms-versions";
+import { logFirestoreIssue } from "@/lib/firestore-errors";
 
 /** Live document path used by the admin dashboard and the visual editor. */
 export function cmsContentDoc() {
@@ -38,7 +39,7 @@ export async function saveLiveCmsContent(options: {
     });
     return { liveSaved: true, versionSaved: true };
   } catch (error) {
-    console.error("CMS version snapshot failed (live content was still saved):", error);
+    logFirestoreIssue("cms/content/versions snapshot", error);
     return { liveSaved: true, versionSaved: false };
   }
 }

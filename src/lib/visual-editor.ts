@@ -72,7 +72,7 @@ export function clearVisualEditorFlag() {
   }
 }
 
-/** Admin chrome: turn the overlay on, then open the public site. */
+/** Admin chrome: cookie + localStorage only, then open `/`. No Firestore. */
 export function startLiveEdit() {
   setVisualEditorFlag();
   window.location.assign("/");

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
+import { CmsText } from "@/components/visual-editor/CmsText";
 import { site, seo } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
@@ -62,19 +63,25 @@ export default async function ContactPage({
               <div>
                 <dt className="text-[13.5px] text-fg/50">Call</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.phoneHref}>{site.phone}</a>
+                  <a href={site.phoneHref}>
+                    <CmsText path="site.phone">{site.phone}</CmsText>
+                  </a>
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">WhatsApp</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.whatsappHref}>{site.whatsapp}</a>
+                  <a href={site.whatsappHref}>
+                    <CmsText path="site.whatsapp">{site.whatsapp}</CmsText>
+                  </a>
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Email</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.emailHref}>{site.email}</a>
+                  <a href={site.emailHref}>
+                    <CmsText path="site.email">{site.email}</CmsText>
+                  </a>
                 </dd>
               </div>
               <div>
@@ -89,7 +96,9 @@ export default async function ContactPage({
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Hours</dt>
-                <dd className="mt-1 text-lg font-medium">{site.hours}</dd>
+                <dd className="mt-1 text-lg font-medium">
+                  <CmsText path="site.hours">{site.hours}</CmsText>
+                </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Parent company</dt>

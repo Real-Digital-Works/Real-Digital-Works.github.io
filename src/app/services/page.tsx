@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { RichContent } from "@/components/RichContent";
+import { CmsText } from "@/components/visual-editor/CmsText";
 import { seo, faq } from "@/lib/content";
 import { canonicalUrl } from "@/lib/canonical-url";
 import { cmsServiceRecords } from "@/lib/services-data";
@@ -63,16 +63,29 @@ export default function ServicesPage() {
               >
                 <div>
                   <h2 className="text-2xl font-semibold tracking-[-0.03em]">
-                    {service.listingTitle.trim() || service.title}
+                    <CmsText path={`svc.${service.slug}.listingTitle`}>
+                      {service.listingTitle.trim() || service.title}
+                    </CmsText>
                   </h2>
-                  <p className="mt-2 font-semibold text-beam">{service.from}</p>
+                  <p className="mt-2 font-semibold text-beam">
+                    <CmsText path={`svc.${service.slug}.from`}>{service.from}</CmsText>
+                  </p>
                 </div>
                 <div>
-                  <p className="text-fg/58">{service.summary || service.intro}</p>
+                  <p className="text-fg/58">
+                    <CmsText path={`svc.${service.slug}.summary`}>
+                      {service.summary || service.intro}
+                    </CmsText>
+                  </p>
                   {service.detail ? (
-                    <div className="mt-3 text-[15px] text-fg/60">
-                      <RichContent html={service.detail} />
-                    </div>
+                    <CmsText
+                      path={`svc.${service.slug}.detail`}
+                      as="div"
+                      className="mt-3 text-[15px] text-fg/60"
+                      html
+                    >
+                      {service.detail}
+                    </CmsText>
                   ) : null}
                 </div>
                 <Link
@@ -117,10 +130,16 @@ export default function ServicesPage() {
           <span className="tag">Questions</span>
           <h2 className="display mt-3 text-[clamp(28px,3.5vw,44px)]">Common questions</h2>
           <dl className="mt-8 grid gap-4 md:grid-cols-2">
-            {faq.slice(0, 4).map((item) => (
+            {faq.slice(0, 4).map((item, i) => (
               <div key={item.q} className="glass rounded-2xl p-6">
-                <dt className="font-semibold text-fg">{item.q}</dt>
-                <dd className="mt-2 text-[15px] text-fg/55">{item.a}</dd>
+                <dt className="font-semibold text-fg">
+                  <CmsText path={`faq.${i}.q`}>{item.q}</CmsText>
+                </dt>
+                <dd className="mt-2 text-[15px] text-fg/55">
+                  <CmsText path={`faq.${i}.a`} html>
+                    {item.a}
+                  </CmsText>
+                </dd>
               </div>
             ))}
           </dl>

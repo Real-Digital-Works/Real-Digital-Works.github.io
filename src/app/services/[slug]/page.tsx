@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CmsText } from "@/components/visual-editor/CmsText";
 import { site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl } from "@/lib/canonical-url";
 import { brandedTitle, serviceHeading, shareTitle } from "@/lib/seo";
@@ -99,12 +100,20 @@ export default async function ServicePage({ params }: Props) {
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
             {service.category}
           </p>
-          <h1 className="display mt-3 text-[clamp(42px,6vw,80px)] leading-[0.95] tracking-[-0.04em]">
+          <CmsText
+            path={`svc.${slug}.title`}
+            as="h1"
+            className="display mt-3 text-[clamp(42px,6vw,80px)] leading-[0.95] tracking-[-0.04em]"
+          >
             {heading}
-          </h1>
-          <p className="mt-6 max-w-[55ch] text-[18px] leading-relaxed text-fg/65">
+          </CmsText>
+          <CmsText
+            path={`svc.${slug}.intro`}
+            as="p"
+            className="mt-6 max-w-[55ch] text-[18px] leading-relaxed text-fg/65"
+          >
             {service.intro}
-          </p>
+          </CmsText>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href={quoteHref}
@@ -118,7 +127,9 @@ export default async function ServicePage({ params }: Props) {
             >
               Book a free call
             </a>
-            <span className="font-mono text-[13px] text-fg/55">{service.from}</span>
+            <span className="font-mono text-[13px] text-fg/55">
+              <CmsText path={`svc.${slug}.from`}>{service.from}</CmsText>
+            </span>
           </div>
         </div>
       </section>
@@ -132,7 +143,9 @@ export default async function ServicePage({ params }: Props) {
           <h2 className="display mt-2 text-[clamp(28px,3.6vw,44px)]">
             How we approach this.
           </h2>
-          <p className="mt-6 text-[17px] leading-relaxed text-fg/65">{service.overview}</p>
+          <CmsText path={`svc.${slug}.overview`} as="p" className="mt-6 text-[17px] leading-relaxed text-fg/65">
+            {service.overview}
+          </CmsText>
         </div>
       </section>
 
@@ -146,10 +159,14 @@ export default async function ServicePage({ params }: Props) {
             Six parts of the work.
           </h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {service.whatsIncluded.map((item) => (
+            {service.whatsIncluded.map((item, i) => (
               <div key={item.title} className="glass rounded-[20px] p-7">
-                <h3 className="text-[17px] font-semibold tracking-[-0.02em]">{item.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-fg/60">{item.description}</p>
+                <h3 className="text-[17px] font-semibold tracking-[-0.02em]">
+                  <CmsText path={`svc.${slug}.whatsIncluded.${i}.title`}>{item.title}</CmsText>
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-fg/60">
+                  <CmsText path={`svc.${slug}.whatsIncluded.${i}.description`}>{item.description}</CmsText>
+                </p>
               </div>
             ))}
           </div>
@@ -171,8 +188,12 @@ export default async function ServicePage({ params }: Props) {
                 <p className="font-mono text-[11px] tracking-[0.18em] text-tech">
                   {String(index + 1).padStart(2, "0")}
                 </p>
-                <h3 className="mt-3 text-[16px] font-semibold tracking-[-0.02em]">{item.title}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-fg/60">{item.description}</p>
+                <h3 className="mt-3 text-[16px] font-semibold tracking-[-0.02em]">
+                  <CmsText path={`svc.${slug}.process.${index}.title`}>{item.title}</CmsText>
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-fg/60">
+                  <CmsText path={`svc.${slug}.process.${index}.description`}>{item.description}</CmsText>
+                </p>
               </li>
             ))}
           </ol>
@@ -190,10 +211,14 @@ export default async function ServicePage({ params }: Props) {
             Common questions.
           </h2>
           <div className="mt-10 divide-y divide-line">
-            {service.faq.map((item) => (
+            {service.faq.map((item, i) => (
               <div key={item.q} className="py-6">
-                <h3 className="text-[16px] font-semibold tracking-[-0.015em]">{item.q}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-fg/60">{item.a}</p>
+                <h3 className="text-[16px] font-semibold tracking-[-0.015em]">
+                  <CmsText path={`svc.${slug}.faq.${i}.q`}>{item.q}</CmsText>
+                </h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-fg/60">
+                  <CmsText path={`svc.${slug}.faq.${i}.a`}>{item.a}</CmsText>
+                </p>
               </div>
             ))}
           </div>

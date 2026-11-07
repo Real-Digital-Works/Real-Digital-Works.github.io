@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function ModernSlaveryPage() {
-  return <LegalDocument page={page} />;
+  return <LegalDocument page={page} field="modernSlavery" />;
 }

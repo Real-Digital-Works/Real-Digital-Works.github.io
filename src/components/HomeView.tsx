@@ -9,10 +9,11 @@ import { Faq } from "@/components/Faq";
 import { HeroScene } from "@/components/HeroScene";
 import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
-import { RichContent } from "@/components/RichContent";
 import { StudioChat } from "@/components/StudioChat";
-import { process, projects, proof, stack, hero } from "@/lib/content";
-import { homeServices } from "@/lib/services-data";
+import { CmsText, useDraftArray, useDraftServicesHome } from "@/components/visual-editor/CmsText";
+import { process as seedProcess, projects, proof as seedProof, stack, hero } from "@/lib/content";
+import { homeServices as seedHomeServices } from "@/lib/services-data";
+import type { ProcessStep, ProofStat, Service } from "@/lib/content";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -22,6 +23,9 @@ export function HomeView() {
   const track = useRef<HTMLDivElement>(null);
   const indexEl = useRef<HTMLSpanElement>(null);
   const barEl = useRef<HTMLSpanElement>(null);
+  const proof = useDraftArray<ProofStat>("proof", seedProof);
+  const process = useDraftArray<ProcessStep>("process", seedProcess);
+  const homeServices = useDraftServicesHome<Service>(seedHomeServices);
   const featured = projects[0];
   const featuredMark = featured?.title.trim().split(/\s+/)[0] ?? "";
 
@@ -180,24 +184,30 @@ export function HomeView() {
           <div>
             <p className="rise inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-cyan uppercase">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan" />
-              {hero.eyebrow}
+              <CmsText path="hero.eyebrow">{hero.eyebrow}</CmsText>
             </p>
-            <h1 className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-fg">
-              {hero.headline.split("\n").slice(0, -1).join(" ")}
-              <br />
-              <span className="accent accent-wash">
-                {hero.headline.split("\n").slice(-1)[0]}
-              </span>
-            </h1>
-            <p className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-fg/62">
-              <RichContent html={hero.sub} />
-            </p>
+            <CmsText
+              path="hero.headline"
+              as="h1"
+              className="rise-2 display mt-4 text-[clamp(40px,6.4vw,76px)] text-fg"
+              accentLastLine
+            >
+              {hero.headline}
+            </CmsText>
+            <CmsText
+              path="hero.sub"
+              as="p"
+              className="rise-3 mt-5 max-w-[42ch] text-[16.5px] leading-relaxed text-fg/62"
+              html
+            >
+              {hero.sub}
+            </CmsText>
             <div className="rise-4 relative z-30 mt-7 flex flex-wrap items-center gap-3">
               <Link href={hero.primaryHref} className="btn btn-beam">
-                {hero.primaryCta}
+                <CmsText path="hero.primaryCta">{hero.primaryCta}</CmsText>
               </Link>
               <Link href={hero.secondaryHref} className="btn btn-outline-light">
-                {hero.secondaryCta}
+                <CmsText path="hero.secondaryCta">{hero.secondaryCta}</CmsText>
               </Link>
             </div>
           </div>
@@ -206,16 +216,16 @@ export function HomeView() {
 
         <div className="relative z-10 border-t border-line">
           <div className="wrap grid grid-cols-2 md:grid-cols-4">
-            {proof.map((item) => (
+            {proof.map((item, i) => (
               <div
                 key={item.label}
                 className="border-b border-line px-0 py-4 even:pl-6 md:border-b-0 md:border-r md:px-6 md:even:pl-6 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
               >
                 <strong className="display block text-[22px] sm:text-[26px]">
-                  {item.value}
+                  <CmsText path={`proof.${i}.value`}>{item.value}</CmsText>
                 </strong>
                 <span className="mt-1 block text-[12.5px] text-fg/60">
-                  {item.label}
+                  <CmsText path={`proof.${i}.label`}>{item.label}</CmsText>
                 </span>
               </div>
             ))}
@@ -255,14 +265,16 @@ export function HomeView() {
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-beam/15 text-[22px]">
                     {["🌐","🛒","⚙️","🤖","⚡","👥","🔍","📣","📱","🔬","✦","🎬","📷","✍️","🖥️","🎓","🔒"][i] ?? "✦"}
                   </span>
-                  <p className="font-mono text-[12px] text-cyan">{service.from}</p>
+                  <p className="font-mono text-[12px] text-cyan">
+                    <CmsText path={`svc.${service.id}.from`}>{service.from}</CmsText>
+                  </p>
                 </div>
                 <div>
                   <h3 className="text-[clamp(28px,3.6vw,44px)] leading-[1.0] font-semibold tracking-[-0.045em]">
-                    {service.title}
+                    <CmsText path={`svc.${service.id}.listingTitle`}>{service.title}</CmsText>
                   </h3>
                   <p className="mt-4 max-w-[36ch] text-[15px] leading-relaxed text-fg/60">
-                    {service.summary}
+                    <CmsText path={`svc.${service.id}.summary`}>{service.summary}</CmsText>
                   </p>
                   <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase">
                     Open services →
@@ -301,11 +313,17 @@ export function HomeView() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-beam/15 text-[20px]">
                     {["🌐","🛒","⚙️","🤖","⚡","👥","🔍","📣","📱","🔬","✦","🎬","📷","✍️","🖥️","🎓","🔒"][i] ?? "✦"}
                   </span>
-                  <span className="font-mono text-[11px] text-cyan">{service.from}</span>
+                  <span className="font-mono text-[11px] text-cyan">
+                    <CmsText path={`svc.${service.id}.from`}>{service.from}</CmsText>
+                  </span>
                 </div>
                 <div>
-                  <h3 className="text-[18px] font-semibold tracking-[-0.03em]">{service.title}</h3>
-                  <p className="mt-2 text-[13.5px] leading-relaxed text-fg/60">{service.summary}</p>
+                  <h3 className="text-[18px] font-semibold tracking-[-0.03em]">
+                    <CmsText path={`svc.${service.id}.listingTitle`}>{service.title}</CmsText>
+                  </h3>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-fg/60">
+                    <CmsText path={`svc.${service.id}.summary`}>{service.summary}</CmsText>
+                  </p>
                 </div>
               </Link>
             ))}
@@ -375,7 +393,7 @@ export function HomeView() {
                 </div>
                 <div className="flex flex-col justify-between bg-fg/[0.03] p-8 md:p-10">
                   <p className="text-[16.5px] leading-relaxed text-fg/68">
-                    {featured.summary}
+                    <CmsText path={`project.${featured.slug}.summary`}>{featured.summary}</CmsText>
                   </p>
                   <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
                     Open the case →
@@ -403,11 +421,16 @@ export function HomeView() {
               >
                 <p className="font-mono text-[12px] text-tech">{step.n}</p>
                 <h3 className="mt-3 text-[17px] font-semibold tracking-[-0.03em]">
-                  {step.title}
+                  <CmsText path={`process.${i}.title`}>{step.title}</CmsText>
                 </h3>
-                <p className="mt-2 text-[14.5px] leading-relaxed text-fg/65">
-                  <RichContent html={step.body} />
-                </p>
+                <CmsText
+                  path={`process.${i}.body`}
+                  as="p"
+                  className="mt-2 text-[14.5px] leading-relaxed text-fg/65"
+                  html
+                >
+                  {step.body}
+                </CmsText>
               </div>
             ))}
           </div>

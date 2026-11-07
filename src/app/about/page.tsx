@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { RichContent } from "@/components/RichContent";
+import { CmsText } from "@/components/visual-editor/CmsText";
 import { disciplines, seo } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
@@ -39,9 +39,11 @@ export default function AboutPage() {
             <Reveal key={item.title} delay={i * 0.05} className="glass rounded-3xl p-8">
               <p className="font-mono text-[11px] text-cyan">0{i + 1}</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">
-                {item.title}
+                <CmsText path={`disciplines.${i}.title`}>{item.title}</CmsText>
               </h2>
-              <p className="mt-3 text-fg/55"><RichContent html={item.body} /></p>
+              <CmsText path={`disciplines.${i}.body`} as="p" className="mt-3 text-fg/55" html>
+                {item.body}
+              </CmsText>
             </Reveal>
           ))}
         </div>

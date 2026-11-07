@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
-import { RichContent } from "@/components/RichContent";
+import { CmsText } from "@/components/visual-editor/CmsText";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -60,11 +60,19 @@ export default async function WorkDetailPage({ params }: Props) {
           <p className="mt-5 font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">
             {project.status} · {project.year} · {project.kind}
           </p>
-          <h1 className="display mt-3 max-w-[14ch] text-[clamp(36px,5.5vw,64px)]">
+          <CmsText
+            path={`project.${slug}.title`}
+            as="h1"
+            className="display mt-3 max-w-[14ch] text-[clamp(36px,5.5vw,64px)]"
+          >
             {project.title}
-          </h1>
-          <p className="mt-2 text-fg/50">{project.client}</p>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/68">{project.summary}</p>
+          </CmsText>
+          <p className="mt-2 text-fg/50">
+            <CmsText path={`project.${slug}.client`}>{project.client}</CmsText>
+          </p>
+          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/68">
+            <CmsText path={`project.${slug}.summary`}>{project.summary}</CmsText>
+          </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
@@ -83,19 +91,25 @@ export default async function WorkDetailPage({ params }: Props) {
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               Problem
             </h2>
-            <div className="mt-3 text-mid"><RichContent html={project.problem} /></div>
+            <CmsText path={`project.${slug}.problem`} as="div" className="mt-3 text-mid" html>
+              {project.problem}
+            </CmsText>
           </article>
           <article>
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               What we did
             </h2>
-            <div className="mt-3 text-mid"><RichContent html={project.work} /></div>
+            <CmsText path={`project.${slug}.work`} as="div" className="mt-3 text-mid" html>
+              {project.work}
+            </CmsText>
           </article>
           <article>
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">
               Why it is here
             </h2>
-            <div className="mt-3 text-mid"><RichContent html={project.outcome} /></div>
+            <CmsText path={`project.${slug}.outcome`} as="div" className="mt-3 text-mid" html>
+              {project.outcome}
+            </CmsText>
           </article>
         </div>
         <div className="wrap mt-16 flex flex-wrap gap-3">

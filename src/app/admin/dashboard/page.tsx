@@ -80,6 +80,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor, type NavPageOption } from "@/components/NavEditor";
 import { ServiceEditor } from "@/components/ServiceEditor";
 import { AdminThemeToggle } from "@/components/AdminTheme";
+import { startLiveEdit } from "@/lib/visual-editor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -941,6 +942,16 @@ export default function AdminDashboard() {
             <p className="text-[11px] text-white/35 truncate max-w-[100px]">{user?.email}</p>
           </div>
         </div>
+        <div className="border-b border-white/8 px-4 py-3">
+          <button
+            type="button"
+            onClick={startLiveEdit}
+            className="w-full rounded-xl bg-[#1857EC] px-4 py-3 text-left transition hover:bg-blue-600"
+          >
+            <span className="block text-sm font-semibold text-white">Live edit</span>
+            <span className="mt-0.5 block text-[11px] font-medium text-white/80">Edit the website</span>
+          </button>
+        </div>
         <nav className="flex-1 py-4">
           {tabs.map((t) => (
             <button
@@ -982,6 +993,13 @@ export default function AdminDashboard() {
             <div className="lg:hidden">
               <AdminThemeToggle compact />
             </div>
+            <button
+              type="button"
+              onClick={startLiveEdit}
+              className="rounded-xl border border-[#1857EC]/40 bg-[#1857EC]/10 px-4 py-2 text-sm font-semibold text-[#60a5fa] transition hover:bg-[#1857EC]/20"
+            >
+              Live edit
+            </button>
             <button
               onClick={() => void save()}
               disabled={status === "saving"}

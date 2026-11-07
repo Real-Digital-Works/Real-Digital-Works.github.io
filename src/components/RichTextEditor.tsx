@@ -22,6 +22,8 @@ interface Props {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: string;
+  /** Live-edit allowlist: B/I/U, headings, lists, links. No code or quotes. */
+  strict?: boolean;
 }
 
 // ── Toolbar button ─────────────────────────────────────────────────────────
@@ -59,13 +61,18 @@ function Divider() {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function RichTextEditor({ content, onChange, placeholder, minHeight = "240px" }: Props) {
+export function RichTextEditor({ content, onChange, placeholder, minHeight = "240px", strict = false }: Props) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3, 4] },
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
+        strike: strict ? false : undefined,
+        blockquote: strict ? false : undefined,
+        codeBlock: strict ? false : undefined,
+        code: strict ? false : undefined,
       }),
       Underline,
       Link.configure({
@@ -123,9 +130,11 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
         <Btn active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline">
           <span className="underline">U</span>
         </Btn>
-        <Btn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough">
-          <span className="line-through">S</span>
-        </Btn>
+        {strict ? null : (
+          <Btn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough">
+            <span className="line-through">S</span>
+          </Btn>
+        )}
 
         <Divider />
 
@@ -152,13 +161,16 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
 
         <Divider />
 
-        {/* Blocks */}
-        <Btn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote">
-          ❝
-        </Btn>
-        <Btn active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code block">
-          {"</>"}
-        </Btn>
+        {strict ? null : (
+          <>
+            <Btn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote">
+              ❝
+            </Btn>
+            <Btn active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code block">
+              {"</>"}
+            </Btn>
+          </>
+        )}
         <Btn active={editor.isActive("link")} onClick={setLink} title="Link">
           🔗
         </Btn>

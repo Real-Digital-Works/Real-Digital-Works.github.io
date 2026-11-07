@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { pages } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
 
 type Props = { params: Promise<{ page: string }> };
 
@@ -44,19 +45,24 @@ export default async function DynamicPage({ params }: Props) {
     <>
       <section className="page-intro">
         <div className="wrap">
-          <h1 className="display mt-3 max-w-[20ch] text-[clamp(36px,5.5vw,64px)]">
+          <CmsText
+            path={`cmsPage.${pg.slug}.title`}
+            as="h1"
+            className="display mt-3 max-w-[20ch] text-[clamp(36px,5.5vw,64px)]"
+          >
             {pg.title}
-          </h1>
+          </CmsText>
         </div>
       </section>
       <section className="pb-24">
         <div className="wrap">
-          <article
-            className="rdw-content max-w-[72ch]"
-            dangerouslySetInnerHTML={{ __html: pg.content }}
-          />
+          <article className="rdw-legal-body rdw-content max-w-[72ch]">
+            <CmsText path={`cmsPage.${pg.slug}.content`} html>
+              {pg.content}
+            </CmsText>
+          </article>
           <div className="mt-16 border-t border-line pt-8">
-            <Link href="/contact" className="btn btn-ghost">Get in touch →</Link>
+            <CmsLink ctaId="page.contact" href="/contact" className="btn btn-ghost">Get in touch →</CmsLink>
           </div>
         </div>
       </section>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { WorkflowPlay } from "@/components/WorkflowPlay";
 import { type WorkflowId, workflows } from "@/lib/workflows";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 function SiteSketch() {
   return (
@@ -81,6 +82,11 @@ const sketches = {
 
 export function OfferBoard() {
   const [open, setOpen] = useState<WorkflowId | null>(null);
+  const visual = useVisualEditorOptional();
+
+  useEffect(() => {
+    if (visual?.activePopup === "workflow") setOpen("websites");
+  }, [visual?.activePopup]);
 
   return (
     <>
@@ -101,7 +107,10 @@ export function OfferBoard() {
                 key={slot.id}
                 type="button"
                 className="hero-tile group rounded-[16px] border border-line p-3 text-left transition-[border-color,background] duration-200 hover:border-tech/50"
-                onClick={() => setOpen(slot.id)}
+                onClick={() => {
+                  if (visual?.enabled) visual.selectPopup("workflow");
+                  setOpen(slot.id);
+                }}
               >
                 <div aria-hidden="true">
                   <Sketch />

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/ContactForm";
-import { site, seo } from "@/lib/content";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
+import { site, seo, pageIntros } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -44,14 +46,23 @@ export default async function ContactPage({
     <>
       <section className="page-intro">
         <div className="wrap">
-          <span className="tag on-dark">Contact</span>
-          <h1 className="display mt-3 max-w-[14ch] text-[clamp(36px,5.5vw,64px)]">
-            Tell us what is not working.
-          </h1>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62">
-            One working day for a reply. If we are not right for the job we
-            will say so. The form goes to the studio.
-          </p>
+          <span className="tag on-dark">
+            <CmsText path="pageIntros.contact.eyebrow">{pageIntros.contact.eyebrow}</CmsText>
+          </span>
+          <CmsText
+            path="pageIntros.contact.headline"
+            as="h1"
+            className="display mt-3 max-w-[14ch] text-[clamp(36px,5.5vw,64px)]"
+          >
+            {pageIntros.contact.headline}
+          </CmsText>
+          <CmsText
+            path="pageIntros.contact.sub"
+            as="p"
+            className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62"
+          >
+            {pageIntros.contact.sub}
+          </CmsText>
         </div>
       </section>
       <section className="pb-20">
@@ -62,38 +73,48 @@ export default async function ContactPage({
               <div>
                 <dt className="text-[13.5px] text-fg/50">Call</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.phoneHref}>{site.phone}</a>
+                  <CmsLink ctaId="footer.phone" href={site.phoneHref}>
+                    {site.phone}
+                  </CmsLink>
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">WhatsApp</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.whatsappHref}>{site.whatsapp}</a>
+                  <CmsLink ctaId="contact.whatsapp" href={site.whatsappHref}>
+                    {site.whatsapp}
+                  </CmsLink>
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Email</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  <a href={site.emailHref}>{site.email}</a>
+                  <CmsLink ctaId="footer.email" href={site.emailHref}>
+                    {site.email}
+                  </CmsLink>
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Studio</dt>
                 <dd className="mt-1 text-lg font-medium">
-                  {site.address.map((line) => (
-                    <span key={line} className="block">
+                  {site.address.map((line, i) => (
+                    <CmsText key={`address-${i}`} path={`site.address.${i}`} as="span" className="block">
                       {line}
-                    </span>
+                    </CmsText>
                   ))}
                 </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Hours</dt>
-                <dd className="mt-1 text-lg font-medium">{site.hours}</dd>
+                <dd className="mt-1 text-lg font-medium">
+                  <CmsText path="site.hours">{site.hours}</CmsText>
+                </dd>
               </div>
               <div>
                 <dt className="text-[13.5px] text-fg/50">Parent company</dt>
-                <dd className="mt-1 text-lg font-medium">{site.parent}</dd>
+                <dd className="mt-1 text-lg font-medium">
+                  <CmsText path="site.parent">{site.parent}</CmsText>
+                </dd>
               </div>
             </dl>
           </aside>

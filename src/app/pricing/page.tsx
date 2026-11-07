@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { QuoteBuilder } from "@/components/QuoteBuilder";
-import { packages, faq, seo } from "@/lib/content";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
+import { packages, faq, seo, pageIntros } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -35,14 +36,23 @@ export default function PricingPage() {
       />
       <section className="page-intro">
         <div className="wrap">
-          <span className="tag on-dark">Pricing</span>
-          <h1 className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]">
-            Know the number before you call.
-          </h1>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62">
-            Tick what you need. The estimate updates as you go. Starting ranges
-            for review, not a contract.
-          </p>
+          <span className="tag on-dark">
+            <CmsText path="pageIntros.pricing.eyebrow">{pageIntros.pricing.eyebrow}</CmsText>
+          </span>
+          <CmsText
+            path="pageIntros.pricing.headline"
+            as="h1"
+            className="display mt-3 max-w-[16ch] text-[clamp(36px,5.5vw,64px)]"
+          >
+            {pageIntros.pricing.headline}
+          </CmsText>
+          <CmsText
+            path="pageIntros.pricing.sub"
+            as="p"
+            className="mt-4 max-w-[58ch] text-[16.5px] text-fg/62"
+          >
+            {pageIntros.pricing.sub}
+          </CmsText>
         </div>
       </section>
       <section className="pb-20">
@@ -94,12 +104,13 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
+                  <CmsLink
+                    ctaId="pricing.enquire"
                     href="/contact"
                     className={tier.featured ? "btn btn-light w-full" : "btn btn-ghost w-full"}
                   >
                     Enquire
-                  </Link>
+                  </CmsLink>
                 </article>
               ))}
             </div>

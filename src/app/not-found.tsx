@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { brandedTitle, shareTitle } from "@/lib/seo";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText } from "@/components/visual-editor/CmsText";
+import { pageIntros } from "@/lib/content";
 
 const title = "Page not found";
 const description = "That page is not on Real Digital Works. Head home or get in touch.";
@@ -16,19 +18,26 @@ export default function NotFound() {
   return (
     <section className="py-24">
       <div className="wrap max-w-[68ch]">
-        <span className="tag">404</span>
-        <h1 className="display mt-4 text-[clamp(36px,5vw,56px)]">Page not found</h1>
-        <p className="mt-6 text-mid">
-          That address is not on this site. Try the homepage, or send a brief if you
-          were looking for a piece of work.
-        </p>
+        <span className="tag">
+          <CmsText path="pageIntros.notfound.eyebrow">{pageIntros.notfound.eyebrow}</CmsText>
+        </span>
+        <CmsText
+          path="pageIntros.notfound.headline"
+          as="h1"
+          className="display mt-4 text-[clamp(36px,5vw,56px)]"
+        >
+          {pageIntros.notfound.headline}
+        </CmsText>
+        <CmsText path="pageIntros.notfound.sub" as="p" className="mt-6 text-mid">
+          {pageIntros.notfound.sub}
+        </CmsText>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/" className="btn btn-beam">
+          <CmsLink ctaId="notfound.home" href="/" className="btn btn-beam">
             Home
-          </Link>
-          <Link href="/contact" className="btn btn-ghost">
+          </CmsLink>
+          <CmsLink ctaId="notfound.contact" href="/contact" className="btn btn-ghost">
             Contact
-          </Link>
+          </CmsLink>
         </div>
       </div>
     </section>

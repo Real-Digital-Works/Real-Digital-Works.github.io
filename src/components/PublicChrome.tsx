@@ -6,6 +6,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { StudioChat } from "@/components/StudioChat";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { VisualEditorChrome } from "@/components/visual-editor/VisualEditorChrome";
+import { VisualEditorProvider } from "@/components/visual-editor/VisualEditorProvider";
 import type { ReactNode } from "react";
 
 /**
@@ -21,15 +23,16 @@ export function PublicChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <VisualEditorProvider>
       <div className="grain" aria-hidden="true" />
       <Cursor />
       <CommandK />
       <ThemeToggle />
+      <VisualEditorChrome />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
       <StudioChat variant="dock" />
-    </>
+    </VisualEditorProvider>
   );
 }

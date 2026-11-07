@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <LegalDocument page={page} />;
+  return <LegalDocument page={page} field="privacy" />;
 }

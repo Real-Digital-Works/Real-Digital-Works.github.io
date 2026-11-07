@@ -8,10 +8,13 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 import Script from "next/script";
 import { site } from "@/lib/content";
 import { servicePages } from "@/lib/services-data";
+import { CmsText, usePopupCopy } from "@/components/visual-editor/CmsText";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 const UNSURE = "Not sure yet";
 const serviceOptions = [
@@ -59,6 +62,8 @@ export function ContactForm({
   const [turnstileToken, setTurnstileToken] = useState("");
   const widgetHostRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const visual = useVisualEditorOptional();
+  const copy = usePopupCopy("brief");
 
   const renderTurnstile = useCallback(() => {
     if (!TURNSTILE_SITE_KEY || !widgetHostRef.current || !window.turnstile) return;
@@ -169,19 +174,24 @@ export function ContactForm({
     return (
       <div className="rounded-[14px] bg-ink p-7 text-bone">
         <h3 className="text-xl font-semibold tracking-[-0.03em]">
-          Thanks — that is with us.
+          {copy("thanksTitle")}
         </h3>
         <p className="mt-2 text-[15.5px] text-bone/66">
           {viaMailto
             ? `Your mail app should have opened a message to the studio. If it did not, write to ${site.email} or call ${site.phone}.`
-            : `A person replies within one working day. If you need us sooner, write to ${site.email} or call ${site.phone}.`}
+            : copy("thanksBody")}
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="relative grid gap-4" noValidate>
+    <form
+      onSubmit={onSubmit}
+      className="relative grid gap-4"
+      noValidate
+      onFocusCapture={() => visual?.selectPopup("brief")}
+    >
       <div className="pointer-events-none absolute -left-[10000px] h-0 w-0 overflow-hidden" aria-hidden="true">
         <label>
           Website
@@ -189,32 +199,46 @@ export function ContactForm({
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Your name" name="name" error={errors.name} placeholder="Sam Patel" />
-        <Field label="Business name" name="business" placeholder="Patel & Co" />
+        <Field
+          label={<CmsText path="popups.brief.nameLabel">{copy("nameLabel")}</CmsText>}
+          name="name"
+          error={errors.name}
+          placeholder={copy("namePlaceholder")}
+        />
+        <Field
+          label={<CmsText path="popups.brief.businessLabel">{copy("businessLabel")}</CmsText>}
+          name="business"
+          placeholder={copy("businessPlaceholder")}
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="Email"
+          label={<CmsText path="popups.brief.emailLabel">{copy("emailLabel")}</CmsText>}
           name="email"
           type="email"
           error={errors.email}
-          placeholder="sam@studio.co.uk"
+          placeholder={copy("emailPlaceholder")}
         />
-        <Field label="Phone" name="phone" type="tel" placeholder="07700 900123" />
+        <Field
+          label={<CmsText path="popups.brief.phoneLabel">{copy("phoneLabel")}</CmsText>}
+          name="phone"
+          type="tel"
+          placeholder={copy("phonePlaceholder")}
+        />
       </div>
       <NeedSelect
         name="need"
-        label="What do you need?"
+        label={copy("needLabel")}
         options={serviceOptions}
         defaultValue={selectedService}
       />
       <label className="block text-[14.5px] font-medium">
-        Tell us a bit more
+        <CmsText path="popups.brief.messageLabel">{copy("messageLabel")}</CmsText>
         <textarea
           name="message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Current site, rough budget, when you would like it live."
+          placeholder={copy("messagePlaceholder")}
           className={`mt-2 min-h-[140px] w-full resize-y rounded-[10px] input-dark px-4 py-3 text-base ${
             errors.message ? "border-[#c0392b]" : ""
           }`}
@@ -246,7 +270,7 @@ export function ContactForm({
         className="btn btn-beam w-fit"
         disabled={status === "sending" || (!TURNSTILE_SITE_KEY && IS_PRODUCTION)}
       >
-        {status === "sending" ? "Sending…" : "Send enquiry"}
+        {status === "sending" ? copy("sending") : copy("submit")}
       </button>
       {status === "err" ? (
         <p className="text-[14px] text-[#c0392b]">
@@ -424,7 +448,7 @@ function Field({
   placeholder,
   error,
 }: {
-  label: string;
+  label: ReactNode;
   name: string;
   type?: string;
   placeholder?: string;

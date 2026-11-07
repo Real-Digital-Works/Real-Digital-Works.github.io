@@ -34,6 +34,7 @@ import {
   type CmsSaveSource,
   type CmsVersionRow,
 } from "@/lib/cms-versions";
+import { isPermissionDenied, logFirestoreIssue } from "@/lib/firestore-errors";
 import content, {
   DEFAULT_NAV_ITEMS,
   appendNavChild,
@@ -52,6 +53,7 @@ import content, {
   uniqueProjectSlug,
   uniqueServiceSlug,
   type CmsServiceRecord,
+  type Content,
 } from "@/lib/content";
 import type {
   SiteInfo,
@@ -80,6 +82,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor, type NavPageOption } from "@/components/NavEditor";
 import { ServiceEditor } from "@/components/ServiceEditor";
 import { AdminThemeToggle } from "@/components/AdminTheme";
+import { startLiveEdit } from "@/lib/visual-editor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -351,6 +354,8 @@ export default function AdminDashboard() {
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
   const [legalData, setLegalData] = useState<LegalContent>(() => mergeLegal(content.legal));
+  const [ctasData, setCtasData] = useState<Content["ctas"]>(content.ctas ?? {});
+  const [popupsData, setPopupsData] = useState<Content["popups"]>(content.popups ?? {});
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
@@ -359,6 +364,7 @@ export default function AdminDashboard() {
   const [hookDisplay, setHookDisplay] = useState("");
   const [versions, setVersions] = useState<CmsVersionRow[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versionsError, setVersionsError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   // ── Users state ──
@@ -407,6 +413,8 @@ export default function AdminDashboard() {
     } else {
       setNavData(hydrateServicesNavChildren(DEFAULT_NAV_ITEMS, nextServices));
     }
+    setCtasData((d.ctas as Content["ctas"]) ?? {});
+    setPopupsData((d.popups as Content["popups"]) ?? {});
   }, []);
 
   // ── Load from Firestore ──
@@ -418,17 +426,22 @@ export default function AdminDashboard() {
         if (snap.exists()) {
           applyLiveContent(snap.data());
         }
-        // Load blogs collection
+      } catch (e) {
+        logFirestoreIssue("cms/content read", e);
+      }
+      try {
         const blogsSnap = await getDocs(collection(db(), "blogs"));
         const blogs = blogsSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as BlogPost));
         setBlogsData(blogs.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
-
-        // Load pages collection
+      } catch (e) {
+        logFirestoreIssue("blogs list", e);
+      }
+      try {
         const pagesSnap = await getDocs(collection(db(), "pages"));
         const pages = pagesSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as DynamicPage));
         setPagesData(pages);
       } catch (e) {
-        console.error("Error loading content:", e);
+        logFirestoreIssue("pages list", e);
       }
     }
     load();
@@ -603,17 +616,24 @@ export default function AdminDashboard() {
         query(cmsVersionsCollection(db()), orderBy("createdAt", "desc"), limit(50)),
       );
       setVersions(snap.docs.map(mapCmsVersionDoc));
+      setVersionsError(null);
     } catch (e) {
-      console.error("Failed to load CMS versions:", e);
+      logFirestoreIssue("cms/content/versions read", e);
+      setVersions([]);
+      setVersionsError(
+        isPermissionDenied(e)
+          ? "Firestore denied cms/content/versions. Live cms/content still works. Paste the signed-in admin rule if you want snapshots."
+          : "Could not load content versions. Live cms/content is unaffected.",
+      );
     } finally {
       setVersionsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    loadVersions();
-  }, [user, loadVersions]);
+    if (!user || tab !== "deploy") return;
+    void loadVersions();
+  }, [user, tab, loadVersions]);
 
   // ── Auth token helper for API calls ──
   async function getToken() {
@@ -646,7 +666,7 @@ export default function AdminDashboard() {
         setHookSource(data.source ?? "none");
         setHookDisplay(typeof data.displayUrl === "string" ? data.displayUrl : "");
       } catch (e) {
-        console.error("Failed to load deploy hook:", e);
+        logFirestoreIssue("admin deploy-hook load", e);
       }
     }
     loadDeployHook();
@@ -665,7 +685,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.users) setUsersData(data.users);
     } catch (e) {
-      console.error("Failed to fetch users:", e);
+      logFirestoreIssue("admin users fetch", e);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -686,6 +706,8 @@ export default function AdminDashboard() {
       disciplines: disciplinesData,
       legal: legalData,
       navItems: navData,
+      ctas: ctasData ?? {},
+      popups: popupsData ?? {},
       updatedAt: serverTimestamp(),
     };
   }
@@ -716,7 +738,7 @@ export default function AdminDashboard() {
       try {
         await writeCmsVersion(payload as Record<string, unknown>, source);
       } catch (versionErr) {
-        console.error("CMS version snapshot failed (live content was still saved):", versionErr);
+        logFirestoreIssue("cms/content/versions snapshot", versionErr);
       }
       // Persist a typed override only — never write an empty string over the shared hook
       if (deployHook.trim()) {
@@ -736,10 +758,10 @@ export default function AdminDashboard() {
       }
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 3000);
-      void loadVersions();
+      if (tab === "deploy") void loadVersions();
       return true;
     } catch (e) {
-      console.error("Save error:", e);
+      logFirestoreIssue("cms/content save", e);
       setStatus("error");
       return false;
     }
@@ -763,13 +785,13 @@ export default function AdminDashboard() {
       try {
         await writeCmsVersion(restored as Record<string, unknown>, "restore", `Restored from ${row.id}`);
       } catch (versionErr) {
-        console.error("CMS version snapshot failed after restore (live content was still restored):", versionErr);
+        logFirestoreIssue("cms/content/versions snapshot after restore", versionErr);
       }
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 3000);
-      void loadVersions();
+      if (tab === "deploy") void loadVersions();
     } catch (e) {
-      console.error("Restore error:", e);
+      logFirestoreIssue("cms/content restore", e);
       setStatus("error");
     } finally {
       setRestoringId(null);
@@ -809,7 +831,7 @@ export default function AdminDashboard() {
       setDeployStatus("done");
       setTimeout(() => setDeployStatus("idle"), 5000);
     } catch (e) {
-      console.error(e);
+      logFirestoreIssue("admin deploy", e);
       setDeployStatus("error");
     }
   }
@@ -941,6 +963,16 @@ export default function AdminDashboard() {
             <p className="text-[11px] text-white/35 truncate max-w-[100px]">{user?.email}</p>
           </div>
         </div>
+        <div className="border-b border-white/8 px-4 py-3">
+          <button
+            type="button"
+            onClick={startLiveEdit}
+            className="w-full rounded-xl bg-[#1857EC] px-4 py-3 text-left transition hover:bg-blue-600"
+          >
+            <span className="block text-sm font-semibold text-white">Live edit</span>
+            <span className="mt-0.5 block text-[11px] font-medium text-white/80">Edit the website</span>
+          </button>
+        </div>
         <nav className="flex-1 py-4">
           {tabs.map((t) => (
             <button
@@ -982,6 +1014,13 @@ export default function AdminDashboard() {
             <div className="lg:hidden">
               <AdminThemeToggle compact />
             </div>
+            <button
+              type="button"
+              onClick={startLiveEdit}
+              className="rounded-xl border border-[#1857EC]/40 bg-[#1857EC]/10 px-4 py-2 text-sm font-semibold text-[#60a5fa] transition hover:bg-[#1857EC]/20"
+            >
+              Live edit
+            </button>
             <button
               onClick={() => void save()}
               disabled={status === "saving"}
@@ -1025,6 +1064,34 @@ export default function AdminDashboard() {
                   <Field label="WhatsApp (display)" value={siteData.whatsapp} onChange={(v) => { setSiteData((p) => ({ ...p, whatsapp: v })); markUnsaved(); }} />
                   <Field label="Email" value={siteData.email} onChange={(v) => { setSiteData((p) => ({ ...p, email: v, emailHref: `mailto:${v}` })); markUnsaved(); }} />
                   <Field label="Business hours" value={siteData.hours} onChange={(v) => { setSiteData((p) => ({ ...p, hours: v })); markUnsaved(); }} />
+                  {(siteData.address ?? []).map((line, i) => (
+                    <Field
+                      key={`address-${i}`}
+                      label={`Address line ${i + 1}`}
+                      value={line}
+                      onChange={(v) => {
+                        setSiteData((p) => {
+                          const address = [...(p.address ?? [])];
+                          address[i] = v;
+                          return { ...p, address };
+                        });
+                        markUnsaved();
+                      }}
+                    />
+                  ))}
+                  <Field
+                    label="Footer description"
+                    value={siteData.footerBlurb ?? ""}
+                    textarea
+                    onChange={(v) => { setSiteData((p) => ({ ...p, footerBlurb: v })); markUnsaved(); }}
+                    hint="Shown under the logo in the footer."
+                  />
+                  <Field
+                    label="Copyright line"
+                    value={siteData.copyright ?? ""}
+                    onChange={(v) => { setSiteData((p) => ({ ...p, copyright: v })); markUnsaved(); }}
+                    hint="Bottom-left footer, e.g. © 2026 Real Digital Works."
+                  />
                 </Card>
               </>
             )}
@@ -1575,7 +1642,8 @@ export default function AdminDashboard() {
                             setStatus("saved");
                             setTimeout(() => { setStatus("idle"); setEditingBlog(null); }, 1500);
                           } catch (e) {
-                            console.error(e); setStatus("error");
+                            logFirestoreIssue("blogs save", e);
+                            setStatus("error");
                           }
                         }}
                         className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600"
@@ -1705,7 +1773,8 @@ export default function AdminDashboard() {
                             setStatus("saved");
                             setTimeout(() => { setStatus("idle"); setEditingPage(null); }, 1500);
                           } catch (e) {
-                            console.error(e); setStatus("error");
+                            logFirestoreIssue("pages save", e);
+                            setStatus("error");
                           }
                         }}
                         className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600"
@@ -1831,7 +1900,7 @@ export default function AdminDashboard() {
                             throw new Error(data.error);
                           }
                         } catch (e) {
-                          console.error(e);
+                          logFirestoreIssue("admin invite", e);
                           setInviteStatus("error");
                         }
                       }}
@@ -1908,7 +1977,7 @@ export default function AdminDashboard() {
                                   });
                                   setUsersData((prev) => prev.filter((x) => x.uid !== u.uid));
                                 } catch (e) {
-                                  console.error(e);
+                                  logFirestoreIssue("admin user remove", e);
                                 }
                               }}
                               className="rounded-lg border border-red-500/20 px-3 py-1.5 text-xs text-red-400/70 hover:text-red-400 shrink-0"
@@ -1969,7 +2038,12 @@ export default function AdminDashboard() {
                     Every Save writes the live <code className="rounded bg-white/10 px-1">cms/content</code> document and an immutable snapshot under{" "}
                     <code className="rounded bg-white/10 px-1">cms/content/versions</code>. Builds still read only the live document. Restore copies a snapshot back to live — then Save &amp; Deploy to publish.
                   </p>
-                  {versionsLoading && versions.length === 0 ? (
+                  {versionsError ? (
+                    <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
+                      {versionsError} Snapshots are optional — Live edit and Save still use{" "}
+                      <code className="rounded bg-white/10 px-1">cms/content</code>.
+                    </p>
+                  ) : versionsLoading && versions.length === 0 ? (
                     <p className="text-sm text-white/40">Loading versions…</p>
                   ) : versions.length === 0 ? (
                     <p className="text-sm text-white/40">No snapshots yet. The next Save will create the first one.</p>

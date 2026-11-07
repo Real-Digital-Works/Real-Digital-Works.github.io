@@ -1,8 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import {
+  CTA_BY_ID,
+  destinationGroups,
+  findNavItem,
+  patchNavItem,
+  POPUP_BY_ID,
+  POPUP_DEFS,
+  popupText,
+  resolveCta,
+  type PopupField,
+} from "@/lib/cms-ui";
 import { fieldLabel, resolveVisualSeo, VISUAL_PAGES } from "@/lib/visual-editor";
 import { useVisualEditor } from "./VisualEditorProvider";
 
@@ -28,13 +39,120 @@ function SeoIcon() {
   );
 }
 
+function DestinationField({
+  href,
+  onChange,
+}: {
+  href: string;
+  onChange: (next: string) => void;
+}) {
+  const ctx = useVisualEditor();
+  const groups = useMemo(() => destinationGroups(ctx.draft), [ctx.draft]);
+  const matched = groups.some((group) => group.items.some((item) => item.href === href));
+  const selectValue = matched ? href : "__custom__";
+
+  return (
+    <label className="rdw-ve-label">
+      Destination
+      <select
+        className="rdw-ve-input"
+        value={selectValue}
+        onChange={(event) => {
+          const next = event.target.value;
+          if (next === "__custom__") return;
+          onChange(next);
+        }}
+      >
+        {groups.map((group) => (
+          <optgroup key={group.group} label={group.group}>
+            {group.items.map((item) => (
+              <option key={`${group.group}-${item.href}`} value={item.href}>
+                {item.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        <option value="__custom__">Custom URL / mailto / tel / WhatsApp</option>
+      </select>
+      <input
+        className="rdw-ve-input"
+        value={href}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="/contact, https://…, mailto:, tel:, https://wa.me/…"
+      />
+      <span className="rdw-ve-count">
+        Pairing pages: pick Home, a service, a case study, or paste a custom URL.
+      </span>
+    </label>
+  );
+}
+
+function PopupFields({
+  id,
+  fields,
+}: {
+  id: string;
+  fields: PopupField[];
+}) {
+  const ctx = useVisualEditor();
+  return (
+    <>
+      {fields.map((field) => {
+        if (field.kind === "cta") {
+          const label = popupText(ctx.draft, id, field.labelKey);
+          const href = popupText(ctx.draft, id, field.hrefKey);
+          return (
+            <div key={field.key} className="rdw-ve-block">
+              <label className="rdw-ve-label">
+                {field.label}
+                <input
+                  className="rdw-ve-input"
+                  value={label}
+                  onChange={(event) => ctx.setText(`popups.${id}.${field.labelKey}`, event.target.value)}
+                />
+              </label>
+              <DestinationField
+                href={href}
+                onChange={(next) => ctx.setText(`popups.${id}.${field.hrefKey}`, next)}
+              />
+            </div>
+          );
+        }
+        const value = popupText(ctx.draft, id, field.key);
+        return (
+          <label key={field.key} className="rdw-ve-label">
+            {field.label}
+            {field.kind === "textarea" ? (
+              <textarea
+                className="rdw-ve-input rdw-ve-textarea"
+                rows={3}
+                value={value}
+                onChange={(event) => ctx.setText(`popups.${id}.${field.key}`, event.target.value)}
+              />
+            ) : (
+              <input
+                className="rdw-ve-input"
+                value={value}
+                onChange={(event) => ctx.setText(`popups.${id}.${field.key}`, event.target.value)}
+              />
+            )}
+          </label>
+        );
+      })}
+    </>
+  );
+}
+
 export function VisualEditorChrome() {
   const ctx = useVisualEditor();
   const pathname = usePathname();
+  const router = useRouter();
   const [seoOpen, setSeoOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("seo") === "1";
   });
+  const [popupsOpen, setPopupsOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
 
   const seo = useMemo(() => resolveVisualSeo(pathname, ctx.draft), [pathname, ctx.draft]);
   const withVisual = (href: string) =>
@@ -46,6 +164,29 @@ export function VisualEditorChrome() {
 
   const statusTone =
     ctx.status === "error" ? "#FECACA" : ctx.status === "saved" ? "#BBF7D0" : "#E2E8F0";
+
+  const selectionKind = ctx.selection?.kind ?? "none";
+  const hint =
+    selectionKind === "link" || selectionKind === "nav"
+      ? "Link — label and destination"
+      : selectionKind === "popup"
+        ? "Pop-up copy"
+        : ctx.selectedPath
+          ? `Text · ${fieldLabel(ctx.selectedPath)}`
+          : "Click outlined text, a green link, or Edit pop-ups";
+
+  function openListedPopup(id: string) {
+    const def = POPUP_BY_ID[id];
+    setPopupsOpen(false);
+    setInspectorOpen(true);
+    ctx.openPopup(id);
+    if (def?.open === "route" && def.href && pathname !== def.href) {
+      router.push(withVisual(def.href));
+    }
+    if (id === "workflow" && pathname !== "/") {
+      router.push(withVisual("/"));
+    }
+  }
 
   return (
     <>
@@ -65,13 +206,15 @@ export function VisualEditorChrome() {
               <span className="rdw-ve-live">Signed in</span>
             )}
             <span className="rdw-ve-page">{seo.label}</span>
-            {ctx.selectedPath ? (
-              <span className="rdw-ve-field">Editing {fieldLabel(ctx.selectedPath)}</span>
-            ) : (
-              <span className="rdw-ve-hint">Click outlined text to edit</span>
-            )}
+            <span className="rdw-ve-hint">{hint}</span>
           </div>
           <div className="rdw-ve-actions">
+            <button type="button" className="rdw-ve-btn" onClick={() => setInspectorOpen((v) => !v)}>
+              Inspector
+            </button>
+            <button type="button" className="rdw-ve-btn" onClick={() => setPopupsOpen(true)}>
+              Edit pop-ups
+            </button>
             <button type="button" className="rdw-ve-btn" onClick={() => setSeoOpen(true)}>
               <SeoIcon />
               SEO
@@ -116,6 +259,65 @@ export function VisualEditorChrome() {
         <p className="rdw-ve-status" style={{ color: statusTone }} role="status">
           {ctx.statusMessage}
         </p>
+      ) : null}
+
+      {inspectorOpen ? (
+        <aside className="rdw-ve-inspector" aria-label="Selected element inspector">
+          {ctx.selection?.kind === "link" ? (
+            <LinkInspector id={ctx.selection.id} />
+          ) : ctx.selection?.kind === "nav" ? (
+            <NavInspector id={ctx.selection.id} />
+          ) : ctx.selection?.kind === "popup" ? (
+            <PopupInspector id={ctx.selection.id} />
+          ) : ctx.selection?.kind === "text" ? (
+            <TextInspector path={ctx.selection.path} />
+          ) : (
+            <div>
+              <p className="rdw-ve-kicker">Inspector</p>
+              <h2>Nothing selected</h2>
+              <p className="rdw-ve-note">
+                Blue outline is wording. Green outline is a button or link (label + where it goes).
+                Use Edit pop-ups for Ask RDW, the brief form, and the quote builder.
+              </p>
+            </div>
+          )}
+        </aside>
+      ) : null}
+
+      {popupsOpen ? (
+        <div className="rdw-ve-drawer-root">
+          <button
+            type="button"
+            className="rdw-ve-backdrop"
+            aria-label="Close pop-ups list"
+            onClick={() => setPopupsOpen(false)}
+          />
+          <aside className="rdw-ve-drawer" aria-labelledby="rdw-ve-popups-title">
+            <div className="rdw-ve-drawer-head">
+              <div>
+                <p className="rdw-ve-kicker">Overlays</p>
+                <h2 id="rdw-ve-popups-title">Edit pop-ups</h2>
+              </div>
+              <button type="button" className="rdw-ve-btn" onClick={() => setPopupsOpen(false)}>
+                Close
+              </button>
+            </div>
+            <ul className="rdw-ve-popup-list">
+              {POPUP_DEFS.map((item) => (
+                <li key={item.id}>
+                  <button type="button" className="rdw-ve-popup-item" onClick={() => openListedPopup(item.id)}>
+                    <strong>{item.title}</strong>
+                    <span>{item.hint}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="rdw-ve-note">
+              There is no cookie banner on this site. Start a brief is the header button plus the
+              contact form — not a second product.
+            </p>
+          </aside>
+        </div>
       ) : null}
 
       {seoOpen ? (
@@ -202,14 +404,108 @@ export function VisualEditorChrome() {
               </p>
             </div>
             <p className="rdw-ve-note">
-              This is not a Wix-style layout builder. You are editing the real site copy and this
-              page’s SEO. Layout, colours, and blocks stay in code. The existing /admin dashboard
-              remains for lists, images, and advanced fields.
+              This is not a Wix-style layout builder. You are editing the real site copy, links, and
+              pop-ups. Layout stays in code.
             </p>
           </aside>
         </div>
       ) : null}
     </>
+  );
+}
+
+function TextInspector({ path }: { path: string }) {
+  const ctx = useVisualEditor();
+  return (
+    <div>
+      <p className="rdw-ve-kicker">Text</p>
+      <h2>{fieldLabel(path)}</h2>
+      <p className="rdw-ve-note">
+        Click the outlined copy on the page and type. Save &amp; Deploy writes it to cms/content.
+      </p>
+      <label className="rdw-ve-label">
+        Value
+        <textarea
+          className="rdw-ve-input rdw-ve-textarea"
+          rows={4}
+          value={ctx.getText(path)}
+          onChange={(event) => ctx.setText(path, event.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
+
+function LinkInspector({ id }: { id: string }) {
+  const ctx = useVisualEditor();
+  const def = CTA_BY_ID[id];
+  const value = resolveCta(ctx.draft, id);
+  if (!def) {
+    return <p className="rdw-ve-note">Unknown link {id}</p>;
+  }
+  return (
+    <div>
+      <p className="rdw-ve-kicker">Link</p>
+      <h2>{def.title}</h2>
+      <label className="rdw-ve-label">
+        Label
+        <input
+          className="rdw-ve-input"
+          value={value.label}
+          onChange={(event) => ctx.setText(def.labelPath, event.target.value)}
+        />
+      </label>
+      <DestinationField href={value.href} onChange={(next) => ctx.setText(def.hrefPath, next)} />
+    </div>
+  );
+}
+
+function NavInspector({ id }: { id: string }) {
+  const ctx = useVisualEditor();
+  const item = findNavItem(ctx.draft.navItems, id);
+  if (!item) {
+    return <p className="rdw-ve-note">That menu item is not in the saved nav.</p>;
+  }
+  return (
+    <div>
+      <p className="rdw-ve-kicker">Menu link</p>
+      <h2>{item.label}</h2>
+      <label className="rdw-ve-label">
+        Label
+        <input
+          className="rdw-ve-input"
+          value={item.label}
+          onChange={(event) =>
+            ctx.patchDraft({
+              ...ctx.draft,
+              navItems: patchNavItem(ctx.draft.navItems ?? [], id, { label: event.target.value }),
+            })
+          }
+        />
+      </label>
+      <DestinationField
+        href={item.href}
+        onChange={(next) =>
+          ctx.patchDraft({
+            ...ctx.draft,
+            navItems: patchNavItem(ctx.draft.navItems ?? [], id, { href: next }),
+          })
+        }
+      />
+    </div>
+  );
+}
+
+function PopupInspector({ id }: { id: string }) {
+  const def = POPUP_BY_ID[id];
+  if (!def) return <p className="rdw-ve-note">Unknown pop-up {id}</p>;
+  return (
+    <div>
+      <p className="rdw-ve-kicker">Pop-up</p>
+      <h2>{def.title}</h2>
+      <p className="rdw-ve-note">{def.hint}</p>
+      <PopupFields id={id} fields={def.fields} />
+    </div>
   );
 }
 
@@ -264,6 +560,25 @@ html[data-rdw-visual] body { padding-top: 96px; }
   margin: 0; padding: 6px 12px; border-radius: 999px;
   background: rgba(12,16,24,.92); font-size: 12px; font-weight: 600;
 }
+.rdw-ve-inspector {
+  position: fixed; top: 108px; right: 12px; z-index: 82;
+  width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 128px);
+  overflow: auto; padding: 16px 16px 20px;
+  background: rgba(15, 23, 42, 0.96); color: #F8FAFC;
+  border: 1px solid rgba(24,87,236,.4); border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+.rdw-ve-inspector h2 { margin: 4px 0 10px; font-size: 18px; letter-spacing: -.03em; }
+.rdw-ve-block { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.rdw-ve-popup-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.rdw-ve-popup-item {
+  width: 100%; text-align: left; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.12); background: #1E293B; color: #F8FAFC;
+  border-radius: 12px; padding: 12px 14px;
+}
+.rdw-ve-popup-item strong { display: block; font-size: 14px; }
+.rdw-ve-popup-item span { display: block; margin-top: 4px; font-size: 12px; color: #94A3B8; }
 .rdw-ve-drawer-root { position: fixed; inset: 0; z-index: 90; }
 .rdw-ve-backdrop { position: absolute; inset: 0; background: rgba(8,12,20,.45); border: 0; cursor: pointer; }
 .rdw-ve-drawer {
@@ -299,6 +614,12 @@ html[data-rdw-visual] body { padding-top: 96px; }
 .rdw-cms-field:focus, .rdw-cms-field-selected {
   outline: 2px solid #1857EC; background: rgba(24,87,236,.12);
 }
+.rdw-cms-link {
+  outline: 1px dashed rgba(16,185,129,0); outline-offset: 3px;
+  cursor: pointer; border-radius: 4px;
+}
+.rdw-cms-link:hover { outline-color: rgba(16,185,129,.7); background: rgba(16,185,129,.1); }
+.rdw-cms-link-selected { outline: 2px solid #10B981; background: rgba(16,185,129,.14); }
 @media (prefers-reduced-motion: reduce) {
   .rdw-cms-field, .rdw-ve-chip, .rdw-ve-btn { transition: none; }
 }

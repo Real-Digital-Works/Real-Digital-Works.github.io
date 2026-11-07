@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Logo } from "./Logo";
-import { isServicesNavItem, navItems, type NavItem } from "@/lib/content";
+import { isServicesNavItem, mergeNavItems, navItems, type NavItem } from "@/lib/content";
 import { serviceCategories, servicePages } from "@/lib/services-data";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 const serviceMap = Object.fromEntries(servicePages.map((s) => [s.slug, s]));
 
@@ -35,6 +37,7 @@ function groupedNavChildren(children: NavItem[]) {
 
 export function Header() {
   const pathname = usePathname();
+  const visual = useVisualEditorOptional();
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
@@ -44,8 +47,13 @@ export function Header() {
   const megaRef = useRef<HTMLDivElement>(null);
   const megaTriggerRef = useRef<HTMLButtonElement>(null);
 
-  // Only show non-hidden items
-  const visibleNav = navItems.filter((item) => !item.hidden);
+  const visibleNav = (visual?.enabled ? mergeNavItems(visual.draft.navItems) : navItems).filter(
+    (item) => !item.hidden,
+  );
+
+  useEffect(() => {
+    if (visual?.activePopup === "mobileMenu") setOpen(true);
+  }, [visual?.activePopup]);
 
   useEffect(() => {
     const onScroll = () => setStuck(window.scrollY > 8);
@@ -179,21 +187,23 @@ export function Header() {
                   {isDropOpen && (
                     <div className="absolute left-0 top-full z-50 mt-2 min-w-[180px] rounded-2xl border border-line bg-[var(--header)] p-2 backdrop-blur-2xl shadow-xl">
                       {/* Link to the parent item itself */}
-                      <Link
+                      <CmsLink
+                        navId={item.id}
                         href={item.href}
                         className="block rounded-xl px-3 py-2 text-[13px] text-fg/60 hover:bg-fg/6 hover:text-fg"
                       >
                         {item.label} overview
-                      </Link>
+                      </CmsLink>
                       <div className="my-1 h-px bg-line" />
                       {visibleChildren.map((child) => (
-                        <Link
+                        <CmsLink
                           key={child.id}
+                          navId={child.id}
                           href={child.href}
                           className="block rounded-xl px-3 py-2 text-[14px] text-fg/70 transition hover:bg-fg/6 hover:text-fg"
                         >
                           {child.label}
-                        </Link>
+                        </CmsLink>
                       ))}
                     </div>
                   )}
@@ -201,17 +211,17 @@ export function Header() {
               );
             }
 
-            // Plain link
             return (
-              <Link
+              <CmsLink
                 key={item.id}
+                navId={item.id}
                 href={item.href}
                 className={`rounded-full px-3.5 py-1.5 text-[14px] font-medium transition ${
                   isActive ? "bg-fg/10 text-fg" : "text-fg/55 hover:bg-fg/6 hover:text-fg"
                 }`}
               >
                 {item.label}
-              </Link>
+              </CmsLink>
             );
           })}
         </nav>
@@ -223,9 +233,9 @@ export function Header() {
         >
           ⌘K
         </button>
-        <Link href="/contact" className="btn btn-beam ml-2 hidden sm:inline-flex">
+        <CmsLink ctaId="header.brief" href="/contact" className="btn btn-beam ml-2 hidden sm:inline-flex">
           Start a brief
-        </Link>
+        </CmsLink>
         <button
           type="button"
           className="rounded-lg border border-line p-2.5 text-fg lg:hidden"
@@ -291,17 +301,17 @@ export function Header() {
                 <ul className="space-y-1">
                   {cat.items.map((entry) => (
                     <li key={entry.id}>
-                      <Link
+                      <CmsLink
+                        navId={cmsChildren !== undefined ? entry.id : undefined}
+                        ctaId={cmsChildren === undefined ? `footer.svc.${entry.id}` : undefined}
                         href={entry.href}
                         className="group flex flex-col rounded-lg px-2 py-2 transition hover:bg-fg/5"
                       >
-                        <span className="text-[14px] font-medium text-fg group-hover:text-beam">
-                          {entry.label}
-                        </span>
-                        {entry.from ? (
-                          <span className="font-mono text-[11px] text-fg/40">{entry.from}</span>
-                        ) : null}
-                      </Link>
+                        {entry.label}
+                      </CmsLink>
+                      {entry.from ? (
+                        <span className="font-mono text-[11px] text-fg/40 px-2">{entry.from}</span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -312,12 +322,12 @@ export function Header() {
             <div className="wrap flex items-center justify-between py-3">
               <span className="text-[13px] text-fg/50">Can&apos;t find what you need?</span>
               <div className="flex gap-4">
-                <Link href="/services" className="text-[13px] font-medium text-fg/70 hover:text-fg">
+                <CmsLink ctaId="header.megaAll" href="/services" className="text-[13px] font-medium text-fg/70 hover:text-fg">
                   All services →
-                </Link>
-                <Link href="/contact" className="text-[13px] font-semibold text-beam hover:opacity-80">
+                </CmsLink>
+                <CmsLink ctaId="header.megaTalk" href="/contact" className="text-[13px] font-semibold text-beam hover:opacity-80">
                   Talk to us →
-                </Link>
+                </CmsLink>
               </div>
             </div>
           </div>
@@ -372,13 +382,15 @@ export function Header() {
                             {cat.label}
                           </p>
                           {cat.items.map((entry) => (
-                            <Link
+                            <CmsLink
                               key={entry.id}
+                              navId={useCmsMega ? entry.id : undefined}
+                              ctaId={!useCmsMega ? `footer.svc.${entry.id}` : undefined}
                               href={entry.href}
                               className="block py-1.5 text-[14px] text-fg/70 hover:text-fg"
                             >
                               {entry.label}
-                            </Link>
+                            </CmsLink>
                           ))}
                         </div>
                       ))}
@@ -392,21 +404,23 @@ export function Header() {
               const visibleChildren = (item.children ?? []).filter((c) => !c.hidden);
               return (
                 <div key={item.id}>
-                  <Link
+                  <CmsLink
+                    navId={item.id}
                     href={item.href}
                     className="block border-b border-line py-3.5 text-lg text-fg"
                   >
                     {item.label}
-                  </Link>
+                  </CmsLink>
                   <div className="border-b border-line pb-2 pl-4">
                     {visibleChildren.map((child) => (
-                      <Link
+                      <CmsLink
                         key={child.id}
+                        navId={child.id}
                         href={child.href}
                         className="block py-2 text-[15px] text-fg/65 hover:text-fg"
                       >
                         {child.label}
-                      </Link>
+                      </CmsLink>
                     ))}
                   </div>
                 </div>
@@ -414,18 +428,19 @@ export function Header() {
             }
 
             return (
-              <Link
+              <CmsLink
                 key={item.id}
+                navId={item.id}
                 href={item.href}
                 className="block border-b border-line py-3.5 text-lg text-fg"
               >
                 {item.label}
-              </Link>
+              </CmsLink>
             );
           })}
-          <Link href="/contact" className="btn btn-beam mt-4 w-full">
+          <CmsLink ctaId="header.brief" href="/contact" className="btn btn-beam mt-4 w-full">
             Start a brief
-          </Link>
+          </CmsLink>
         </div>
       ) : null}
     </header>

@@ -242,6 +242,10 @@ export interface Content {
    * An empty array is a real value (user deleted every service).
    */
   servicePagesList?: CmsServiceRecord[];
+  /** Named public CTAs (label + destination). Missing keys use in-code fallbacks. */
+  ctas?: Record<string, { label?: string; href?: string }>;
+  /** Copy for Ask RDW, quote builder, contact brief, ⌘K, and overlays. */
+  popups?: Record<string, Record<string, string>>;
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────

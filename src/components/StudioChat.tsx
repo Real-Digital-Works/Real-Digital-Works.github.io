@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { site } from "@/lib/content";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText, usePopupCopy } from "@/components/visual-editor/CmsText";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 type Msg = { from: "rdw" | "you"; text: string };
 
@@ -48,6 +49,15 @@ export function StudioChat({
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
+  const visual = useVisualEditorOptional();
+  const copy = usePopupCopy("askRdw");
+  const greeting = copy("greeting");
+  const placeholder = copy("placeholder");
+  const submitLabel = copy("submit");
+  const launcher = copy("launcher");
+  const closer = copy("closer");
+  const note = copy("note");
+  const windowTitle = copy("title");
   const list = useRef<HTMLDivElement>(null);
   // Hide the dock button when the enquiry desk section is already visible on screen
   const [deskVisible, setDeskVisible] = useState(false);
@@ -69,6 +79,19 @@ export function StudioChat({
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [msgs, open]);
+
+  useEffect(() => {
+    if (visual?.activePopup === "askRdw" && variant === "dock") setOpen(true);
+  }, [visual?.activePopup, variant]);
+
+  useEffect(() => {
+    setMsgs((current) => {
+      if (current.length === 1 && current[0]?.from === "rdw") {
+        return [{ from: "rdw", text: greeting }];
+      }
+      return current;
+    });
+  }, [greeting]);
 
   async function send(text: string) {
     const q = text.trim();
@@ -105,7 +128,7 @@ export function StudioChat({
         <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
         <p className="ml-3 font-mono text-[11px] tracking-[0.16em] text-fg/45 uppercase">
-          rdw / enquire-desk
+          <CmsText path="popups.askRdw.title">{windowTitle}</CmsText>
         </p>
         <span className="ml-auto font-mono text-[11px] text-cyan">live</span>
       </div>
@@ -136,22 +159,40 @@ export function StudioChat({
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about AI, a site, a price…"
+          placeholder={placeholder}
           className="input-dark min-w-0 flex-1 rounded-full px-4 py-2.5 text-[15px]"
+          onFocus={() => visual?.selectPopup("askRdw")}
         />
-        <button className="btn btn-beam rounded-full px-4 py-2.5" type="submit">
-          Send
+        <button
+          className="btn btn-beam rounded-full px-4 py-2.5"
+          type="submit"
+          onClick={() => visual?.selectPopup("askRdw")}
+        >
+          {submitLabel}
         </button>
       </form>
       <p className="px-4 pb-3 text-[11px] text-fg/35">
-        Ranges only — not a quote.{" "}
-        <Link href="/contact" className="text-tech">
+        {note}{" "}
+        <CmsLink
+          popupId="askRdw"
+          labelKey="ctaLabel"
+          hrefKey="ctaHref"
+          href="/contact"
+          className="text-tech"
+        >
           Talk to a person
-        </Link>
+        </CmsLink>
         {" · "}
-        <a href={site.whatsappHref} className="text-tech" target="_blank" rel="noreferrer">
+        <CmsLink
+          popupId="askRdw"
+          labelKey="whatsappLabel"
+          hrefKey="whatsappHref"
+          href="https://wa.me/447970325184"
+          className="text-tech"
+          target="_blank"
+        >
           WhatsApp
-        </a>
+        </CmsLink>
       </p>
     </div>
   );
@@ -170,9 +211,12 @@ export function StudioChat({
         className={`fixed right-4 bottom-20 sm:bottom-4 z-50 rounded-full bg-beam px-4 py-3 text-[13px] font-semibold tracking-[0.08em] text-white uppercase shadow-[0_0_40px_rgba(24,87,236,.45)] transition-all duration-300 ${
           deskVisible ? "opacity-0 pointer-events-none translate-y-2" : "opacity-100"
         }`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (visual?.enabled) visual.selectPopup("askRdw");
+          setOpen((v) => !v);
+        }}
       >
-        {open ? "Close desk" : "Ask RDW"}
+        {open ? closer : launcher}
       </button>
     </>
   );

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
 import { disciplines, seo } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
@@ -54,9 +54,9 @@ export default function AboutPage() {
             names or film credits on this site until the founding team wants
             them public.
           </p>
-          <Link href="/contact" className="btn btn-beam mt-8">
+          <CmsLink ctaId="about.brief" href="/contact" className="btn btn-beam mt-8">
             Start a brief
-          </Link>
+          </CmsLink>
         </div>
       </section>
     </>

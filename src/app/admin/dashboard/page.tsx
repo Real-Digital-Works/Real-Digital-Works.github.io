@@ -53,6 +53,7 @@ import content, {
   uniqueProjectSlug,
   uniqueServiceSlug,
   type CmsServiceRecord,
+  type Content,
 } from "@/lib/content";
 import type {
   SiteInfo,
@@ -353,6 +354,8 @@ export default function AdminDashboard() {
   const [blogsData, setBlogsData] = useState<BlogPost[]>([]);
   const [pagesData, setPagesData] = useState<DynamicPage[]>([]);
   const [legalData, setLegalData] = useState<LegalContent>(() => mergeLegal(content.legal));
+  const [ctasData, setCtasData] = useState<Content["ctas"]>(content.ctas ?? {});
+  const [popupsData, setPopupsData] = useState<Content["popups"]>(content.popups ?? {});
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [editingPage, setEditingPage] = useState<DynamicPage | null>(null);
   const [deployHook, setDeployHook] = useState("");
@@ -410,6 +413,8 @@ export default function AdminDashboard() {
     } else {
       setNavData(hydrateServicesNavChildren(DEFAULT_NAV_ITEMS, nextServices));
     }
+    setCtasData((d.ctas as Content["ctas"]) ?? {});
+    setPopupsData((d.popups as Content["popups"]) ?? {});
   }, []);
 
   // ── Load from Firestore ──
@@ -701,6 +706,8 @@ export default function AdminDashboard() {
       disciplines: disciplinesData,
       legal: legalData,
       navItems: navData,
+      ctas: ctasData ?? {},
+      popups: popupsData ?? {},
       updatedAt: serverTimestamp(),
     };
   }

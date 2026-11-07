@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { type Workflow, type WorkflowId, workflows } from "@/lib/workflows";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 
 const STEP_MS = 1600;
 
@@ -315,12 +315,26 @@ export function WorkflowPlay({
         </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link href="/contact" className="btn btn-beam" onClick={onClose}>
+          <CmsLink
+            popupId="workflow"
+            labelKey="ctaLabel"
+            hrefKey="ctaHref"
+            href="/contact"
+            className="btn btn-beam"
+            onClick={onClose}
+          >
             Start this brief
-          </Link>
-          <Link href="/pricing" className="btn btn-outline-light" onClick={onClose}>
+          </CmsLink>
+          <CmsLink
+            popupId="workflow"
+            labelKey="pricingLabel"
+            hrefKey="pricingHref"
+            href="/pricing"
+            className="btn btn-outline-light"
+            onClick={onClose}
+          >
             Scope a number
-          </Link>
+          </CmsLink>
           <p className="ml-auto font-mono text-[11px] text-fg/35">
             {flow.from} · loops until you close
           </p>

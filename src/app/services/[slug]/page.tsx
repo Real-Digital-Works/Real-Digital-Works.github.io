@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
 import { site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl } from "@/lib/canonical-url";
@@ -115,18 +116,20 @@ export default async function ServicePage({ params }: Props) {
             {service.intro}
           </CmsText>
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link
+            <CmsLink
+              ctaId="services.quote"
               href={quoteHref}
               className="inline-flex h-12 items-center rounded-full bg-beam px-7 text-[14px] font-semibold tracking-[0.06em] text-black uppercase transition hover:opacity-90"
             >
               Get a quote
-            </Link>
-            <a
+            </CmsLink>
+            <CmsLink
+              ctaId="services.call"
               href={site.phoneHref}
               className="inline-flex h-12 items-center rounded-full border border-line px-7 text-[14px] font-semibold tracking-[0.06em] uppercase transition hover:border-beam/50"
             >
               Book a free call
-            </a>
+            </CmsLink>
             <span className="font-mono text-[13px] text-fg/55">
               <CmsText path={`svc.${slug}.from`}>{service.from}</CmsText>
             </span>
@@ -262,18 +265,20 @@ export default async function ServicePage({ params }: Props) {
             most suitable next step.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
+            <CmsLink
+              ctaId="services.quote"
               href={quoteHref}
               className="inline-flex h-12 items-center rounded-full bg-beam px-8 text-[14px] font-semibold tracking-[0.06em] text-black uppercase transition hover:opacity-90"
             >
               Get a quote
-            </Link>
-            <Link
+            </CmsLink>
+            <CmsLink
+              ctaId="services.pricing"
               href="/pricing"
               className="inline-flex h-12 items-center rounded-full border border-line px-8 text-[14px] font-semibold tracking-[0.06em] uppercase transition hover:border-beam/50"
             >
               See pricing
-            </Link>
+            </CmsLink>
           </div>
         </div>
       </section>

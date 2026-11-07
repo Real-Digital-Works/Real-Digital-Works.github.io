@@ -1,66 +1,32 @@
-import Link from "next/link";
 import { Logo } from "./Logo";
 import { site } from "@/lib/content";
+import { FOOTER_SERVICE_LINKS } from "@/lib/cms-ui";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 
-const buildLinks = [
-  { href: "/services/web-design", label: "Web design" },
-  { href: "/services/ecommerce", label: "Ecommerce" },
-  { href: "/services/web-applications", label: "Web applications" },
-  { href: "/services/landing-pages", label: "Landing pages" },
-];
-const growLinks = [
-  { href: "/services/seo", label: "SEO" },
-  { href: "/services/google-ads", label: "Google Ads" },
-  { href: "/services/social-media", label: "Social media" },
-  { href: "/services/email-marketing", label: "Email marketing" },
-];
-const createLinks = [
-  { href: "/services/branding", label: "Branding" },
-  { href: "/services/3d-animation", label: "3D & animation" },
-  { href: "/services/photography", label: "Photography" },
-  { href: "/services/copywriting", label: "Copywriting" },
-];
-const supportLinks = [
-  { href: "/services/hosting", label: "Hosting & care" },
-  { href: "/services/training", label: "Training" },
-  { href: "/services/ai-automation", label: "AI & automation" },
-  { href: "/services/consultancy", label: "Consultancy" },
-];
+const groups = ["Build", "Grow", "Create", "Support"] as const;
 
 export function Footer() {
   return (
     <footer className="bg-void text-[15px] text-fg/62">
       <div className="wrap py-16">
-
-        {/* Service columns — F1 */}
         <div className="grid gap-10 border-b border-line pb-10 md:grid-cols-4">
-          <div>
-            <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">Build</h4>
-            {buildLinks.map((l) => (
-              <Link key={l.href} className="block py-1 hover:text-tech" href={l.href}>{l.label}</Link>
-            ))}
-          </div>
-          <div>
-            <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">Grow</h4>
-            {growLinks.map((l) => (
-              <Link key={l.href} className="block py-1 hover:text-tech" href={l.href}>{l.label}</Link>
-            ))}
-          </div>
-          <div>
-            <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">Create</h4>
-            {createLinks.map((l) => (
-              <Link key={l.href} className="block py-1 hover:text-tech" href={l.href}>{l.label}</Link>
-            ))}
-          </div>
-          <div>
-            <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">Support</h4>
-            {supportLinks.map((l) => (
-              <Link key={l.href} className="block py-1 hover:text-tech" href={l.href}>{l.label}</Link>
-            ))}
-          </div>
+          {groups.map((group) => (
+            <div key={group}>
+              <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">{group}</h4>
+              {FOOTER_SERVICE_LINKS.filter((item) => item.group === group).map((item) => (
+                <CmsLink
+                  key={item.id}
+                  ctaId={item.id}
+                  href={item.href}
+                  className="block py-1 hover:text-tech"
+                >
+                  {item.label}
+                </CmsLink>
+              ))}
+            </div>
+          ))}
         </div>
 
-        {/* Logo + Company + Studio — F2 */}
         <div className="grid gap-10 border-b border-line py-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <Logo variant="lockup" />
@@ -71,14 +37,23 @@ export function Footer() {
           </div>
           <div>
             <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">Company</h4>
-            <Link className="block py-1 hover:text-tech" href="/about">About</Link>
-            <Link className="block py-1 hover:text-tech" href="/work">Work</Link>
-            <Link className="block py-1 hover:text-tech" href="/pricing">Pricing</Link>
-            <Link className="block py-1 hover:text-tech" href="/contact">Contact</Link>
-            <Link className="block py-1 hover:text-tech" href="/privacy">Privacy Policy</Link>
-            <Link className="block py-1 hover:text-tech" href="/terms">Terms</Link>
-            <Link className="block py-1 hover:text-tech" href="/modern-slavery">Modern Slavery Policy</Link>
-            <a className="block py-1 hover:text-tech" href="https://www.realanimationworks.com" target="_blank" rel="noreferrer">{site.parent}</a>
+            <CmsLink ctaId="footer.about" href="/about" className="block py-1 hover:text-tech">About</CmsLink>
+            <CmsLink ctaId="footer.work" href="/work" className="block py-1 hover:text-tech">Work</CmsLink>
+            <CmsLink ctaId="footer.pricing" href="/pricing" className="block py-1 hover:text-tech">Pricing</CmsLink>
+            <CmsLink ctaId="footer.contact" href="/contact" className="block py-1 hover:text-tech">Contact</CmsLink>
+            <CmsLink ctaId="footer.privacy" href="/privacy" className="block py-1 hover:text-tech">Privacy Policy</CmsLink>
+            <CmsLink ctaId="footer.terms" href="/terms" className="block py-1 hover:text-tech">Terms</CmsLink>
+            <CmsLink ctaId="footer.modernSlavery" href="/modern-slavery" className="block py-1 hover:text-tech">
+              Modern Slavery Policy
+            </CmsLink>
+            <CmsLink
+              ctaId="footer.parent"
+              href="https://www.realanimationworks.com"
+              className="block py-1 hover:text-tech"
+              target="_blank"
+            >
+              {site.parent}
+            </CmsLink>
           </div>
           <div>
             <h4 className="mb-3 text-[13px] font-semibold tracking-[0.12em] text-fg uppercase">Studio</h4>
@@ -92,13 +67,18 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom row — F3 */}
         <div className="flex flex-wrap justify-between gap-3 pt-6 text-[13px] text-fg/55">
           <span>© 2026 Real Digital Works</span>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/privacy" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Privacy Policy</Link>
-            <Link href="/terms" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Terms</Link>
-            <Link href="/modern-slavery" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">Modern Slavery Policy</Link>
+            <CmsLink ctaId="footer.privacy" href="/privacy" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">
+              Privacy Policy
+            </CmsLink>
+            <CmsLink ctaId="footer.terms" href="/terms" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">
+              Terms
+            </CmsLink>
+            <CmsLink ctaId="footer.modernSlavery" href="/modern-slavery" className="text-fg/80 underline-offset-4 hover:text-tech hover:underline">
+              Modern Slavery Policy
+            </CmsLink>
           </nav>
           <span>A {site.parent} company</span>
         </div>

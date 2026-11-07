@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { blogs, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -96,8 +97,8 @@ export default async function BlogPostPage({ params }: Props) {
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
           <div className="mt-16 border-t border-line pt-10">
-            <Link href="/contact" className="btn btn-beam">Start a brief</Link>
-            <Link href="/blog" className="btn btn-ghost ml-4">More posts</Link>
+            <CmsLink ctaId="blog.brief" href="/contact" className="btn btn-beam">Start a brief</CmsLink>
+            <CmsLink ctaId="blog.more" href="/blog" className="btn btn-ghost ml-4">More posts</CmsLink>
           </div>
         </div>
       </section>

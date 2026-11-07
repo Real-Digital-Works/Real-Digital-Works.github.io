@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { QuoteBuilder } from "@/components/QuoteBuilder";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { packages, faq, seo } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
@@ -94,12 +94,13 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
+                  <CmsLink
+                    ctaId="pricing.enquire"
                     href="/contact"
                     className={tier.featured ? "btn btn-light w-full" : "btn btn-ghost w-full"}
                   >
                     Enquire
-                  </Link>
+                  </CmsLink>
                 </article>
               ))}
             </div>

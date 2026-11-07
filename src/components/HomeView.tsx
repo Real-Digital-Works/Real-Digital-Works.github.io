@@ -10,6 +10,7 @@ import { HeroScene } from "@/components/HeroScene";
 import { Marquee } from "@/components/Marquee";
 import { OfferBoard } from "@/components/OfferBoard";
 import { StudioChat } from "@/components/StudioChat";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText, useDraftArray, useDraftServicesHome } from "@/components/visual-editor/CmsText";
 import { process as seedProcess, projects, proof as seedProof, stack, hero } from "@/lib/content";
 import { homeServices as seedHomeServices } from "@/lib/services-data";
@@ -203,12 +204,12 @@ export function HomeView() {
               {hero.sub}
             </CmsText>
             <div className="rise-4 relative z-30 mt-7 flex flex-wrap items-center gap-3">
-              <Link href={hero.primaryHref} className="btn btn-beam">
-                <CmsText path="hero.primaryCta">{hero.primaryCta}</CmsText>
-              </Link>
-              <Link href={hero.secondaryHref} className="btn btn-outline-light">
-                <CmsText path="hero.secondaryCta">{hero.secondaryCta}</CmsText>
-              </Link>
+              <CmsLink ctaId="hero.primary" href={hero.primaryHref} className="btn btn-beam">
+                {hero.primaryCta}
+              </CmsLink>
+              <CmsLink ctaId="hero.secondary" href={hero.secondaryHref} className="btn btn-outline-light">
+                {hero.secondaryCta}
+              </CmsLink>
             </div>
           </div>
           <OfferBoard />
@@ -289,9 +290,9 @@ export function HomeView() {
             </div>
             <div className="mt-3 flex justify-between text-[12px]">
               <span className="font-mono text-fg/30 uppercase">Unpack</span>
-              <Link href="/services" className="font-semibold tracking-[0.08em] text-cyan uppercase">
+              <CmsLink ctaId="home.allServices" href="/services" className="font-semibold tracking-[0.08em] text-cyan uppercase">
                 All services →
-              </Link>
+              </CmsLink>
             </div>
           </div>
         </div>
@@ -361,9 +362,9 @@ export function HomeView() {
                 {featured.title}
               </h2>
             </div>
-            <Link href="/work" className="btn btn-outline-light hidden sm:inline-flex">
+            <CmsLink ctaId="home.allWork" href="/work" className="btn btn-outline-light hidden sm:inline-flex">
               All work
-            </Link>
+            </CmsLink>
           </div>
           <Link href={`/work/${featured.slug}`} className="work-stage group block">
             <div className="overflow-hidden rounded-[24px] border border-line">

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { projects, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -113,12 +114,12 @@ export default async function WorkDetailPage({ params }: Props) {
           </article>
         </div>
         <div className="wrap mt-16 flex flex-wrap gap-3">
-          <Link href="/contact" className="btn btn-beam">
+          <CmsLink ctaId="work.brief" href="/contact" className="btn btn-beam">
             Start a similar brief
-          </Link>
-          <Link href="/pricing" className="btn btn-ghost">
+          </CmsLink>
+          <CmsLink ctaId="work.pricing" href="/pricing" className="btn btn-ghost">
             See pricing
-          </Link>
+          </CmsLink>
         </div>
       </section>
     </>

@@ -10,6 +10,7 @@ import {
   mergeWorkPage,
   mergeWorkSeo,
 } from "@/lib/content";
+import { mergeCmsMaps } from "@/lib/cms-ui";
 import {
   mergeServicePagesList,
   recordsToCmsMap,
@@ -339,12 +340,12 @@ export function resolveVisualSeo(pathname: string, draft: Content): VisualSeoTar
 export const VISUAL_PAGES = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
-  { href: "/services/seo", label: "SEO service" },
   { href: "/work", label: "Work" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-  { href: "/modern-slavery", label: "Modern slavery" },
+  { href: "/blog", label: "Blog" },
+  { href: "/privacy", label: "Legal" },
 ] as const;
 
 export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown> | null): Content {
@@ -385,6 +386,8 @@ export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown>
     servicePagesList: list,
     servicePagesContent: recordsToCmsMap(list),
     servicePagesSeo: recordsToSeoMap(list),
+    ctas: mergeCmsMaps((d.ctas as Content["ctas"]) ?? seed.ctas),
+    popups: mergeCmsMaps((d.popups as Content["popups"]) ?? seed.popups),
   };
 }
 
@@ -406,6 +409,8 @@ export function visualSavePayload(draft: Content) {
     disciplines: draft.disciplines,
     legal: draft.legal,
     navItems: draft.navItems,
+    ctas: draft.ctas ?? {},
+    popups: draft.popups ?? {},
   };
 }
 

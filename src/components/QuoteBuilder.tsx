@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   quoteExtras,
@@ -8,6 +7,10 @@ import {
   quoteSizes,
   quoteSpeeds,
 } from "@/lib/content";
+import { withContactQuery } from "@/lib/cms-ui";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { CmsText, usePopupCopy } from "@/components/visual-editor/CmsText";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 function money(n: number) {
   // Round to nearest £50 for large amounts, £5 for small — keeps £95/mo accurate
@@ -20,6 +23,9 @@ export function QuoteBuilder() {
   const [ex, setEx] = useState<Set<string>>(new Set());
   const [size, setSize] = useState("small");
   const [speed, setSpeed] = useState("standard");
+  const visual = useVisualEditorOptional();
+  const copy = usePopupCopy("quote");
+  const ctaHref = copy("ctaHref", "/contact");
 
   const toggle = (set: Set<string>, id: string, next: boolean) => {
     const copy = new Set(set);
@@ -61,7 +67,7 @@ export function QuoteBuilder() {
     if (!lines.length) {
       return {
         total: "£0",
-        sub: "Select what you need to see a price",
+        sub: copy("empty", "Select what you need to see a price"),
         lines,
         query: "",
       };
@@ -82,12 +88,18 @@ export function QuoteBuilder() {
       estimate: total,
     }).toString();
     return { total, sub, lines, query };
-  }, [svc, ex, size, speed]);
+  }, [svc, ex, size, speed, copy]);
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
+    <div
+      className="grid items-start gap-8 lg:grid-cols-[1fr_360px]"
+      onClick={() => visual?.selectPopup("quote")}
+    >
       <div className="glass rounded-[22px] px-5 py-8 sm:px-8">
-        <Step title="What do you need?" sub="Choose as many as apply.">
+        <Step
+          title={<CmsText path="popups.quote.needTitle">{copy("needTitle")}</CmsText>}
+          sub={<CmsText path="popups.quote.needSub">{copy("needSub")}</CmsText>}
+        >
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {quoteServices.map((item) => (
               <Option
@@ -100,14 +112,20 @@ export function QuoteBuilder() {
             ))}
           </div>
         </Step>
-        <Step title="How big is the organisation?" sub="This changes scope and support volume.">
+        <Step
+          title={<CmsText path="popups.quote.sizeTitle">{copy("sizeTitle")}</CmsText>}
+          sub={<CmsText path="popups.quote.sizeSub">{copy("sizeSub")}</CmsText>}
+        >
           <Seg
             items={quoteSizes}
             value={size}
             onChange={setSize}
           />
         </Step>
-        <Step title="Anything else?" sub="Optional extras we are often asked for.">
+        <Step
+          title={<CmsText path="popups.quote.extraTitle">{copy("extraTitle")}</CmsText>}
+          sub={<CmsText path="popups.quote.extraSub">{copy("extraSub")}</CmsText>}
+        >
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {quoteExtras.map((item) => (
               <Option
@@ -120,13 +138,19 @@ export function QuoteBuilder() {
             ))}
           </div>
         </Step>
-        <Step title="When do you need it?" sub="Priority displaces other work, so it costs more." last>
+        <Step
+          title={<CmsText path="popups.quote.whenTitle">{copy("whenTitle")}</CmsText>}
+          sub={<CmsText path="popups.quote.whenSub">{copy("whenSub")}</CmsText>}
+          last
+        >
           <Seg items={quoteSpeeds} value={speed} onChange={setSpeed} />
         </Step>
       </div>
 
       <aside className="glass sticky top-24 overflow-hidden rounded-[22px] p-7">
-        <p className="text-sm text-fg/55">Your estimate</p>
+        <p className="text-sm text-fg/55">
+          <CmsText path="popups.quote.estimateLabel">{copy("estimateLabel")}</CmsText>
+        </p>
         <p className="display mt-2 text-[42px]">{estimate.total}</p>
         <p className="mt-2 border-b border-line pb-5 text-[14.5px] text-fg/55">
           {estimate.sub}
@@ -146,15 +170,17 @@ export function QuoteBuilder() {
             <li className="py-3 text-fg/40">Nothing selected yet.</li>
           )}
         </ul>
-        <Link
-          href={estimate.query ? `/contact?${estimate.query}` : "/contact"}
+        <CmsLink
+          popupId="quote"
+          labelKey="ctaLabel"
+          hrefKey="ctaHref"
+          href={withContactQuery(ctaHref, estimate.query)}
           className="btn btn-beam w-full"
         >
           Send this to us
-        </Link>
+        </CmsLink>
         <p className="mt-3.5 text-[12.5px] leading-5 text-fg/42">
-          Indicative range for this draft. Final price is fixed in writing after
-          a free consultation.
+          <CmsText path="popups.quote.note">{copy("note")}</CmsText>
         </p>
       </aside>
     </div>
@@ -167,8 +193,8 @@ function Step({
   children,
   last,
 }: {
-  title: string;
-  sub: string;
+  title: ReactNode;
+  sub: ReactNode;
   children: ReactNode;
   last?: boolean;
 }) {

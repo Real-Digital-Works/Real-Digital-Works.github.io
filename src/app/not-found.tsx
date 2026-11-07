@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { brandedTitle, shareTitle } from "@/lib/seo";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
 
 const title = "Page not found";
 const description = "That page is not on Real Digital Works. Head home or get in touch.";
@@ -23,12 +23,12 @@ export default function NotFound() {
           were looking for a piece of work.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/" className="btn btn-beam">
+          <CmsLink ctaId="notfound.home" href="/" className="btn btn-beam">
             Home
-          </Link>
-          <Link href="/contact" className="btn btn-ghost">
+          </CmsLink>
+          <CmsLink ctaId="notfound.contact" href="/contact" className="btn btn-ghost">
             Contact
-          </Link>
+          </CmsLink>
         </div>
       </div>
     </section>

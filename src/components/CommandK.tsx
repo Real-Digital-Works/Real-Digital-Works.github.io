@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { navItems, type NavItem } from "@/lib/content";
+import { mergeNavItems, navItems, type NavItem } from "@/lib/content";
+import { CmsLink } from "@/components/visual-editor/CmsLink";
+import { usePopupCopy } from "@/components/visual-editor/CmsText";
+import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 function flattenNav(items: NavItem[]): { label: string; href: string }[] {
   const out: { label: string; href: string }[] = [];
@@ -18,8 +20,10 @@ function flattenNav(items: NavItem[]): { label: string; href: string }[] {
 export function CommandK() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const router = useRouter();
   const pathname = usePathname();
+  const visual = useVisualEditorOptional();
+  const copy = usePopupCopy("commandK");
+  const liveNav = visual?.enabled ? mergeNavItems(visual.draft.navItems) : navItems;
 
   useEffect(() => {
     setOpen(false);
@@ -43,13 +47,17 @@ export function CommandK() {
     };
   }, []);
 
+  useEffect(() => {
+    if (visual?.activePopup === "commandK") setOpen(true);
+  }, [visual?.activePopup]);
+
   const legalItems = [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
     { label: "Modern Slavery Policy", href: "/modern-slavery" },
   ];
   const seen = new Set<string>();
-  const items = [...flattenNav(navItems), ...legalItems].filter((item) => {
+  const items = [...flattenNav(liveNav), ...legalItems].filter((item) => {
     if (seen.has(item.href)) return false;
     seen.add(item.href);
     return item.label.toLowerCase().includes(q.toLowerCase());
@@ -70,35 +78,36 @@ export function CommandK() {
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Jump to a page…"
+          placeholder={copy("placeholder")}
           className="w-full border-b border-line bg-transparent px-5 py-4 text-lg outline-none"
+          onFocus={() => visual?.selectPopup("commandK")}
         />
         <ul className="p-2">
           {items.map((item) => (
             <li key={item.href}>
-              <Link
+              <CmsLink
                 href={item.href}
                 className="block rounded-xl px-4 py-3 text-fg/80 hover:bg-fg/8"
                 onClick={() => setOpen(false)}
               >
                 {item.label}
-              </Link>
+              </CmsLink>
             </li>
           ))}
           <li>
-            <button
-              type="button"
+            <CmsLink
+              popupId="commandK"
+              labelKey="ctaLabel"
+              hrefKey="ctaHref"
+              href="/contact"
               className="block w-full rounded-xl px-4 py-3 text-left text-fg/80 hover:bg-fg/8"
-              onClick={() => {
-                setOpen(false);
-                router.push("/contact");
-              }}
+              onClick={() => setOpen(false)}
             >
               Send a brief
-            </button>
+            </CmsLink>
           </li>
         </ul>
-        <p className="px-5 py-3 font-mono text-[11px] text-fg/35">esc to close</p>
+        <p className="px-5 py-3 font-mono text-[11px] text-fg/35">{copy("hint")}</p>
       </div>
     </div>
   );

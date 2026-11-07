@@ -31,6 +31,12 @@ import {
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+export type VisualSelection =
+  | { kind: "text"; path: string }
+  | { kind: "link"; id: string }
+  | { kind: "nav"; id: string }
+  | { kind: "popup"; id: string };
+
 type VisualEditorContextValue = {
   enabled: boolean;
   isDevBypass: boolean;
@@ -40,7 +46,13 @@ type VisualEditorContextValue = {
   status: SaveStatus;
   statusMessage: string;
   selectedPath: string | null;
+  selection: VisualSelection | null;
   selectPath: (path: string | null) => void;
+  selectLink: (id: string) => void;
+  selectNav: (id: string) => void;
+  selectPopup: (id: string) => void;
+  activePopup: string | null;
+  openPopup: (id: string) => void;
   getText: (path: string) => string;
   setText: (path: string, value: string) => void;
   patchDraft: (next: Content) => void;
@@ -73,6 +85,8 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selection, setSelection] = useState<VisualSelection | null>(null);
+  const [activePopup, setActivePopup] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -134,6 +148,34 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     setDirty(true);
     setStatus("idle");
   }, []);
+
+  const selectPath = useCallback((path: string | null) => {
+    setSelectedPath(path);
+    setSelection(path ? { kind: "text", path } : null);
+  }, []);
+
+  const selectLink = useCallback((id: string) => {
+    setSelection({ kind: "link", id });
+    setSelectedPath(`cta.${id}`);
+  }, []);
+
+  const selectNav = useCallback((id: string) => {
+    setSelection({ kind: "nav", id });
+    setSelectedPath(`nav.${id}`);
+  }, []);
+
+  const selectPopup = useCallback((id: string) => {
+    setSelection({ kind: "popup", id });
+    setSelectedPath(`popup.${id}`);
+  }, []);
+
+  const openPopup = useCallback(
+    (id: string) => {
+      setActivePopup(id);
+      selectPopup(id);
+    },
+    [selectPopup],
+  );
 
   const patchDraft = useCallback((next: Content) => {
     setDraft(next);
@@ -233,7 +275,13 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       status,
       statusMessage,
       selectedPath,
-      selectPath: setSelectedPath,
+      selection,
+      selectPath,
+      selectLink,
+      selectNav,
+      selectPopup,
+      activePopup,
+      openPopup,
       getText,
       setText,
       patchDraft,
@@ -250,6 +298,13 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       status,
       statusMessage,
       selectedPath,
+      selection,
+      selectPath,
+      selectLink,
+      selectNav,
+      selectPopup,
+      activePopup,
+      openPopup,
       getText,
       setText,
       patchDraft,

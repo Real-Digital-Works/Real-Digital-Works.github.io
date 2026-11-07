@@ -2,7 +2,19 @@
 
 import type { ElementType, FocusEvent, MouseEvent, ReactNode } from "react";
 import { RichContent } from "@/components/RichContent";
+import seedContent, { type Content } from "@/lib/content";
+import { popupText } from "@/lib/cms-ui";
 import { useVisualEditorOptional } from "./VisualEditorProvider";
+
+export function useLiveDraft(): Content {
+  const ctx = useVisualEditorOptional();
+  return ctx?.enabled ? ctx.draft : seedContent;
+}
+
+export function usePopupCopy(id: string) {
+  const draft = useLiveDraft();
+  return (key: string, fallback?: string) => popupText(draft, id, key, fallback);
+}
 
 type CmsTextProps = {
   path: string;

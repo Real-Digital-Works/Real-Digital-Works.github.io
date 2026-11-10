@@ -82,6 +82,7 @@ import { NavEditor, type NavPageOption } from "@/components/NavEditor";
 import { ServiceEditor } from "@/components/ServiceEditor";
 import { AdminThemeToggle } from "@/components/AdminTheme";
 import { startLiveEdit } from "@/lib/visual-editor";
+import { WorkImageField } from "@/components/WorkImageField";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -275,11 +276,10 @@ function CaseStudyList({
             onChange={(v) => onPatch(i, { accent: v })}
             hint="#hex used for the card when there is no image."
           />
-          <Field
-            label="Card image URL (optional)"
+          <WorkImageField
             value={proj.image ?? ""}
+            slug={proj.slug}
             onChange={(v) => onPatch(i, { image: v })}
-            hint="Leave empty to keep the accent gradient."
           />
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>
@@ -1382,7 +1382,7 @@ export default function AdminDashboard() {
 
                 <SectionTitle
                   title="Case studies"
-                  sub="Cards on /work. Hide keeps /work/{slug} live. Each item needs a unique slug. Optional image URL; empty keeps the accent gradient."
+                  sub="Cards on /work. Hide keeps /work/{slug} live. Each item needs a unique slug. Upload a card image or paste a URL; empty keeps the accent gradient."
                 />
                 <CaseStudyList
                   projects={projectsData}

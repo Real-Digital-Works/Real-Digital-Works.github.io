@@ -15,8 +15,15 @@ function serviceSlugFromHref(href: string): string | null {
   return match ? match[1] : null;
 }
 
+function isNavChildVisible(child: NavItem) {
+  if (child.hidden) return false;
+  const slug = serviceSlugFromHref(child.href);
+  if (slug && serviceMap[slug]?.hidden) return false;
+  return true;
+}
+
 function groupedNavChildren(children: NavItem[]) {
-  const visible = children.filter((child) => !child.hidden);
+  const visible = children.filter(isNavChildVisible);
   const used = new Set<string>();
   const groups = serviceCategories
     .map((cat) => ({
@@ -103,7 +110,7 @@ export function Header() {
           {visibleNav.map((item) => {
             const servicesItem = isServicesNavItem(item);
             const childList = item.children;
-            const visibleChildren = (childList ?? []).filter((c) => !c.hidden);
+            const visibleChildren = (childList ?? []).filter(isNavChildVisible);
             const useCmsMega = servicesItem && childList !== undefined;
             const useLegacyMega = servicesItem && childList === undefined;
             const hasChildren = visibleChildren.length > 0;
@@ -171,7 +178,7 @@ export function Header() {
             // Items with sub-nav → dropdown
             if (hasChildren) {
               const isDropOpen = dropdownOpen === item.id;
-              const visibleChildren = (item.children ?? []).filter((c) => !c.hidden);
+              const visibleChildren = (item.children ?? []).filter(isNavChildVisible);
               return (
                 <div key={item.id} className="relative">
                   <button
@@ -348,7 +355,7 @@ export function Header() {
           {visibleNav.map((item) => {
             const servicesItem = isServicesNavItem(item);
             const childList = item.children;
-            const visibleChildren = (childList ?? []).filter((c) => !c.hidden);
+            const visibleChildren = (childList ?? []).filter(isNavChildVisible);
             const useCmsMega = servicesItem && childList !== undefined && visibleChildren.length > 0;
             const useLegacyMega = servicesItem && childList === undefined;
             const hasChildren = visibleChildren.length > 0;
@@ -408,7 +415,7 @@ export function Header() {
             }
 
             if (hasChildren) {
-              const visibleChildren = (item.children ?? []).filter((c) => !c.hidden);
+              const visibleChildren = (item.children ?? []).filter(isNavChildVisible);
               return (
                 <div key={item.id}>
                   <CmsLink

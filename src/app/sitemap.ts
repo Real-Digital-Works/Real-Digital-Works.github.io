@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { blogs, pages, projects } from "@/lib/content";
 import { canonicalOrigin } from "@/lib/canonical-url";
-import { servicePages } from "@/lib/services-data";
+import { listedServicePages } from "@/lib/services-data";
 
 export const dynamic = "force-static";
 
@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // All 16 service pages — generated from services-data.ts
-  const serviceRoutes: MetadataRoute.Sitemap = servicePages.map((s) => ({
+  const serviceRoutes: MetadataRoute.Sitemap = listedServicePages.map((s) => ({
     url: `${base}/services/${s.slug}`,
     lastModified: now,
     changeFrequency: "monthly" as const,
@@ -31,7 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const blogRoutes: MetadataRoute.Sitemap = blogs
-    .filter((p) => p.status === "published")
+    .filter((p) => p.status === "published" && !p.hidden)
     .map((p) => ({
       url: `${base}/blog/${p.slug}`,
       lastModified: p.publishedAt ? new Date(p.publishedAt) : now,
@@ -40,7 +40,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }));
 
   const pageRoutes: MetadataRoute.Sitemap = pages
-    .filter((p) => p.status === "published")
+    .filter((p) => p.status === "published" && !p.hidden)
     .map((p) => ({
       url: `${base}/${p.slug}`,
       lastModified: now,
@@ -49,7 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }));
 
   const workRoutes: MetadataRoute.Sitemap = projects
-    .filter((p) => p.slug)
+    .filter((p) => p.slug && !p.hidden)
     .map((p) => ({
       url: `${base}/work/${p.slug}`,
       lastModified: now,

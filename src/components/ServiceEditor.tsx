@@ -70,7 +70,7 @@ export function ServiceEditor({
     <>
       {services.length === 0 && (
         <p className="mb-4 text-sm text-white/40">
-          No services. The public /services page, individual routes, sitemap, and contact dropdown will stay empty until you add one.
+          No services. The public /services listing, sitemap, and contact dropdown stay empty until you add one. Hidden services still keep their URLs.
         </p>
       )}
       {services.map((page, i) => {
@@ -78,7 +78,12 @@ export function ServiceEditor({
         const open = openSlug === page.slug;
         const slugIsLive = LIVE_SERVICE_SLUGS.has(page.slug);
         return (
-          <div key={page.slug || `new-${i}`} className="space-y-4 rounded-2xl border border-white/8 bg-white/4 p-6">
+          <div
+            key={page.slug || `new-${i}`}
+            className={`space-y-4 rounded-2xl border p-6 ${
+              page.hidden ? "border-white/5 bg-white/2 opacity-70" : "border-white/8 bg-white/4"
+            }`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
@@ -89,6 +94,11 @@ export function ServiceEditor({
                 <span>
                   <span className="block text-sm font-semibold text-white/80">
                     {page.title || "Untitled"}
+                    {page.hidden ? (
+                      <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+                        Hidden
+                      </span>
+                    ) : null}
                   </span>
                   <span className="font-mono text-[11px] text-white/35">{livePath}</span>
                 </span>
@@ -122,8 +132,9 @@ export function ServiceEditor({
                   type="button"
                   onClick={() => onRemove(i)}
                   className="text-xs text-red-400/60 hover:text-red-400"
+                  title="Hidden from menus and listings. The URL still works."
                 >
-                  Remove
+                  {page.hidden ? "Unhide" : "Hide"}
                 </button>
               </div>
             </div>
@@ -424,7 +435,7 @@ export function ServiceEditor({
                   <h4 className="text-sm font-semibold text-white/80">Related services</h4>
                   <p className="text-[11px] text-white/35">Shown at the bottom of {livePath}.</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {services.filter((rel) => rel.slug && rel.slug !== page.slug).map((rel) => {
+                    {services.filter((rel) => rel.slug && rel.slug !== page.slug && !rel.hidden).map((rel) => {
                       const checked = page.relatedSlugs.includes(rel.slug);
                       return (
                         <label key={rel.slug} className="flex items-center gap-2 text-[13px] text-white/70">

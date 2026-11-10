@@ -141,7 +141,7 @@ export function useDraftServicesHome<T>(fallback: T[]): T[] {
   if (!ctx?.enabled) return fallback;
   const list = ctx.draft.servicePagesList ?? [];
   return list
-    .filter((row) => row.showOnHome)
+    .filter((row) => row.showOnHome && !row.hidden)
     .map((row) => ({
       id: row.slug,
       title: row.listingTitle.trim() || row.title,

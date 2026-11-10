@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   ...shareTitle("Blog", blogDescription, { url: "/blog" }),
 };
 
-const published = blogs.filter((p) => p.status === "published");
+const published = blogs.filter((p) => p.status === "published" && !p.hidden);
 
 export default function BlogPage() {
   return (

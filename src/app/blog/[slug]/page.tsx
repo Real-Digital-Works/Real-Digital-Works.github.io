@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { blogs, site } from "@/lib/content";
+import { blogs, isDirectUrlLive, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
@@ -10,14 +10,12 @@ import { CmsText } from "@/components/visual-editor/CmsText";
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  return blogs
-    .filter((p) => p.status === "published")
-    .map((p) => ({ slug: p.slug }));
+  return blogs.filter((p) => p.slug && isDirectUrlLive(p)).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogs.find((p) => p.slug === slug);
+  const post = blogs.find((p) => p.slug === slug && isDirectUrlLive(p));
   if (!post) {
     return { title: brandedTitle("Post not found"), robots: { index: false, follow: false } };
   }
@@ -37,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = blogs.find((p) => p.slug === slug && p.status === "published");
+  const post = blogs.find((p) => p.slug === slug && isDirectUrlLive(p));
   if (!post) notFound();
 
   const origin = canonicalOrigin();

@@ -10,7 +10,7 @@ import {
   site,
   stack,
 } from "@/lib/content";
-import { homeServices, serviceCategories, servicePages } from "@/lib/services-data";
+import { homeServices, listedServicePages, serviceCategories } from "@/lib/services-data";
 
 export type ChatRole = "rdw" | "you";
 export type ChatTurn = { from: ChatRole; text: string };
@@ -121,7 +121,7 @@ export function buildFactsBlock(): string {
     .map((c) => `- ${c.label}: ${c.slugs.join(", ")}`)
     .join("\n");
 
-  const pageLines = servicePages
+  const pageLines = listedServicePages
     .map((s) => {
       const included = s.whatsIncluded.map((item) => `${item.title}: ${item.description}`).join("; ");
       const pageFaq = s.faq.map((item) => `Q: ${item.q} A: ${item.a}`).join(" ");

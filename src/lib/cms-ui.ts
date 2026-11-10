@@ -390,19 +390,23 @@ export function destinationGroups(draft: Content): { group: string; items: { lab
     { label: "Terms", href: "/terms" },
     { label: "Modern slavery", href: "/modern-slavery" },
   ];
-  const services = (draft.servicePagesList ?? []).map((row) => ({
-    label: row.title || row.slug,
-    href: `/services/${row.slug}`,
-  }));
-  const work = (draft.projects ?? []).map((row) => ({
-    label: row.title || row.slug,
-    href: `/work/${row.slug}`,
-  }));
+  const services = (draft.servicePagesList ?? [])
+    .filter((row) => !row.hidden)
+    .map((row) => ({
+      label: row.title || row.slug,
+      href: `/services/${row.slug}`,
+    }));
+  const work = (draft.projects ?? [])
+    .filter((row) => !row.hidden)
+    .map((row) => ({
+      label: row.title || row.slug,
+      href: `/work/${row.slug}`,
+    }));
   const blogs = (draft.blogs ?? [])
-    .filter((row) => row.status === "published")
+    .filter((row) => row.status === "published" && !row.hidden)
     .map((row) => ({ label: row.title || row.slug, href: `/blog/${row.slug}` }));
   const pages = (draft.pages ?? [])
-    .filter((row) => row.status === "published")
+    .filter((row) => row.status === "published" && !row.hidden)
     .map((row) => ({ label: row.title || row.slug, href: `/${row.slug}` }));
   const contact = [
     { label: "WhatsApp", href: draft.site.whatsappHref },

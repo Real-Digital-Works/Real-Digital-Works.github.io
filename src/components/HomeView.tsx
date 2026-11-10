@@ -47,7 +47,7 @@ export function HomeView() {
   const process = useDraftArray<ProcessStep>("process", seedProcess);
   const homeServices = useDraftServicesHome<Service>(seedHomeServices);
   const liveProjects = useDraftArray<Project>("projects", projects);
-  const featured = liveProjects[0];
+  const featured = liveProjects.find((project) => !project.hidden);
   const featuredMark = featured?.title.trim().split(/\s+/)[0] ?? "";
 
   useGSAP(

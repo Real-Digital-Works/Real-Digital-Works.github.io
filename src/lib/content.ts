@@ -168,6 +168,8 @@ export interface CmsServicePage {
   detail?: string;
   category?: ServiceCategory;
   showOnHome?: boolean;
+  /** Hidden from listings/menus; the /services/{slug} URL still renders. */
+  hidden?: boolean;
 }
 
 /** Canonical CMS row for one service — listing + individual page */
@@ -223,6 +225,8 @@ export interface Project {
   accent: string;
   /** Optional card image. Empty keeps the accent gradient used on /work. */
   image?: string;
+  /** Hidden from /work and homepage cards; /work/{slug} still renders. */
+  hidden?: boolean;
 }
 
 /** Intro copy on the public /work listing (not individual case studies). */
@@ -245,6 +249,8 @@ export interface BlogPost {
   tags: string[];
   seoTitle: string;
   seoDescription: string;
+  /** Hidden from /blog listing; /blog/{slug} still renders. */
+  hidden?: boolean;
 }
 
 export type PageStatus = "published" | "draft";
@@ -257,6 +263,8 @@ export interface DynamicPage {
   showInNav: boolean;
   seoTitle: string;
   seoDescription: string;
+  /** Hidden from menus and sitemaps; the custom path still renders. */
+  hidden?: boolean;
 }
 
 export interface NavItem {
@@ -315,7 +323,7 @@ export interface Content {
   servicePagesContent?: ServicePagesCmsMap;
   /**
    * Canonical ordered service list. Missing → seed the original 16 pages.
-   * An empty array is a real value (user deleted every service).
+   * An empty array is a real value (every service is hidden or none exist).
    */
   servicePagesList?: CmsServiceRecord[];
   /** Named public CTAs (label + destination). Missing keys use in-code fallbacks. */
@@ -588,11 +596,26 @@ function normalizeProject(item: Partial<Project>, seed: Project[]): Project {
     tags,
     accent: pickStr(item.accent, fallback?.accent ?? "#1857EC"),
     ...(image ? { image } : {}),
+    ...(item.hidden ? { hidden: true } : {}),
   };
 }
 
+export function isHidden(item?: { hidden?: boolean } | null): boolean {
+  return Boolean(item?.hidden);
+}
+
+/** Listings, menus, sitemaps — omit hidden records. Direct URLs still use the full list. */
+export function visibleItems<T extends { hidden?: boolean }>(items: T[]): T[] {
+  return items.filter((item) => !isHidden(item));
+}
+
+/** Published pages/posts, plus hidden ones so their URLs keep working. */
+export function isDirectUrlLive(item: { status?: string; hidden?: boolean }): boolean {
+  return item.status === "published" || Boolean(item.hidden);
+}
+
 /**
- * Merge CMS case studies. An empty array is a real value (user deleted every item).
+ * Merge CMS case studies. An empty visible list is a real value (every item may be hidden).
  * Seed is used only when the list is missing entirely, not when it is empty.
  */
 export function mergeProjects(raw?: Project[] | null): Project[] {
@@ -671,7 +694,7 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * Merge CMS nav. An empty array is a real value (user deleted every item).
+ * Merge CMS nav. An empty visible list is a real value (every item may be hidden).
  * Seed is used only when the list is missing entirely, not when it is empty.
  */
 export function mergeNavItems(raw?: NavItem[] | null): NavItem[] {
@@ -686,7 +709,7 @@ export function isServicesNavItem(item: NavItem): boolean {
 /** Fill Services children from CMS pages only when children were never saved. */
 export function hydrateServicesNavChildren(
   items: NavItem[],
-  pages: { slug: string; title: string }[],
+  pages: { slug: string; title: string; hidden?: boolean }[],
 ): NavItem[] {
   return items.map((item) => {
     if (!isServicesNavItem(item) || item.children !== undefined) return item;
@@ -696,6 +719,7 @@ export function hydrateServicesNavChildren(
         id: `svc-${page.slug}`,
         label: page.title,
         href: `/services/${page.slug}`,
+        ...(page.hidden ? { hidden: true } : {}),
       })),
     };
   });
@@ -735,14 +759,16 @@ export function rewriteNavHrefs(items: NavItem[], from: string, to: string): Nav
   }));
 }
 
-export function removeNavHrefs(items: NavItem[], href: string): NavItem[] {
-  return items
-    .filter((item) => item.href !== href)
-    .map((item) =>
-      item.children
-        ? { ...item, children: removeNavHrefs(item.children, href) }
-        : item,
-    );
+export function setNavHrefsHidden(
+  items: NavItem[],
+  href: string,
+  hidden: boolean,
+): NavItem[] {
+  return items.map((item) => ({
+    ...item,
+    hidden: item.href === href ? hidden : item.hidden,
+    ...(item.children ? { children: setNavHrefsHidden(item.children, href, hidden) } : {}),
+  }));
 }
 
 export const navItems: NavItem[] = mergeNavItems(content.navItems);

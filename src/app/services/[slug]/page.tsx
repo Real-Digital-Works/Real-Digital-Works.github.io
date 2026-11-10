@@ -40,7 +40,9 @@ export default async function ServicePage({ params }: Props) {
   const service = getServiceBySlug(slug);
   if (!service) notFound();
 
-  const related = servicePages.filter((s) => service.relatedSlugs.includes(s.slug));
+  const related = servicePages.filter(
+    (s) => service.relatedSlugs.includes(s.slug) && !s.hidden,
+  );
   const heading = serviceHeading(service.seoTitle, service.title);
   const origin = canonicalOrigin();
   const pageUrl = canonicalUrl(`/services/${slug}`);

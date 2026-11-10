@@ -12,14 +12,14 @@ import {
 } from "react";
 import Script from "next/script";
 import { site } from "@/lib/content";
-import { servicePages } from "@/lib/services-data";
+import { listedServicePages } from "@/lib/services-data";
 import { CmsText, usePopupCopy } from "@/components/visual-editor/CmsText";
 import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
 
 const UNSURE = "Not sure yet";
 const serviceOptions = [
   { value: "", label: UNSURE },
-  ...servicePages.map((s) => ({ value: s.slug, label: s.title })),
+  ...listedServicePages.map((s) => ({ value: s.slug, label: s.title })),
 ];
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";

@@ -4,7 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { CmsText } from "@/components/visual-editor/CmsText";
 import { seo, faq, pageIntros } from "@/lib/content";
 import { canonicalUrl } from "@/lib/canonical-url";
-import { cmsServiceRecords } from "@/lib/services-data";
+import { listedServiceRecords } from "@/lib/services-data";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ const serviceJsonLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "Real Digital Works Services",
-  itemListElement: cmsServiceRecords.map((s, i) => ({
+  itemListElement: listedServiceRecords.map((s, i) => ({
     "@type": "ListItem",
     position: i + 1,
     item: {
@@ -61,10 +61,10 @@ export default function ServicesPage() {
       </section>
       <section className="pb-20">
         <div className="wrap grid gap-4">
-          {cmsServiceRecords.length === 0 ? (
+          {listedServiceRecords.length === 0 ? (
             <p className="text-[16px] text-fg/55">No services published yet.</p>
           ) : (
-            cmsServiceRecords.map((service, i) => (
+            listedServiceRecords.map((service, i) => (
               <Reveal
                 key={service.slug}
                 delay={i * 0.04}

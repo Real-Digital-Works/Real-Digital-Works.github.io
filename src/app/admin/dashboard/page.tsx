@@ -24,7 +24,6 @@ import {
   query,
   orderBy,
   limit,
-  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -46,8 +45,8 @@ import content, {
   mergeWorkPage,
   mergeWorkSeo,
   navContainsHref,
-  removeNavHrefs,
   rewriteNavHrefs,
+  setNavHrefsHidden,
   slugifyProjectTitle,
   slugifyServiceTitle,
   uniqueProjectSlug,
@@ -168,6 +167,8 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
+const HIDE_HINT = "Hidden from menus and listings. The URL still works.";
+
 function CaseStudyList({
   projects,
   onPatch,
@@ -189,10 +190,15 @@ function CaseStudyList({
         </p>
       )}
       {projects.map((proj, i) => (
-        <Card key={i} className="space-y-4">
+        <Card key={i} className={`space-y-4 ${proj.hidden ? "opacity-70" : ""}`}>
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded-full" style={{ background: proj.accent }} />
             <h3 className="text-sm font-semibold text-white/80">{proj.title || "Untitled"}</h3>
+            {proj.hidden ? (
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+                Hidden
+              </span>
+            ) : null}
             <span className="ml-auto font-mono text-[11px] text-white/40">/work/{proj.slug}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -216,8 +222,9 @@ function CaseStudyList({
               type="button"
               onClick={() => onRemove(i)}
               className="ml-auto text-xs text-red-400/60 hover:text-red-400"
+              title={HIDE_HINT}
             >
-              Remove
+              {proj.hidden ? "Unhide" : "Hide"}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -512,25 +519,21 @@ export default function AdminDashboard() {
     (index: number) => {
       const item = servicePagesList[index];
       const label = item?.title || item?.slug || "this service";
+      const nextHidden = !item?.hidden;
       if (
+        nextHidden &&
         !confirm(
-          `Remove "${label}"? After you save and deploy it disappears from /services, /services/{slug}, the sitemap, the contact form, related-service pickers, and matching nav links.`,
+          `Hide "${label}"? ${HIDE_HINT} Save & Deploy to update listings.`,
         )
       ) {
         return;
       }
       const slug = item?.slug;
       setServicePagesList((list) =>
-        list
-          .filter((_, i) => i !== index)
-          .map((row) => ({
-            ...row,
-            relatedSlugs: slug ? row.relatedSlugs.filter((rel) => rel !== slug) : row.relatedSlugs,
-          })),
+        list.map((row, i) => (i === index ? { ...row, hidden: nextHidden } : row)),
       );
       if (slug) {
-        setNavData((nav) => removeNavHrefs(nav, `/services/${slug}`));
-        setOpenServiceSlug((open) => (open === slug ? null : open));
+        setNavData((nav) => setNavHrefsHidden(nav, `/services/${slug}`, nextHidden));
       }
       markUnsaved();
     },
@@ -585,10 +588,16 @@ export default function AdminDashboard() {
     (index: number) => {
       const item = projectsData[index];
       const label = item?.title || item?.slug || "this case study";
-      if (!confirm(`Remove "${label}"? It will disappear from /work after you save and deploy.`)) {
+      const nextHidden = !item?.hidden;
+      if (
+        nextHidden &&
+        !confirm(`Hide "${label}" from /work? ${HIDE_HINT} Save & Deploy to update listings.`)
+      ) {
         return;
       }
-      setProjectsData((p) => p.filter((_, i) => i !== index));
+      setProjectsData((p) =>
+        p.map((row, i) => (i === index ? { ...row, hidden: nextHidden } : row)),
+      );
       markUnsaved();
     },
     [markUnsaved, projectsData],
@@ -1373,7 +1382,7 @@ export default function AdminDashboard() {
 
                 <SectionTitle
                   title="Case studies"
-                  sub="Cards on /work. Add, remove, or reorder. Each item needs a unique slug for /work/{slug}. Optional image URL; empty keeps the accent gradient."
+                  sub="Cards on /work. Hide keeps /work/{slug} live. Each item needs a unique slug. Optional image URL; empty keeps the accent gradient."
                 />
                 <CaseStudyList
                   projects={projectsData}
@@ -1390,7 +1399,7 @@ export default function AdminDashboard() {
               <>
                 <SectionTitle
                   title="Projects / Work"
-                  sub="Same case studies as the Work tab. Shown on /work and /work/{slug}. Add, remove, reorder, and edit slugs here too."
+                  sub="Same case studies as the Work tab. Hide removes them from /work listings; the slug URL still works."
                 />
                 <CaseStudyList
                   projects={projectsData}
@@ -1517,9 +1526,16 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="space-y-3">
                         {blogsData.map((post) => (
-                          <Card key={post.slug} className="flex items-center justify-between gap-4">
+                          <Card key={post.slug} className={`flex items-center justify-between gap-4 ${post.hidden ? "opacity-70" : ""}`}>
                             <div>
-                              <p className="font-medium text-white">{post.title || "(untitled)"}</p>
+                              <p className="font-medium text-white">
+                                {post.title || "(untitled)"}
+                                {post.hidden ? (
+                                  <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+                                    Hidden
+                                  </span>
+                                ) : null}
+                              </p>
                               <p className="text-xs text-white/40 mt-0.5">
                                 /{post.slug} · {post.status} · {post.publishedAt?.split("T")[0] ?? "no date"}
                               </p>
@@ -1533,14 +1549,25 @@ export default function AdminDashboard() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  if (!confirm(`Delete "${post.title}"?`)) return;
-                                  await deleteDoc(doc(db(), "blogs", post.slug));
-                                  setBlogsData((b) => b.filter((p) => p.slug !== post.slug));
+                                  const nextHidden = !post.hidden;
+                                  if (
+                                    nextHidden &&
+                                    !confirm(`Hide "${post.title}"? ${HIDE_HINT}`)
+                                  ) {
+                                    return;
+                                  }
+                                  const next = { ...post, hidden: nextHidden };
+                                  await setDoc(doc(db(), "blogs", post.slug), {
+                                    ...next,
+                                    updatedAt: serverTimestamp(),
+                                  });
+                                  setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
                                   markUnsaved();
                                 }}
                                 className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
+                                title={HIDE_HINT}
                               >
-                                Delete
+                                {post.hidden ? "Unhide" : "Hide"}
                               </button>
                             </div>
                           </Card>
@@ -1688,23 +1715,41 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="space-y-3">
                         {pagesData.map((pg) => (
-                          <Card key={pg.slug} className="flex items-center justify-between gap-4">
+                          <Card key={pg.slug} className={`flex items-center justify-between gap-4 ${pg.hidden ? "opacity-70" : ""}`}>
                             <div>
-                              <p className="font-medium text-white">{pg.title || "(untitled)"}</p>
+                              <p className="font-medium text-white">
+                                {pg.title || "(untitled)"}
+                                {pg.hidden ? (
+                                  <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+                                    Hidden
+                                  </span>
+                                ) : null}
+                              </p>
                               <p className="text-xs text-white/40 mt-0.5">/{pg.slug} · {pg.status}</p>
                             </div>
                             <div className="flex gap-2 shrink-0">
                               <button onClick={() => setEditingPage(pg)} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white">Edit</button>
                               <button
                                 onClick={async () => {
-                                  if (!confirm(`Delete "${pg.title}"?`)) return;
-                                  await deleteDoc(doc(db(), "pages", pg.slug));
-                                  setPagesData((p) => p.filter((x) => x.slug !== pg.slug));
+                                  const nextHidden = !pg.hidden;
+                                  if (
+                                    nextHidden &&
+                                    !confirm(`Hide "${pg.title}"? ${HIDE_HINT}`)
+                                  ) {
+                                    return;
+                                  }
+                                  const next = { ...pg, hidden: nextHidden };
+                                  await setDoc(doc(db(), "pages", pg.slug), {
+                                    ...next,
+                                    updatedAt: serverTimestamp(),
+                                  });
+                                  setPagesData((p) => p.map((x) => (x.slug === pg.slug ? next : x)));
                                   markUnsaved();
                                 }}
                                 className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
+                                title={HIDE_HINT}
                               >
-                                Delete
+                                {pg.hidden ? "Unhide" : "Hide"}
                               </button>
                             </div>
                           </Card>

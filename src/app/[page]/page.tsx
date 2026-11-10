@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { pages } from "@/lib/content";
+import { isDirectUrlLive, pages } from "@/lib/content";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
@@ -15,13 +15,13 @@ const RESERVED = new Set([
 
 export async function generateStaticParams() {
   return pages
-    .filter((p) => p.status === "published" && !RESERVED.has(p.slug))
+    .filter((p) => p.slug && !RESERVED.has(p.slug) && isDirectUrlLive(p))
     .map((p) => ({ page: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { page: slug } = await params;
-  const pg = pages.find((p) => p.slug === slug && p.status === "published");
+  const pg = pages.find((p) => p.slug === slug && isDirectUrlLive(p));
   if (!pg) {
     return { title: brandedTitle("Page not found"), robots: { index: false, follow: false } };
   }
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DynamicPage({ params }: Props) {
   const { page: slug } = await params;
   if (RESERVED.has(slug)) notFound();
-  const pg = pages.find((p) => p.slug === slug && p.status === "published");
+  const pg = pages.find((p) => p.slug === slug && isDirectUrlLive(p));
   if (!pg) notFound();
 
   return (

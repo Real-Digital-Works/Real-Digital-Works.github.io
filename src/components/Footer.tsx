@@ -5,7 +5,7 @@ import {
   DEFAULT_FOOTER_COPY,
   site,
 } from "@/lib/content";
-import { FOOTER_SERVICE_LINKS } from "@/lib/cms-ui";
+import { listedServiceRecords } from "@/lib/services-data";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
 
@@ -28,7 +28,14 @@ export function Footer() {
               <h4 className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-fg/45 uppercase">
                 <CmsText path={colPath[group]}>{group}</CmsText>
               </h4>
-              {FOOTER_SERVICE_LINKS.filter((item) => item.group === group).map((item) => (
+              {listedServiceRecords
+                .filter((row) => row.category === group)
+                .map((row) => ({
+                  id: `footer.svc.${row.slug}`,
+                  href: `/services/${row.slug}`,
+                  label: row.listingTitle.trim() || row.title,
+                }))
+                .map((item) => (
                 <CmsLink
                   key={item.id}
                   ctaId={item.id}

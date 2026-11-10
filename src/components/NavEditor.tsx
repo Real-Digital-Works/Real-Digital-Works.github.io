@@ -185,9 +185,9 @@ function SubItemRow({
         type="button"
         onClick={onRemove}
         className="text-xs text-red-400/50 hover:text-red-400"
-        title="Remove"
+        title={item.hidden ? "Show in menus" : "Hide from menus. The URL still works."}
       >
-        ✕
+        {item.hidden ? "Show" : "Hide"}
       </button>
     </div>
   );
@@ -242,8 +242,11 @@ function TopItemRow({
     onUpdate({ ...item, children });
   };
 
-  const removeChild = (idx: number) => {
-    const children = (item.children ?? []).filter((_, i) => i !== idx);
+  const hideChild = (idx: number) => {
+    const children = [...(item.children ?? [])];
+    const current = children[idx];
+    if (!current) return;
+    children[idx] = { ...current, hidden: !current.hidden };
     onUpdate({ ...item, children });
   };
 
@@ -336,9 +339,9 @@ function TopItemRow({
           type="button"
           onClick={onRemove}
           className="text-xs text-red-400/40 hover:text-red-400"
-          title="Remove item"
+          title={item.hidden ? "Show in menus" : "Hide from menus. The URL still works."}
         >
-          ✕
+          {item.hidden ? "Show" : "Hide"}
         </button>
       </div>
 
@@ -365,7 +368,7 @@ function TopItemRow({
                   item={child}
                   options={options}
                   onUpdate={(u) => updateChild(idx, u)}
-                  onRemove={() => removeChild(idx)}
+                  onRemove={() => hideChild(idx)}
                   onEditPage={onEditPage}
                 />
               ))}
@@ -413,8 +416,12 @@ export function NavEditor({
     onChange(next);
   };
 
-  const removeItem = (idx: number) => {
-    onChange(items.filter((_, i) => i !== idx));
+  const hideItem = (idx: number) => {
+    const next = [...items];
+    const current = next[idx];
+    if (!current) return;
+    next[idx] = { ...current, hidden: !current.hidden };
+    onChange(next);
   };
 
   const addItem = () => {
@@ -425,7 +432,7 @@ export function NavEditor({
     <div className="space-y-2">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs text-white/40">
-          Drag rows to reorder. Click ▶ / “sub” to manage nested dropdowns. Pick a page or type a custom path.
+          Drag rows to reorder. Hide keeps the URL working. Click ▶ / “sub” for nested dropdowns.
         </p>
         <div className="flex items-center gap-3 text-[11px] text-white/35">
           <span>👁 visible</span>
@@ -454,7 +461,7 @@ export function NavEditor({
               item={item}
               options={pageOptions}
               onUpdate={(u) => updateItem(idx, u)}
-              onRemove={() => removeItem(idx)}
+              onRemove={() => hideItem(idx)}
               onEditPage={onEditPage}
             />
           ))}

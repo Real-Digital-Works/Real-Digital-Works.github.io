@@ -35,6 +35,7 @@ export type ServiceEntry = {
   process: { title: string; description: string }[];
   faq: { q: string; a: string }[];
   relatedSlugs: string[];
+  hidden?: boolean;
 };
 
 const pricingNote =
@@ -1446,6 +1447,15 @@ function normalizeServiceRecord(
       item.keywords,
       pickList(cms?.keywords, pickList(seoRow?.keywords, seed?.keywords ?? [])),
     ),
+    ...(
+      typeof item.hidden === "boolean"
+        ? item.hidden
+          ? { hidden: true }
+          : {}
+        : cms?.hidden
+          ? { hidden: true }
+          : {}
+    ),
   };
 }
 
@@ -1454,7 +1464,7 @@ function knownSlugs(records: CmsServiceRecord[]): string[] {
 }
 
 /**
- * Merge CMS services. An empty array is a real value (user deleted every item).
+ * Merge CMS services. An empty visible list is a real value (every item may be hidden).
  * Seed is used only when the list is missing entirely, not when it is empty.
  */
 export function mergeServicePagesList(
@@ -1511,7 +1521,7 @@ export function recordsToSeoMap(list: CmsServiceRecord[]): ServicePagesSeoMap {
 
 export function recordsToListingServices(list: CmsServiceRecord[]): Service[] {
   return list
-    .filter((row) => row.showOnHome)
+    .filter((row) => row.showOnHome && !row.hidden)
     .map((row) => ({
       id: row.slug,
       title: row.listingTitle.trim() || row.title,
@@ -1536,6 +1546,7 @@ export function recordToServiceEntry(row: CmsServiceRecord): ServiceEntry {
     process: row.process,
     faq: row.faq,
     relatedSlugs: row.relatedSlugs,
+    ...(row.hidden ? { hidden: true } : {}),
   };
 }
 
@@ -1586,6 +1597,12 @@ export const cmsServiceRecords: CmsServiceRecord[] = mergeServicePagesList(
 
 export const servicePages: ServiceEntry[] = cmsServiceRecords.map(recordToServiceEntry);
 
+export const listedServicePages: ServiceEntry[] = servicePages.filter((row) => !row.hidden);
+
+export const listedServiceRecords: CmsServiceRecord[] = cmsServiceRecords.filter(
+  (row) => !row.hidden,
+);
+
 export const homeServices: Service[] = recordsToListingServices(cmsServiceRecords);
 
 export function seedServicePageSeo(): ServicePagesSeoMap {
@@ -1607,7 +1624,7 @@ export function serviceCategoriesFrom(pages: ServiceEntry[]): { label: string; s
   return cats;
 }
 
-export const serviceCategories = serviceCategoriesFrom(servicePages);
+export const serviceCategories = serviceCategoriesFrom(listedServicePages);
 
 export function getServiceBySlug(slug: string): ServiceEntry | undefined {
   return servicePages.find((s) => s.slug === slug);

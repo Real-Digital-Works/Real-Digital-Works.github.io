@@ -6,25 +6,35 @@ const MAX_EDGE = 1600;
 const QUALITY = 0.72;
 
 export const CLOUDINARY_SETUP_HEADLINE =
-  "Add Cloudinary free cloud name + unsigned preset";
+  "Add Cloudinary Cloud Name (not an API key) and unsigned preset `work`";
+
+export const CLOUDINARY_MISSING_CLOUD_NAME =
+  "Cloudinary cloud name is missing. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to the Cloud Name from the Cloudinary dashboard (not an API key) and redeploy. Unsigned uploads do not use an API key.";
+
+export const CLOUDINARY_UNKNOWN_KEY_ERROR =
+  "Cloudinary rejected the upload. Unsigned uploads must send only the image and preset `work` — no API key. Check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is the Cloud Name from the dashboard (not an API key or empty) and redeploy.";
 
 export const CLOUDINARY_SETUP_STEPS = [
   "Create a free account at cloudinary.com (no Google billing).",
-  "Copy Cloud Name from the Cloudinary dashboard.",
-  "Settings → Upload → Upload presets → Add upload preset. Signing mode: Unsigned. Folder: work. Restrict to images only. Save the preset name.",
-  "In Vercel → Settings → Environment Variables (and locally in .env.local) add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET. Redeploy.",
+  "Copy Cloud Name from the Cloudinary dashboard — not the API Key.",
+  "Settings → Upload → Upload presets → Add upload preset. Signing mode: Unsigned. Preset name: work. Folder: work. Restrict to images only.",
+  "In Vercel and .env.local set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=work. Redeploy.",
 ] as const;
+
+/** Unsigned preset name (not the folder). Folder `work` is locked on the preset. */
+const UNSIGNED_UPLOAD_PRESET = "work";
 
 function cloudName(): string {
   return process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim() ?? "";
 }
 
 function uploadPreset(): string {
-  return process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET?.trim() ?? "";
+  const fromEnv = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET?.trim() ?? "";
+  return fromEnv || UNSIGNED_UPLOAD_PRESET;
 }
 
 export function isCloudinaryConfigured(): boolean {
-  return Boolean(cloudName() && uploadPreset());
+  return Boolean(cloudName());
 }
 
 function extForType(type: string): string {
@@ -117,8 +127,9 @@ export async function uploadWorkImage(file: File, slug: string): Promise<string>
   if (file.size > WORK_IMAGE_MAX_BYTES) {
     throw new Error("Image is over 8MB. Compress it or pick a smaller file.");
   }
-  if (!isCloudinaryConfigured()) {
-    throw new Error(CLOUDINARY_SETUP_HEADLINE);
+  const cloud = cloudName();
+  if (!cloud) {
+    throw new Error(CLOUDINARY_MISSING_CLOUD_NAME);
   }
 
   const compressed = await compressWorkImage(file);
@@ -130,14 +141,21 @@ export async function uploadWorkImage(file: File, slug: string): Promise<string>
   const body = new FormData();
   body.set("file", named);
   body.set("upload_preset", uploadPreset());
-  // Folder is locked on the unsigned preset (`work`). Do not send extra unsigned params.
+  // Unsigned endpoint: file + upload_preset only. Never api_key / api_secret / folder.
+  body.delete("api_key");
+  body.delete("api_secret");
+  body.delete("signature");
+  body.delete("timestamp");
 
-  const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName())}/image/upload`;
+  const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloud)}/image/upload`;
   const res = await fetch(endpoint, { method: "POST", body });
   const payload = (await res.json().catch(() => ({}))) as CloudinaryUploadResponse;
   const errorMessage =
-    typeof payload.error?.message === "string" ? payload.error.message : "";
+    typeof payload.error?.message === "string" ? payload.error.message.trim() : "";
   if (!res.ok || errorMessage) {
+    if (/unknown api key/i.test(errorMessage)) {
+      throw new Error(CLOUDINARY_UNKNOWN_KEY_ERROR);
+    }
     throw new Error(errorMessage || "Cloudinary upload failed.");
   }
   if (typeof payload.secure_url !== "string" || !payload.secure_url.startsWith("https://")) {

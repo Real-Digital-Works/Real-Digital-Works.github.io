@@ -84,10 +84,25 @@ async function main() {
   // Load the current seed file to use as defaults for any missing fields
   const existing = JSON.parse(fs.readFileSync(OUTPUT, "utf-8"));
 
-  // Deep-merge: Firestore values win, seed fills any gaps
+  // Deep-merge: Firestore values win, seed fills any gaps.
+  // Arrays such as `projects` would otherwise replace the git list entirely
+  // (live Work stayed on Plot Atelier and dropped new client sites).
+  const liveProjects = Array.isArray(firestoreData.projects)
+    ? firestoreData.projects
+    : existing.projects;
+  const liveSlugs = new Set(
+    (Array.isArray(liveProjects) ? liveProjects : [])
+      .map((item) => item && item.slug)
+      .filter(Boolean),
+  );
+  const extraProjects = (Array.isArray(existing.projects) ? existing.projects : []).filter(
+    (item) => item && item.slug && !liveSlugs.has(item.slug),
+  );
+
   const merged = {
     ...existing,
     ...firestoreData,
+    projects: [...extraProjects, ...(Array.isArray(liveProjects) ? liveProjects : [])],
     blogs,
     pages,
     version: (existing.version ?? 1),

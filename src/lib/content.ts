@@ -628,16 +628,113 @@ export function isDirectUrlLive(item: { status?: string; hidden?: boolean }): bo
 }
 
 /**
+ * Live client sites that must survive a Firestore overlay.
+ * Vercel `fetch-content.js` replaces content.json with cms/content, which
+ * historically dropped git-only case studies (Plot Atelier stayed, these vanished).
+ */
+export const FEATURED_CLIENT_PROJECTS: Project[] = [
+  {
+    slug: "coopers-gang",
+    title: "Cooper's Gang",
+    client: "Cooper's Gang",
+    kind: "Website",
+    year: "",
+    status: "Live",
+    summary: "Signature grooming, boutique finds and doggy day care, the Cooper's Gang way.",
+    problem: "A live website for Cooper's Gang.",
+    work: "Website delivered by Real Digital Works.",
+    outcome: "Live at https://coopersgang.co.uk/",
+    tags: ["Pets", "Grooming", "Website"],
+    accent: "#3f4a3c",
+    image: "/work/coopers-gang.png",
+    liveUrl: "https://coopersgang.co.uk/",
+  },
+  {
+    slug: "vape-superstore",
+    title: "Vape Superstore",
+    client: "Vape Superstore",
+    kind: "Ecommerce",
+    year: "",
+    status: "Live",
+    summary: "Vape Superstore: your UK online vape shop.",
+    problem: "A live UK online shop for Vape Superstore.",
+    work: "Website delivered by Real Digital Works.",
+    outcome: "Live at https://www.vapesuperstore.co.uk/",
+    tags: ["Ecommerce", "Retail"],
+    accent: "#0e6e75",
+    image: "/work/vape-superstore.png",
+    liveUrl: "https://www.vapesuperstore.co.uk/",
+  },
+  {
+    slug: "glassware-uk",
+    title: "Glassware UK",
+    client: "Glassware UK",
+    kind: "Ecommerce",
+    year: "",
+    status: "Live",
+    summary: "Premium glassware and accessories — wine glasses, decanters and tableware.",
+    problem: "A live UK shop for Glassware UK.",
+    work: "Website delivered by Real Digital Works.",
+    outcome: "Live at https://glasswareuk.co.uk/",
+    tags: ["Ecommerce", "Retail"],
+    accent: "#165a6b",
+    image: "/work/glassware-uk.png",
+    liveUrl: "https://glasswareuk.co.uk/",
+  },
+  {
+    slug: "valentina-valentti",
+    title: "Valentina Valentti",
+    client: "Valentina Valentti",
+    kind: "Ecommerce",
+    year: "",
+    status: "Live",
+    summary: "Luxury pet products and premium dog essentials.",
+    problem: "A live UK online pet shop for Valentina Valentti.",
+    work: "Website delivered by Real Digital Works.",
+    outcome: "Live at https://www.valentinavalentti.co.uk/",
+    tags: ["Ecommerce", "Pets"],
+    accent: "#c4a035",
+    image: "/work/valentina-valentti.png",
+    liveUrl: "https://www.valentinavalentti.co.uk/",
+  },
+  {
+    slug: "tpob",
+    title: "TPOB",
+    client: "TPOB",
+    kind: "Ecommerce",
+    year: "",
+    status: "Live",
+    summary: "The TPOB Pro line of hair clippers and trimmers for professional barbers and stylists.",
+    problem: "A live shop for the TPOB barber brand.",
+    work: "Website delivered by Real Digital Works.",
+    outcome: "Live at https://tpob.co.uk/",
+    tags: ["Ecommerce", "Barber"],
+    accent: "#111111",
+    image: "/work/tpob.png",
+    liveUrl: "https://tpob.co.uk/",
+  },
+];
+
+/**
  * Merge CMS case studies. An empty visible list is a real value (every item may be hidden).
  * Seed is used only when the list is missing entirely, not when it is empty.
+ * Featured client sites are prepended when their slug is absent from CMS (including
+ * after a Firestore fetch that only contains the older sample work).
  */
 export function mergeProjects(raw?: Project[] | null): Project[] {
-  const seed = Array.isArray(content.projects) ? content.projects : [];
+  const seed = [
+    ...FEATURED_CLIENT_PROJECTS,
+    ...(Array.isArray(content.projects) ? content.projects : []),
+  ];
+  const catalog = FEATURED_CLIENT_PROJECTS;
   if (!Array.isArray(raw)) {
-    return seed.map((item) => normalizeProject(item, seed));
+    const json = Array.isArray(content.projects) ? content.projects : [];
+    const jsonSlugs = new Set(json.map((item) => item.slug));
+    const missing = catalog.filter((item) => !jsonSlugs.has(item.slug));
+    return [...missing, ...json].map((item) => normalizeProject(item, seed));
   }
   const seen: string[] = [];
-  return raw.map((item) => {
+  const cms = raw.map((item) => {
     const normalized = normalizeProject(item, seed);
     normalized.slug = uniqueProjectSlug(
       normalized.slug || normalized.title || "case-study",
@@ -646,6 +743,11 @@ export function mergeProjects(raw?: Project[] | null): Project[] {
     seen.push(normalized.slug);
     return normalized;
   });
+  const cmsSlugs = new Set(cms.map((item) => item.slug));
+  const missing = catalog
+    .filter((item) => !cmsSlugs.has(item.slug))
+    .map((item) => normalizeProject(item, seed));
+  return [...missing, ...cms];
 }
 
 export const site = mergeSite(content.site);

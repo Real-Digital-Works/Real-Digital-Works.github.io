@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { projects, site } from "@/lib/content";
+import { projectMetaLine, projects, site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
@@ -43,8 +43,9 @@ export default async function WorkDetailPage({ params }: Props) {
     image: project.image ? project.image : siteImageUrl(),
     creator: { "@type": "Organization", name: site.name, url: canonicalOrigin() },
     genre: project.kind,
-    dateCreated: project.year,
+    ...(project.year ? { dateCreated: project.year } : {}),
     keywords: project.tags.join(", "),
+    ...(project.liveUrl ? { sameAs: project.liveUrl } : {}),
   };
 
   return (
@@ -59,7 +60,7 @@ export default async function WorkDetailPage({ params }: Props) {
             ← All work
           </Link>
           <p className="mt-5 font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">
-            {project.status} · {project.year} · {project.kind}
+            {projectMetaLine(project)}
           </p>
           <CmsText
             path={`project.${slug}.title`}
@@ -114,6 +115,16 @@ export default async function WorkDetailPage({ params }: Props) {
           </article>
         </div>
         <div className="wrap mt-16 flex flex-wrap gap-3">
+          {project.liveUrl ? (
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost"
+            >
+              Visit site
+            </a>
+          ) : null}
           <CmsLink ctaId="work.brief" href="/contact" className="btn btn-beam">
             Start a similar brief
           </CmsLink>

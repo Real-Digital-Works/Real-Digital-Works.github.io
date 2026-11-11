@@ -248,6 +248,7 @@ function CaseStudyList({
                 onChange={(e) => onPatch(i, { status: e.target.value as Project["status"] })}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-[#1857EC] focus:ring-1 focus:ring-[#1857EC]"
               >
+                <option value="Live">Live</option>
                 <option value="Live sample">Live sample</option>
                 <option value="Indicative">Indicative</option>
               </select>
@@ -280,6 +281,12 @@ function CaseStudyList({
             value={proj.image ?? ""}
             slug={proj.slug}
             onChange={(v) => onPatch(i, { image: v })}
+          />
+          <Field
+            label="Live site URL"
+            value={proj.liveUrl ?? ""}
+            onChange={(v) => onPatch(i, { liveUrl: v })}
+            hint="Shown as Visit site on /work/{slug}. Leave empty if there is no public URL."
           />
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">The problem</label>

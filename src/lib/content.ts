@@ -61,6 +61,7 @@ export const DEFAULT_HOME_SECTIONS: Record<string, string> = {
   deskIntro:
     "This is the pattern we ship: answers first, then a human. Ask it about a website, an app, search, or motion.",
   workEyebrow: "Then the proof",
+  workTitle: "Live work.",
   openCase: "Open the case →",
   processEyebrow: "How it ships",
   faqEyebrow: "First questions",
@@ -208,7 +209,8 @@ export interface Package {
   items: string[];
 }
 
-export type ProjectStatus = "Live sample" | "Indicative";
+export const PROJECT_STATUSES = ["Live", "Live sample", "Indicative"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export interface Project {
   slug: string;
@@ -225,8 +227,18 @@ export interface Project {
   accent: string;
   /** Optional card image. Empty keeps the accent gradient used on /work. */
   image?: string;
+  /** Live website URL. Shown as “Visit site” on the case-study page. */
+  liveUrl?: string;
   /** Hidden from /work and homepage cards; /work/{slug} still renders. */
   hidden?: boolean;
+}
+
+export function projectMetaLine(project: Pick<Project, "status" | "year" | "kind">): string {
+  return [project.status, project.year, project.kind].map((part) => part.trim()).filter(Boolean).join(" · ");
+}
+
+export function isProjectStatus(value: unknown): value is ProjectStatus {
+  return PROJECT_STATUSES.includes(value as ProjectStatus);
 }
 
 /** Intro copy on the public /work listing (not individual case studies). */
@@ -577,11 +589,11 @@ function normalizeProject(item: Partial<Project>, seed: Project[]): Project {
   const fallback = seed.find((p) => p.slug && p.slug === item.slug);
   const tags =
     Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : (fallback?.tags ?? []);
-  const status: ProjectStatus =
-    item.status === "Live sample" || item.status === "Indicative"
-      ? item.status
-      : (fallback?.status ?? "Indicative");
+  const status: ProjectStatus = isProjectStatus(item.status)
+    ? item.status
+    : (fallback?.status ?? "Indicative");
   const image = pickStr(item.image, fallback?.image ?? "");
+  const liveUrl = pickStr(item.liveUrl, fallback?.liveUrl ?? "");
   return {
     slug: slugifyProjectTitle(pickStr(item.slug, fallback?.slug ?? "")),
     title: pickStr(item.title, fallback?.title ?? ""),
@@ -596,6 +608,7 @@ function normalizeProject(item: Partial<Project>, seed: Project[]): Project {
     tags,
     accent: pickStr(item.accent, fallback?.accent ?? "#1857EC"),
     ...(image ? { image } : {}),
+    ...(liveUrl ? { liveUrl } : {}),
     ...(item.hidden ? { hidden: true } : {}),
   };
 }

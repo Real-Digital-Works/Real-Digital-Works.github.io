@@ -550,6 +550,7 @@ export function fieldLabel(path: string): string {
       deskTitle: "Enquiry desk heading",
       deskIntro: "Enquiry desk intro",
       workEyebrow: "Work eyebrow",
+      workTitle: "Work heading",
       openCase: "Open case label",
       processEyebrow: "Process eyebrow",
       faqEyebrow: "Questions eyebrow",

@@ -187,7 +187,11 @@ function extraPageGroups(pathname: string, draft: Content): InspectorGroup[] {
     {
       id: "page-work",
       title: "This page · Work",
-      items: [textItem("homeSections.workEyebrow", "Eyebrow"), linkItem("home.openCase", "Open the case")],
+      items: [
+        textItem("homeSections.workEyebrow", "Eyebrow"),
+        textItem("homeSections.workTitle", "Heading"),
+        linkItem("home.openCase", "Open the case"),
+      ],
     },
     {
       id: "page-process",

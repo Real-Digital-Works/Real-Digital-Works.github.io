@@ -1011,14 +1011,7 @@ export default function AdminDashboard() {
       });
       setStatus("saved");
       if (intent === "publish") {
-        const deploy = await triggerDeploy();
-        if (deploy === "unconfigured") {
-          alert(
-            "Post saved as published. Add a deploy hook in the Deploy tab so /blog updates. Do not use Save & Deploy unless you also mean to publish other CMS edits.",
-          );
-        } else if (deploy === "error") {
-          alert("Post saved, but the site rebuild failed. Trigger deploy from the Deploy tab without rewriting the rest of the site copy.");
-        }
+        alert("Published. It will show on /blog within a minute.");
       }
       setTimeout(() => {
         setStatus("idle");
@@ -1703,7 +1696,7 @@ export default function AdminDashboard() {
                   <>
                     <SectionTitle
                       title="Blog"
-                      sub="Drafts stay in admin. Publish writes the post live and starts the same Vercel rebuild as Save & Deploy — /blog updates in about a minute. Hidden posts stay off the listing."
+                      sub="Drafts stay in admin. Publish writes the post to Firestore — it appears on /blog within about a minute, with no Vercel rebuild. Hidden posts stay off the listing."
                     />
                     <button
                       onClick={() => setEditingBlog({
@@ -1763,12 +1756,7 @@ export default function AdminDashboard() {
                                     updatedAt: serverTimestamp(),
                                   });
                                   setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
-                                  const deploy = await triggerDeploy();
-                                  if (deploy === "unconfigured") {
-                                    alert(
-                                      "Post visibility saved. Add a deploy hook in the Deploy tab so the live /blog listing updates. Do not use Save & Deploy unless you also mean to publish other CMS edits.",
-                                    );
-                                  }
+                                  alert("Visibility saved. The /blog listing updates within a minute.");
                                 }}
                                 className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
                                 title={HIDE_HINT}
@@ -1861,15 +1849,15 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         onClick={() => void saveBlogPost("publish")}
-                        disabled={status === "saving" || deployStatus === "deploying"}
+                        disabled={status === "saving"}
                         className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                       >
-                        {deployStatus === "deploying" ? "Publishing…" : "Publish"}
+                        {status === "saving" ? "Publishing…" : "Publish"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void saveBlogPost("draft")}
-                        disabled={status === "saving" || deployStatus === "deploying"}
+                        disabled={status === "saving"}
                         className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white disabled:opacity-50"
                       >
                         Save draft
@@ -1883,7 +1871,7 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                     <p className="text-[12px] text-white/35">
-                      Publish sets status to published, clears Hidden, and triggers the site rebuild so the post appears on /blog and in the sitemap. Save draft does not update the public site.
+                      Publish sets status to published and clears Hidden. The public /blog listing reads Firestore, so the post appears within about a minute — no Save & Deploy. Save draft does not update the public site.
                     </p>
                   </>
                 )}

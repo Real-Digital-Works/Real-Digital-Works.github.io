@@ -1,6 +1,14 @@
 import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 
+export function hasFirebaseAdminCreds(): boolean {
+  return Boolean(
+    process.env.FIREBASE_PROJECT_ID?.trim() &&
+      process.env.FIREBASE_CLIENT_EMAIL?.trim() &&
+      process.env.FIREBASE_PRIVATE_KEY?.trim(),
+  );
+}
+
 // ── Singleton cache ─────────────────────────────────────────────────────────
 let _auth: Auth | null = null;
 let _db: Firestore | null = null;

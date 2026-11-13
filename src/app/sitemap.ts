@@ -1,13 +1,15 @@
 import type { MetadataRoute } from "next";
-import { blogs, pages, projects } from "@/lib/content";
+import { pages, projects } from "@/lib/content";
 import { canonicalOrigin } from "@/lib/canonical-url";
+import { getListedLiveBlogs } from "@/lib/live-blogs";
 import { listedServicePages } from "@/lib/services-data";
 
-export const dynamic = "force-static";
+export const revalidate = 60;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = canonicalOrigin();
   const now = new Date();
+  const liveBlogs = await getListedLiveBlogs();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`,        lastModified: now, changeFrequency: "weekly",  priority: 1.0 },
@@ -30,8 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const blogRoutes: MetadataRoute.Sitemap = blogs
-    .filter((p) => p.status === "published" && !p.hidden)
+  const blogRoutes: MetadataRoute.Sitemap = liveBlogs
     .map((p) => ({
       url: `${base}/blog/${p.slug}`,
       lastModified: p.publishedAt ? new Date(p.publishedAt) : now,

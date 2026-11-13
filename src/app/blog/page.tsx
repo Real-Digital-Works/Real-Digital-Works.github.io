@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CmsText } from "@/components/visual-editor/CmsText";
-import { blogs, site, pageIntros } from "@/lib/content";
+import { site, pageIntros } from "@/lib/content";
+import { getListedLiveBlogs } from "@/lib/live-blogs";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 
 const blogDescription = `Insights, guides and studio news from ${site.name} — a London digital studio.`;
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: brandedTitle("Blog"),
@@ -13,9 +16,9 @@ export const metadata: Metadata = {
   ...shareTitle("Blog", blogDescription, { url: "/blog" }),
 };
 
-const published = blogs.filter((p) => p.status === "published" && !p.hidden);
+export default async function BlogPage() {
+  const published = await getListedLiveBlogs();
 
-export default function BlogPage() {
   return (
     <>
       <section className="page-intro">

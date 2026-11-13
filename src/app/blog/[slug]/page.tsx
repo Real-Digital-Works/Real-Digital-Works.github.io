@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { blogs, isDirectUrlLive, site } from "@/lib/content";
+import { site } from "@/lib/content";
 import { canonicalOrigin, canonicalUrl, siteImageUrl } from "@/lib/canonical-url";
+import { getLiveBlogBySlug, getListedLiveBlogs } from "@/lib/live-blogs";
 import { brandedTitle, shareTitle } from "@/lib/seo";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
 import { CmsText } from "@/components/visual-editor/CmsText";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  return blogs.filter((p) => p.slug && isDirectUrlLive(p)).map((p) => ({ slug: p.slug }));
+  const posts = await getListedLiveBlogs();
+  return posts.filter((p) => p.slug).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogs.find((p) => p.slug === slug && isDirectUrlLive(p));
+  const post = await getLiveBlogBySlug(slug);
   if (!post) {
     return { title: brandedTitle("Post not found"), robots: { index: false, follow: false } };
   }
@@ -35,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = blogs.find((p) => p.slug === slug && isDirectUrlLive(p));
+  const post = await getLiveBlogBySlug(slug);
   if (!post) notFound();
 
   const origin = canonicalOrigin();

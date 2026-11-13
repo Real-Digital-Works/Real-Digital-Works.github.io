@@ -935,9 +935,6 @@ export default function AdminDashboard() {
 
   // ── Save & Deploy ──
   async function triggerDeploy(): Promise<"deployed" | "unconfigured" | "error"> {
-    if (!hookConfigured && !deployHook.trim()) {
-      return "unconfigured";
-    }
     setDeployStatus("deploying");
     try {
       const token = await getToken();
@@ -954,7 +951,12 @@ export default function AdminDashboard() {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; source?: "firestore" | "env" | "none" };
       if (!res.ok) {
-        throw new Error(data.error ?? "Deploy failed");
+        const message = data.error ?? "Deploy failed";
+        if (res.status === 400 && /no shared deploy hook/i.test(message)) {
+          setDeployStatus("idle");
+          return "unconfigured";
+        }
+        throw new Error(message);
       }
       if (data.source) {
         setHookConfigured(true);

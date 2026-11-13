@@ -7,7 +7,7 @@
  *   Site Info | SEO | Hero | Services | Work | FAQ | Pricing | Projects | Blog | Pages | Legal | Deploy
  */
 
-import { useEffect, useState, useCallback, type ChangeEvent } from "react";
+import { useEffect, useState, useCallback, useRef, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   onAuthStateChanged,
@@ -20,19 +20,28 @@ import {
   setDoc,
   collection,
   getDocs,
-  addDoc,
   query,
   orderBy,
   limit,
+  onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { cmsContentDoc, saveLiveCmsContent } from "@/lib/cms-save";
+import {
+  cmsRevisionFromData,
+  cmsRevisionsMatch,
+  EMPTY_CMS_REVISION,
+  isStaleCmsContentError,
+  type CmsRevisionToken,
+} from "@/lib/cms-revision";
 import {
   cmsVersionsCollection,
   mapCmsVersionDoc,
   type CmsSaveSource,
   type CmsVersionRow,
 } from "@/lib/cms-versions";
+import { CmsRemoteVersionBanner, CmsStaleSaveModal } from "@/components/CmsStaleNotice";
 import { isPermissionDenied, logFirestoreIssue } from "@/lib/firestore-errors";
 import content, {
   DEFAULT_NAV_ITEMS,
@@ -430,6 +439,12 @@ export default function AdminDashboard() {
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versionsError, setVersionsError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [remoteNewer, setRemoteNewer] = useState(false);
+  const [staleSaveOpen, setStaleSaveOpen] = useState(false);
+  const loadedRevisionRef = useRef<CmsRevisionToken>(EMPTY_CMS_REVISION);
+  const remoteRevisionRef = useRef<CmsRevisionToken>(EMPTY_CMS_REVISION);
+  const dismissedRemoteRef = useRef<CmsRevisionToken | null>(null);
+  const cmsReadyRef = useRef(false);
 
   // ── Users state ──
   type AdminUser = { uid: string; email?: string; displayName: string | null; createdAt?: string; lastSignIn: string | null; emailVerified: boolean; };
@@ -486,9 +501,11 @@ export default function AdminDashboard() {
     if (!user) return;
     async function load() {
       try {
-        const snap = await getDoc(doc(db(), "cms", "content"));
+        const snap = await getDoc(cmsContentDoc());
         if (snap.exists()) {
-          applyLiveContent(snap.data());
+          const data = snap.data() as Record<string, unknown>;
+          applyLiveContent(data);
+          loadedRevisionRef.current = cmsRevisionFromData(data);
         }
       } catch (e) {
         logFirestoreIssue("cms/content read", e);
@@ -511,9 +528,37 @@ export default function AdminDashboard() {
       } catch (e) {
         logFirestoreIssue("pages list", e);
       }
+      cmsReadyRef.current = true;
     }
     load();
   }, [user, applyLiveContent]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(
+      cmsContentDoc(),
+      (snap) => {
+        if (!cmsReadyRef.current || !snap.exists()) return;
+        const remote = cmsRevisionFromData(snap.data() as Record<string, unknown>);
+        remoteRevisionRef.current = remote;
+        if (cmsRevisionsMatch(loadedRevisionRef.current, remote)) {
+          setRemoteNewer(false);
+          return;
+        }
+        if (
+          dismissedRemoteRef.current &&
+          cmsRevisionsMatch(dismissedRemoteRef.current, remote)
+        ) {
+          return;
+        }
+        setRemoteNewer(true);
+      },
+      (error) => {
+        logFirestoreIssue("cms/content listen", error);
+      },
+    );
+    return unsub;
+  }, [user]);
 
   // ── Mark unsaved on any edit ──
   const markUnsaved = useCallback(() => setStatus("unsaved"), []);
@@ -778,25 +823,25 @@ export default function AdminDashboard() {
       navItems: navData,
       ctas: ctasData ?? {},
       popups: popupsData ?? {},
-      updatedAt: serverTimestamp(),
     };
   }
 
-  async function writeCmsVersion(
-    payload: Record<string, unknown>,
-    source: CmsSaveSource,
-    note?: string,
-  ) {
-    await addDoc(cmsVersionsCollection(db()), {
-      createdAt: serverTimestamp(),
-      createdBy: {
-        uid: user?.uid ?? null,
-        email: user?.email ?? null,
-      },
-      source,
-      ...(note ? { note } : {}),
-      content: payload,
-    });
+  async function loadLatestCms() {
+    try {
+      const snap = await getDoc(cmsContentDoc());
+      if (snap.exists()) {
+        const data = snap.data() as Record<string, unknown>;
+        applyLiveContent(data);
+        loadedRevisionRef.current = cmsRevisionFromData(data);
+      }
+      setRemoteNewer(false);
+      setStaleSaveOpen(false);
+      dismissedRemoteRef.current = null;
+      setStatus("idle");
+    } catch (e) {
+      logFirestoreIssue("cms/content reload", e);
+      setStatus("error");
+    }
   }
 
   // ── Save to Firestore ──
@@ -804,12 +849,18 @@ export default function AdminDashboard() {
     setStatus("saving");
     try {
       const payload = buildLiveContentPayload();
-      await setDoc(doc(db(), "cms", "content"), payload);
-      try {
-        await writeCmsVersion(payload as Record<string, unknown>, source);
-      } catch (versionErr) {
-        logFirestoreIssue("cms/content/versions snapshot", versionErr);
-      }
+      const result = await saveLiveCmsContent({
+        payload,
+        source,
+        createdBy: {
+          uid: user?.uid ?? null,
+          email: user?.email ?? null,
+        },
+        expectedRevision: loadedRevisionRef.current,
+      });
+      loadedRevisionRef.current = result.revision;
+      setRemoteNewer(false);
+      setStaleSaveOpen(false);
       // Persist a typed override only — never write an empty string over the shared hook
       if (deployHook.trim()) {
         const token = await getToken();
@@ -831,6 +882,12 @@ export default function AdminDashboard() {
       if (tab === "deploy") void loadVersions();
       return true;
     } catch (e) {
+      if (isStaleCmsContentError(e)) {
+        setStaleSaveOpen(true);
+        setRemoteNewer(true);
+        setStatus("unsaved");
+        return false;
+      }
       logFirestoreIssue("cms/content save", e);
       setStatus("error");
       return false;
@@ -849,14 +906,22 @@ export default function AdminDashboard() {
     setRestoringId(row.id);
     setStatus("saving");
     try {
-      const restored = { ...row.content, updatedAt: serverTimestamp() };
-      await setDoc(doc(db(), "cms", "content"), restored);
+      const result = await saveLiveCmsContent({
+        payload: { ...row.content },
+        source: "restore",
+        createdBy: {
+          uid: user?.uid ?? null,
+          email: user?.email ?? null,
+        },
+        note: `Restored from ${row.id}`,
+        expectedRevision: loadedRevisionRef.current,
+        force: true,
+        replace: true,
+      });
       applyLiveContent(row.content);
-      try {
-        await writeCmsVersion(restored as Record<string, unknown>, "restore", `Restored from ${row.id}`);
-      } catch (versionErr) {
-        logFirestoreIssue("cms/content/versions snapshot after restore", versionErr);
-      }
+      loadedRevisionRef.current = result.revision;
+      setRemoteNewer(false);
+      setStaleSaveOpen(false);
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 3000);
       if (tab === "deploy") void loadVersions();
@@ -947,10 +1012,10 @@ export default function AdminDashboard() {
         const deploy = await triggerDeploy();
         if (deploy === "unconfigured") {
           alert(
-            "Post saved as published. Click Save & Deploy (or add DEPLOY_HOOK_URL) so /blog updates on the public site. Rebuilds bake Firestore blogs at build time.",
+            "Post saved as published. Add a deploy hook in the Deploy tab so /blog updates. Do not use Save & Deploy unless you also mean to publish other CMS edits.",
           );
         } else if (deploy === "error") {
-          alert("Post saved, but the site rebuild failed. Use Save & Deploy.");
+          alert("Post saved, but the site rebuild failed. Trigger deploy from the Deploy tab without rewriting the rest of the site copy.");
         }
       }
       setTimeout(() => {
@@ -1128,6 +1193,22 @@ export default function AdminDashboard() {
 
       {/* ── Main ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
+        {remoteNewer && !staleSaveOpen ? (
+          <CmsRemoteVersionBanner
+            dirty={status === "unsaved"}
+            onLoadLatest={() => void loadLatestCms()}
+            onKeepEditing={() => {
+              dismissedRemoteRef.current = remoteRevisionRef.current;
+              setRemoteNewer(false);
+            }}
+          />
+        ) : null}
+        {staleSaveOpen ? (
+          <CmsStaleSaveModal
+            onLoadLatest={() => void loadLatestCms()}
+            onCancel={() => setStaleSaveOpen(false)}
+          />
+        ) : null}
         {/* Top bar */}
         <header className="flex items-center justify-between border-b border-white/8 px-6 py-3">
           <div className="flex items-center gap-3">
@@ -1680,7 +1761,12 @@ export default function AdminDashboard() {
                                     updatedAt: serverTimestamp(),
                                   });
                                   setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
-                                  markUnsaved();
+                                  const deploy = await triggerDeploy();
+                                  if (deploy === "unconfigured") {
+                                    alert(
+                                      "Post visibility saved. Add a deploy hook in the Deploy tab so the live /blog listing updates. Do not use Save & Deploy unless you also mean to publish other CMS edits.",
+                                    );
+                                  }
                                 }}
                                 className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
                                 title={HIDE_HINT}

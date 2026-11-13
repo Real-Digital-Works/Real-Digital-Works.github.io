@@ -22,6 +22,10 @@ import {
   inspectorItemId,
   type InspectorItem,
 } from "@/lib/visual-inspector";
+import {
+  CMS_REMOTE_BANNER_COPY,
+  CMS_STALE_SAVE_COPY,
+} from "@/lib/cms-revision";
 import { useVisualEditor } from "./VisualEditorProvider";
 
 function PencilIcon() {
@@ -291,6 +295,38 @@ export function VisualEditorChrome() {
           ))}
         </nav>
       </div>
+      {ctx.remoteNewer && !ctx.staleSaveOpen ? (
+        <div className="rdw-ve-banner" role="status">
+          <span>
+            {ctx.dirty ? CMS_REMOTE_BANNER_COPY.dirty : CMS_REMOTE_BANNER_COPY.clean}
+          </span>
+          <span className="rdw-ve-banner-actions">
+            <button type="button" className="rdw-ve-btn rdw-ve-btn-primary" onClick={() => void ctx.loadLatest()}>
+              {CMS_REMOTE_BANNER_COPY.loadLatest}
+            </button>
+            {ctx.dirty ? (
+              <button type="button" className="rdw-ve-btn" onClick={ctx.keepEditingRemote}>
+                {CMS_REMOTE_BANNER_COPY.keepEditing}
+              </button>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
+      {ctx.staleSaveOpen ? (
+        <div className="rdw-ve-modal" role="dialog" aria-modal="true">
+          <div className="rdw-ve-modal-card">
+            <p>{CMS_STALE_SAVE_COPY.message}</p>
+            <div className="rdw-ve-banner-actions">
+              <button type="button" className="rdw-ve-btn" onClick={ctx.dismissStaleSave}>
+                {CMS_STALE_SAVE_COPY.cancel}
+              </button>
+              <button type="button" className="rdw-ve-btn rdw-ve-btn-primary" onClick={() => void ctx.loadLatest()}>
+                {CMS_STALE_SAVE_COPY.loadLatest}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {ctx.statusMessage ? (
         <p className="rdw-ve-status" style={{ color: statusTone }} role="status">
           {ctx.statusMessage}
@@ -678,6 +714,28 @@ html[data-rdw-visual] body { padding-top: 96px; }
   margin: 0; padding: 6px 12px; border-radius: 999px;
   background: rgba(12,16,24,.92); font-size: 12px; font-weight: 600;
 }
+.rdw-ve-banner {
+  position: fixed; top: 96px; left: 50%; transform: translateX(-50%); z-index: 83;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  max-width: min(720px, calc(100vw - 24px));
+  margin: 0; padding: 10px 14px; border-radius: 12px;
+  background: #78350F; color: #FEF3C7; border: 1px solid #F59E0B;
+  font-size: 13px; font-weight: 600; box-shadow: 0 12px 40px rgba(0,0,0,.28);
+}
+.rdw-ve-banner-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.rdw-ve-modal {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,12,20,.55); padding: 16px;
+}
+.rdw-ve-modal-card {
+  width: min(420px, 100%);
+  background: #0F172A; color: #F8FAFC; border: 1px solid rgba(24,87,236,.4);
+  border-radius: 16px; padding: 22px; box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  font-size: 15px; font-weight: 600; line-height: 1.45;
+}
+.rdw-ve-modal-card .rdw-ve-banner-actions { margin-top: 16px; justify-content: flex-end; }
+
 .rdw-ve-inspector {
   position: fixed; top: 108px; right: 12px; z-index: 82;
   width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 128px);

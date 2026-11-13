@@ -6,15 +6,23 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { getDoc } from "firebase/firestore";
+import { getDoc, onSnapshot } from "firebase/firestore";
 import { auth, firebaseConfigured } from "@/lib/firebase";
 import seedContent, { type Content } from "@/lib/content";
 import { cmsContentDoc, saveLiveCmsContent } from "@/lib/cms-save";
 import type { CmsSaveSource } from "@/lib/cms-versions";
+import {
+  cmsRevisionFromData,
+  cmsRevisionsMatch,
+  EMPTY_CMS_REVISION,
+  isStaleCmsContentError,
+  type CmsRevisionToken,
+} from "@/lib/cms-revision";
 import { logFirestoreIssue } from "@/lib/firestore-errors";
 import {
   clearVisualDevBypass,
@@ -61,6 +69,11 @@ type VisualEditorContextValue = {
   save: (source?: CmsSaveSource) => Promise<boolean>;
   deploy: () => Promise<boolean>;
   exit: () => void;
+  remoteNewer: boolean;
+  staleSaveOpen: boolean;
+  loadLatest: () => Promise<void>;
+  dismissStaleSave: () => void;
+  keepEditingRemote: () => void;
 };
 
 const VisualEditorContext = createContext<VisualEditorContextValue | null>(null);
@@ -90,6 +103,12 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
   const [selection, setSelection] = useState<VisualSelection | null>(null);
   const [activePopup, setActivePopup] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
+  const [remoteNewer, setRemoteNewer] = useState(false);
+  const [staleSaveOpen, setStaleSaveOpen] = useState(false);
+  const loadedRevisionRef = useRef<CmsRevisionToken>(EMPTY_CMS_REVISION);
+  const remoteRevisionRef = useRef<CmsRevisionToken>(EMPTY_CMS_REVISION);
+  const dismissedRemoteRef = useRef<CmsRevisionToken | null>(null);
+  const cmsReadyRef = useRef(false);
 
   useEffect(() => {
     const bypass = readVisualDevBypass();
@@ -126,21 +145,70 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     return () => document.documentElement.removeAttribute("data-rdw-visual");
   }, [enabled, isDevBypass, user]);
 
+  const rememberRevision = useCallback((token: CmsRevisionToken) => {
+    loadedRevisionRef.current = token;
+  }, []);
+
+  const applyRemoteDoc = useCallback(
+    (data: Record<string, unknown> | undefined) => {
+      setDraft(hydrateVisualDraft(seedContent, data ?? null));
+      rememberRevision(cmsRevisionFromData(data));
+      cmsReadyRef.current = true;
+      setDirty(false);
+      setRemoteNewer(false);
+      setStaleSaveOpen(false);
+      dismissedRemoteRef.current = null;
+    },
+    [rememberRevision],
+  );
+
   useEffect(() => {
     if (!enabled || !firebaseConfigured || !user) return;
     let cancelled = false;
     (async () => {
       try {
         const snap = await getDoc(cmsContentDoc());
-        if (cancelled || !snap.exists()) return;
-        setDraft(hydrateVisualDraft(seedContent, snap.data()));
+        if (cancelled) return;
+        if (snap.exists()) {
+          applyRemoteDoc(snap.data() as Record<string, unknown>);
+        } else {
+          cmsReadyRef.current = true;
+        }
       } catch (error) {
+        cmsReadyRef.current = true;
         logFirestoreIssue("visual editor cms/content read", error);
       }
     })();
     return () => {
       cancelled = true;
     };
+  }, [enabled, user, applyRemoteDoc]);
+
+  useEffect(() => {
+    if (!enabled || !firebaseConfigured || !user) return;
+    const unsub = onSnapshot(
+      cmsContentDoc(),
+      (snap) => {
+        if (!cmsReadyRef.current || !snap.exists()) return;
+        const remote = cmsRevisionFromData(snap.data() as Record<string, unknown>);
+        remoteRevisionRef.current = remote;
+        if (cmsRevisionsMatch(loadedRevisionRef.current, remote)) {
+          setRemoteNewer(false);
+          return;
+        }
+        if (
+          dismissedRemoteRef.current &&
+          cmsRevisionsMatch(dismissedRemoteRef.current, remote)
+        ) {
+          return;
+        }
+        setRemoteNewer(true);
+      },
+      (error) => {
+        logFirestoreIssue("visual editor cms/content listen", error);
+      },
+    );
+    return unsub;
   }, [enabled, user]);
 
   const getText = useCallback((path: string) => getCmsText(draft, path), [draft]);
@@ -233,8 +301,12 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
           source,
           createdBy: { uid: user?.uid ?? null, email: user?.email ?? null },
           note: "visual-editor",
+          expectedRevision: loadedRevisionRef.current,
         });
+        rememberRevision(result.revision);
         setDirty(false);
+        setRemoteNewer(false);
+        setStaleSaveOpen(false);
         setStatus("saved");
         setStatusMessage(
           result.versionSaved
@@ -246,14 +318,49 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
         }, 3200);
         return true;
       } catch (error) {
+        if (isStaleCmsContentError(error)) {
+          setStaleSaveOpen(true);
+          setRemoteNewer(true);
+          setStatus("idle");
+          setStatusMessage("");
+          return false;
+        }
         logFirestoreIssue("visual editor cms/content write", error);
         setStatus("error");
         setStatusMessage(error instanceof Error ? error.message : "Save failed");
         return false;
       }
     },
-    [draft, user],
+    [draft, rememberRevision, user],
   );
+
+  const loadLatest = useCallback(async () => {
+    if (!firebaseConfigured) return;
+    try {
+      const snap = await getDoc(cmsContentDoc());
+      applyRemoteDoc(snap.exists() ? (snap.data() as Record<string, unknown>) : undefined);
+      setStatus("idle");
+      setStatusMessage("Loaded the latest copy from Firestore.");
+      window.setTimeout(() => {
+        setStatusMessage((message) =>
+          message === "Loaded the latest copy from Firestore." ? "" : message,
+        );
+      }, 2800);
+    } catch (error) {
+      logFirestoreIssue("visual editor cms/content reload", error);
+      setStatus("error");
+      setStatusMessage("Could not load the latest copy.");
+    }
+  }, [applyRemoteDoc]);
+
+  const dismissStaleSave = useCallback(() => {
+    setStaleSaveOpen(false);
+  }, []);
+
+  const keepEditingRemote = useCallback(() => {
+    dismissedRemoteRef.current = remoteRevisionRef.current;
+    setRemoteNewer(false);
+  }, []);
 
   const deploy = useCallback(async () => {
     const ok = await save("save-and-deploy");
@@ -318,6 +425,11 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       save,
       deploy,
       exit,
+      remoteNewer,
+      staleSaveOpen,
+      loadLatest,
+      dismissStaleSave,
+      keepEditingRemote,
     }),
     [
       enabled,
@@ -341,6 +453,11 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       save,
       deploy,
       exit,
+      remoteNewer,
+      staleSaveOpen,
+      loadLatest,
+      dismissStaleSave,
+      keepEditingRemote,
     ],
   );
 

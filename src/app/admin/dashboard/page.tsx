@@ -170,6 +170,56 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 const HIDE_HINT = "Hidden from menus and listings. The URL still works.";
 
+function firestoreDateString(value: unknown): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    const row = value as { toDate?: () => Date; seconds?: number; _seconds?: number };
+    if (typeof row.toDate === "function") return row.toDate().toISOString();
+    const seconds = row.seconds ?? row._seconds;
+    if (typeof seconds === "number") return new Date(seconds * 1000).toISOString();
+  }
+  return "";
+}
+
+function normalizeBlogPost(slug: string, data: Record<string, unknown>): BlogPost {
+  return {
+    slug,
+    title: typeof data.title === "string" ? data.title : "",
+    excerpt: typeof data.excerpt === "string" ? data.excerpt : "",
+    content: typeof data.content === "string" ? data.content : "",
+    coverImage: typeof data.coverImage === "string" ? data.coverImage : undefined,
+    publishedAt: firestoreDateString(data.publishedAt) || new Date().toISOString().split("T")[0],
+    status: data.status === "published" ? "published" : "draft",
+    tags: Array.isArray(data.tags)
+      ? data.tags.filter((tag): tag is string => typeof tag === "string")
+      : [],
+    seoTitle: typeof data.seoTitle === "string" ? data.seoTitle : "",
+    seoDescription: typeof data.seoDescription === "string" ? data.seoDescription : "",
+    hidden: Boolean(data.hidden),
+  };
+}
+
+function blogDocPayload(post: BlogPost): Record<string, unknown> {
+  const dateOnly = (post.publishedAt ?? "").split("T")[0];
+  const publishedAt = /^\d{4}-\d{2}-\d{2}$/.test(dateOnly)
+    ? `${dateOnly}T00:00:00.000Z`
+    : post.publishedAt || new Date().toISOString();
+  return {
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt ?? "",
+    content: post.content ?? "",
+    publishedAt,
+    status: post.status === "published" ? "published" : "draft",
+    tags: post.tags ?? [],
+    seoTitle: post.seoTitle ?? "",
+    seoDescription: post.seoDescription ?? "",
+    hidden: Boolean(post.hidden),
+    ...(post.coverImage ? { coverImage: post.coverImage } : {}),
+  };
+}
+
 function CaseStudyList({
   projects,
   onPatch,
@@ -445,8 +495,12 @@ export default function AdminDashboard() {
       }
       try {
         const blogsSnap = await getDocs(collection(db(), "blogs"));
-        const blogs = blogsSnap.docs.map((d) => ({ slug: d.id, ...d.data() } as BlogPost));
-        setBlogsData(blogs.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
+        const blogs = blogsSnap.docs.map((d) =>
+          normalizeBlogPost(d.id, d.data() as Record<string, unknown>),
+        );
+        setBlogsData(
+          blogs.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "")),
+        );
       } catch (e) {
         logFirestoreIssue("blogs list", e);
       }
@@ -815,12 +869,9 @@ export default function AdminDashboard() {
   }
 
   // ── Save & Deploy ──
-  async function saveAndDeploy() {
-    const ok = await save("save-and-deploy");
-    if (!ok) return;
+  async function triggerDeploy(): Promise<"deployed" | "unconfigured" | "error"> {
     if (!hookConfigured && !deployHook.trim()) {
-      alert("No shared deploy hook is configured. Add DEPLOY_HOOK_URL in Vercel, or paste a hook URL in the Deploy tab.");
-      return;
+      return "unconfigured";
     }
     setDeployStatus("deploying");
     try {
@@ -846,9 +897,69 @@ export default function AdminDashboard() {
       }
       setDeployStatus("done");
       setTimeout(() => setDeployStatus("idle"), 5000);
+      return "deployed";
     } catch (e) {
       logFirestoreIssue("admin deploy", e);
       setDeployStatus("error");
+      return "error";
+    }
+  }
+
+  async function saveAndDeploy() {
+    const ok = await save("save-and-deploy");
+    if (!ok) return;
+    const result = await triggerDeploy();
+    if (result === "unconfigured") {
+      alert("No shared deploy hook is configured. Add DEPLOY_HOOK_URL in Vercel, or paste a hook URL in the Deploy tab.");
+    }
+  }
+
+  async function saveBlogPost(intent: "draft" | "publish") {
+    if (!editingBlog) return;
+    if (!editingBlog.slug) {
+      alert("Add a URL slug first.");
+      return;
+    }
+    const next: BlogPost = {
+      ...editingBlog,
+      status: intent === "publish" ? "published" : "draft",
+      hidden: intent === "publish" ? false : Boolean(editingBlog.hidden),
+    };
+    const payload = blogDocPayload(next);
+    setStatus("saving");
+    try {
+      await setDoc(doc(db(), "blogs", next.slug), {
+        ...payload,
+        updatedAt: serverTimestamp(),
+      });
+      setEditingBlog(next);
+      setBlogsData((prev) => {
+        const idx = prev.findIndex((p) => p.slug === next.slug);
+        if (idx >= 0) {
+          const list = [...prev];
+          list[idx] = next;
+          return list;
+        }
+        return [next, ...prev];
+      });
+      setStatus("saved");
+      if (intent === "publish") {
+        const deploy = await triggerDeploy();
+        if (deploy === "unconfigured") {
+          alert(
+            "Post saved as published. Click Save & Deploy (or add DEPLOY_HOOK_URL) so /blog updates on the public site. Rebuilds bake Firestore blogs at build time.",
+          );
+        } else if (deploy === "error") {
+          alert("Post saved, but the site rebuild failed. Use Save & Deploy.");
+        }
+      }
+      setTimeout(() => {
+        setStatus("idle");
+        setEditingBlog(null);
+      }, 1500);
+    } catch (e) {
+      logFirestoreIssue("blogs save", e);
+      setStatus("error");
     }
   }
 
@@ -1509,7 +1620,7 @@ export default function AdminDashboard() {
                   <>
                     <SectionTitle
                       title="Blog"
-                      sub="Write and publish blog posts. Each post gets its own page with full SEO."
+                      sub="Drafts stay in admin. Publish writes the post live and starts the same Vercel rebuild as Save & Deploy — /blog updates in about a minute. Hidden posts stay off the listing."
                     />
                     <button
                       onClick={() => setEditingBlog({
@@ -1565,7 +1676,7 @@ export default function AdminDashboard() {
                                   }
                                   const next = { ...post, hidden: nextHidden };
                                   await setDoc(doc(db(), "blogs", post.slug), {
-                                    ...next,
+                                    ...blogDocPayload(next),
                                     updatedAt: serverTimestamp(),
                                   });
                                   setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
@@ -1658,36 +1769,34 @@ export default function AdminDashboard() {
                       <Field label="SEO description" value={editingBlog.seoDescription ?? ""} textarea onChange={(v) => setEditingBlog((p) => p ? { ...p, seoDescription: v } : p)} />
                     </Card>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                       <button
-                        onClick={async () => {
-                          if (!editingBlog.slug) { alert("Add a URL slug first."); return; }
-                          setStatus("saving");
-                          try {
-                            await setDoc(doc(db(), "blogs", editingBlog.slug), {
-                              ...editingBlog,
-                              updatedAt: serverTimestamp(),
-                            });
-                            setBlogsData((prev) => {
-                              const idx = prev.findIndex((p) => p.slug === editingBlog.slug);
-                              if (idx >= 0) { const n = [...prev]; n[idx] = editingBlog; return n; }
-                              return [editingBlog, ...prev];
-                            });
-                            setStatus("saved");
-                            setTimeout(() => { setStatus("idle"); setEditingBlog(null); }, 1500);
-                          } catch (e) {
-                            logFirestoreIssue("blogs save", e);
-                            setStatus("error");
-                          }
-                        }}
-                        className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600"
+                        type="button"
+                        onClick={() => void saveBlogPost("publish")}
+                        disabled={status === "saving" || deployStatus === "deploying"}
+                        className="rounded-xl bg-[#1857EC] px-6 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                       >
-                        Save post
+                        {deployStatus === "deploying" ? "Publishing…" : "Publish"}
                       </button>
-                      <button onClick={() => setEditingBlog(null)} className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white">
+                      <button
+                        type="button"
+                        onClick={() => void saveBlogPost("draft")}
+                        disabled={status === "saving" || deployStatus === "deploying"}
+                        className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white disabled:opacity-50"
+                      >
+                        Save draft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingBlog(null)}
+                        className="rounded-xl border border-white/15 px-5 py-3 text-sm text-white/60 hover:text-white"
+                      >
                         Cancel
                       </button>
                     </div>
+                    <p className="text-[12px] text-white/35">
+                      Publish sets status to published, clears Hidden, and triggers the site rebuild so the post appears on /blog and in the sitemap. Save draft does not update the public site.
+                    </p>
                   </>
                 )}
               </>

@@ -134,8 +134,12 @@ export function buildFactsBlock(): string {
     .join("\n");
 
   const quoteLines = [
-    ...quoteServices.map((s) => `- ${s.label} (${s.hint}): from £${s.one || `${s.month}/month`}`),
-    ...quoteExtras.map((s) => `- Extra ${s.label} (${s.hint}): from £${s.one || `${s.month}/month`}`),
+    ...quoteServices
+      .filter((s) => !s.hidden && (s.one > 0 || s.month > 0))
+      .map((s) => `- ${s.label} (${s.hint}): from ${s.one ? `£${s.one}` : `£${s.month}/month`}`),
+    ...quoteExtras
+      .filter((s) => !s.hidden && (s.one > 0 || s.month > 0))
+      .map((s) => `- Extra ${s.label} (${s.hint}): from ${s.one ? `£${s.one}` : `£${s.month}/month`}`),
   ].join("\n");
 
   const faqLines = faq.map((item) => `Q: ${item.q}\nA: ${item.a}`).join("\n");

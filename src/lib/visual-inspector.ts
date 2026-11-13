@@ -163,6 +163,23 @@ function pageCoreItems(pathname: string, draft: Content): InspectorItem[] {
 
 function extraPageGroups(pathname: string, draft: Content): InspectorGroup[] {
   const path = pathOf(pathname);
+  if (path === "/pricing") {
+    return [
+      {
+        id: "page-quote",
+        title: "This page · Estimate",
+        items: [
+          { id: "popup:quote", kind: "popup", popupId: "quote", label: "Quote builder" },
+          textItem("popups.quote.estimateLabel", "Estimate heading"),
+          textItem("popups.quote.empty", "Empty estimate"),
+          textItem("popups.quote.note", "Fine print"),
+          ...(draft.packages ?? []).map((tier, i) =>
+            textItem(`packages.${i}.amount`, `${tier.name || `Package ${i + 1}`} price`),
+          ),
+        ],
+      },
+    ];
+  }
   if (path !== "/") return [];
   return [
     {
@@ -237,7 +254,10 @@ function itemFromSelection(selection: InspectorSelection): InspectorItem {
 
 export function groupIdForSelection(selection: InspectorSelection | null, pathname: string): string {
   if (!selection) return "page";
-  if (selection.kind === "popup") return "popups";
+  if (selection.kind === "popup") {
+    if (selection.id === "quote" && pathOf(pathname) === "/pricing") return "page-quote";
+    return "popups";
+  }
   if (selection.kind === "nav") return "header";
   if (selection.kind === "link") {
     const id = selection.id;
@@ -249,12 +269,13 @@ export function groupIdForSelection(selection: InspectorSelection | null, pathna
     if (id.startsWith("home.openCase") || id === "home.openCase") return "page-work";
     if (id.startsWith("home.")) return "page-offer";
     if (id.startsWith("askRdw.") || id.startsWith("quote.") || id.startsWith("workflow.") || id.startsWith("commandK.")) {
-      return "popups";
+      return id.startsWith("quote.") && pathOf(pathname) === "/pricing" ? "page-quote" : "popups";
     }
     return "page";
   }
   const p = selection.path;
-  if (p.startsWith("popups.")) return "popups";
+  if (p.startsWith("popups.") || p.startsWith("quoteCalc.")) return "popups";
+  if (p.startsWith("packages.") && pathOf(pathname) === "/pricing") return "page-quote";
   if (p === "site.name") return "header";
   if (
     p.startsWith("site.phone") ||

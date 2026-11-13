@@ -92,6 +92,7 @@ import { ServiceEditor } from "@/components/ServiceEditor";
 import { AdminThemeToggle } from "@/components/AdminTheme";
 import { startLiveEdit } from "@/lib/visual-editor";
 import { WorkImageField } from "@/components/WorkImageField";
+import { BlogCoverField } from "@/components/BlogCoverField";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -179,6 +180,60 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 const HIDE_HINT = "Hidden from menus and listings. The URL still works.";
 
+function isVisiblePublishedBlog(post: BlogPost) {
+  return post.status === "published" && !post.hidden;
+}
+
+function BlogListCard({
+  post,
+  onEdit,
+  onToggleHidden,
+}: {
+  post: BlogPost;
+  onEdit: () => void;
+  onToggleHidden: () => void;
+}) {
+  return (
+    <Card className={`flex items-center justify-between gap-4 ${post.hidden ? "opacity-70" : ""}`}>
+      <div>
+        <p className="font-medium text-white">
+          {post.title || "(untitled)"}
+          {post.status !== "published" ? (
+            <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+              Draft
+            </span>
+          ) : null}
+          {post.hidden ? (
+            <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
+              Hidden
+            </span>
+          ) : null}
+        </p>
+        <p className="text-xs text-white/40 mt-0.5">
+          /{post.slug} · {post.status} · {post.publishedAt?.split("T")[0] ?? "no date"}
+        </p>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={onToggleHidden}
+          className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
+          title={HIDE_HINT}
+        >
+          {post.hidden ? "Unhide" : "Hide"}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
 function firestoreDateString(value: unknown): string {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -225,7 +280,7 @@ function blogDocPayload(post: BlogPost): Record<string, unknown> {
     seoTitle: post.seoTitle ?? "",
     seoDescription: post.seoDescription ?? "",
     hidden: Boolean(post.hidden),
-    ...(post.coverImage ? { coverImage: post.coverImage } : {}),
+    coverImage: post.coverImage ?? "",
   };
 }
 
@@ -1023,6 +1078,20 @@ export default function AdminDashboard() {
     }
   }
 
+  async function toggleBlogHidden(post: BlogPost) {
+    const nextHidden = !post.hidden;
+    if (nextHidden && !confirm(`Hide "${post.title}"? ${HIDE_HINT}`)) {
+      return;
+    }
+    const next = { ...post, hidden: nextHidden };
+    await setDoc(doc(db(), "blogs", post.slug), {
+      ...blogDocPayload(next),
+      updatedAt: serverTimestamp(),
+    });
+    setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
+    alert("Visibility saved. The /blog listing updates within a minute.");
+  }
+
   const navPageOptions: NavPageOption[] = [
     { group: "Site", label: "Home", href: "/" },
     { group: "Site", label: "Services", href: "/services" },
@@ -1138,6 +1207,9 @@ export default function AdminDashboard() {
     { id: "users", label: "👥 Users" },
     { id: "deploy", label: "⚡ Deploy" },
   ];
+
+  const listedBlogs = blogsData.filter(isVisiblePublishedBlog);
+  const tuckedBlogs = blogsData.filter((post) => !isVisiblePublishedBlog(post));
 
   return (
     <div className="flex min-h-screen">
@@ -1704,6 +1776,7 @@ export default function AdminDashboard() {
                         title: "",
                         excerpt: "",
                         content: "",
+                        coverImage: "",
                         publishedAt: new Date().toISOString().split("T")[0],
                         status: "draft",
                         tags: [],
@@ -1718,55 +1791,46 @@ export default function AdminDashboard() {
                     {blogsData.length === 0 ? (
                       <Card><p className="text-sm text-white/40">No blog posts yet. Click "New post" to get started.</p></Card>
                     ) : (
-                      <div className="space-y-3">
-                        {blogsData.map((post) => (
-                          <Card key={post.slug} className={`flex items-center justify-between gap-4 ${post.hidden ? "opacity-70" : ""}`}>
-                            <div>
-                              <p className="font-medium text-white">
-                                {post.title || "(untitled)"}
-                                {post.hidden ? (
-                                  <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-white/50">
-                                    Hidden
-                                  </span>
-                                ) : null}
+                      <>
+                        <div className="space-y-3">
+                          {listedBlogs.length === 0 ? (
+                            <Card>
+                              <p className="text-sm text-white/40">
+                                No published posts in the public list. Drafts and hidden posts are below.
                               </p>
-                              <p className="text-xs text-white/40 mt-0.5">
-                                /{post.slug} · {post.status} · {post.publishedAt?.split("T")[0] ?? "no date"}
-                              </p>
+                            </Card>
+                          ) : (
+                            listedBlogs.map((post) => (
+                              <BlogListCard
+                                key={post.slug}
+                                post={post}
+                                onEdit={() => setEditingBlog(post)}
+                                onToggleHidden={() => void toggleBlogHidden(post)}
+                              />
+                            ))
+                          )}
+                        </div>
+                        {tuckedBlogs.length > 0 ? (
+                          <details className="group mt-6 rounded-2xl border border-white/8 bg-white/4">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-4 text-sm font-medium text-white/70 [&::-webkit-details-marker]:hidden">
+                              <span>Hidden & unpublished ({tuckedBlogs.length})</span>
+                              <span className="text-white/40 transition group-open:rotate-180" aria-hidden>
+                                ▾
+                              </span>
+                            </summary>
+                            <div className="space-y-3 border-t border-white/8 px-4 py-4">
+                              {tuckedBlogs.map((post) => (
+                                <BlogListCard
+                                  key={post.slug}
+                                  post={post}
+                                  onEdit={() => setEditingBlog(post)}
+                                  onToggleHidden={() => void toggleBlogHidden(post)}
+                                />
+                              ))}
                             </div>
-                            <div className="flex gap-2 shrink-0">
-                              <button
-                                onClick={() => setEditingBlog(post)}
-                                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  const nextHidden = !post.hidden;
-                                  if (
-                                    nextHidden &&
-                                    !confirm(`Hide "${post.title}"? ${HIDE_HINT}`)
-                                  ) {
-                                    return;
-                                  }
-                                  const next = { ...post, hidden: nextHidden };
-                                  await setDoc(doc(db(), "blogs", post.slug), {
-                                    ...blogDocPayload(next),
-                                    updatedAt: serverTimestamp(),
-                                  });
-                                  setBlogsData((b) => b.map((p) => (p.slug === post.slug ? next : p)));
-                                  alert("Visibility saved. The /blog listing updates within a minute.");
-                                }}
-                                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:text-red-300"
-                                title={HIDE_HINT}
-                              >
-                                {post.hidden ? "Unhide" : "Hide"}
-                              </button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
+                          </details>
+                        ) : null}
+                      </>
                     )}
                   </>
                 ) : (
@@ -1803,6 +1867,11 @@ export default function AdminDashboard() {
                         textarea
                         onChange={(v) => setEditingBlog((p) => p ? { ...p, excerpt: v } : p)}
                       />
+                      <BlogCoverField
+                        value={editingBlog.coverImage ?? ""}
+                        slug={editingBlog.slug}
+                        onChange={(url) => setEditingBlog((p) => p ? { ...p, coverImage: url } : p)}
+                      />
                       <div className="grid grid-cols-2 gap-4">
                         <Field
                           label="Publish date"
@@ -1836,6 +1905,7 @@ export default function AdminDashboard() {
                         onChange={(html) => setEditingBlog((p) => p ? { ...p, content: html } : p)}
                         placeholder="Write your blog post here…"
                         minHeight="400px"
+                        imageSlug={editingBlog.slug}
                       />
                     </Card>
 

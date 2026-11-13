@@ -6,6 +6,7 @@
  * with the initial seed values so SEO metadata is present immediately.
  */
 import raw from "@/data/content.json";
+import { mergeQuoteCalc, type QuoteCalc } from "@/lib/quote-calc";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -348,6 +349,11 @@ export interface Content {
   homeSections?: Record<string, string>;
   /** Footer column headings. */
   footerCopy?: Record<string, string>;
+  /**
+   * Quote builder on /pricing: line prices, format, and auto vs custom total.
+   * Missing → seed from site.ts (same numbers as before this field existed).
+   */
+  quoteCalc?: QuoteCalc;
 }
 
 // ─── Exported accessors ───────────────────────────────────────────────────────
@@ -893,15 +899,10 @@ export const nav = navItems
   .filter((item) => !item.hidden)
   .map(({ label, href }) => ({ label, href }));
 
-/**
- * Quote builder data stays in code — pricing structure changes rarely
- * and is part of business logic, not marketing copy.
- */
-export {
-  quoteServices,
-  quoteExtras,
-  quoteSizes,
-  quoteSpeeds,
-} from "@/lib/site";
+export const quoteCalc: QuoteCalc = mergeQuoteCalc(content.quoteCalc);
+export const quoteServices = quoteCalc.services;
+export const quoteExtras = quoteCalc.extras;
+export const quoteSizes = quoteCalc.sizes;
+export const quoteSpeeds = quoteCalc.speeds;
 
 export default content;

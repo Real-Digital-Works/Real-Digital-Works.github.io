@@ -233,7 +233,7 @@ export const POPUP_DEFS: PopupDef[] = [
   {
     id: "quote",
     title: "Quote builder",
-    hint: "The live estimate on /pricing.",
+    hint: "The live estimate on /pricing. Line prices and Auto sum / Custom total sit on the estimate panel in live edit.",
     open: "route",
     href: "/pricing",
     fields: [

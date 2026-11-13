@@ -33,6 +33,9 @@ const contentSecurityPolicy = [
     "https://firestore.googleapis.com",
     "https://api.cloudinary.com",
     "https://*.cloudinary.com",
+    "https://*.s3.eu-north-1.amazonaws.com",
+    "https://s3.eu-north-1.amazonaws.com",
+    "https://rdw-blog-images-686333686132-eu-north-1-an.s3.eu-north-1.amazonaws.com",
     "wss://*.googleapis.com",
     "wss://*.firebaseio.com",
     "https://va.vercel-scripts.com",
@@ -67,11 +70,38 @@ const nextConfig: NextConfig = {
   images: {
     // Vercel's image optimisation works on the free tier.
     // Remove unoptimized so Next.js can serve properly sized images.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "rdw-blog-images-686333686132-eu-north-1-an.s3.eu-north-1.amazonaws.com",
+        pathname: "/blog/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.eu-north-1.amazonaws.com",
+        pathname: "/blog/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazonaws.com",
+        pathname: "/blog/**",
+      },
+      // Pasted https covers (unoptimized in the listing) still need a host match.
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
   },
 
   // firebase-admin uses native Node.js modules (crypto, http2, etc.)
   // that must NOT be bundled by webpack — mark them as server-side externals.
-  serverExternalPackages: ["firebase-admin", "nodemailer"],
+  serverExternalPackages: [
+    "firebase-admin",
+    "nodemailer",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
+  ],
 
   async headers() {
     return [

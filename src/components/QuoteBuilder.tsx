@@ -1,22 +1,21 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import {
-  quoteExtras,
-  quoteServices,
-  quoteSizes,
-  quoteSpeeds,
-} from "@/lib/content";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { withContactQuery } from "@/lib/cms-ui";
 import { CmsLink } from "@/components/visual-editor/CmsLink";
-import { CmsText, usePopupCopy } from "@/components/visual-editor/CmsText";
+import { CmsText, useLiveDraft, usePopupCopy } from "@/components/visual-editor/CmsText";
+import { QuoteCalcEditor } from "@/components/visual-editor/QuoteCalcEditor";
 import { useVisualEditorOptional } from "@/components/visual-editor/VisualEditorProvider";
-
-function money(n: number) {
-  // Round to nearest £50 for large amounts, £5 for small — keeps £95/mo accurate
-  const rounded = n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 5) * 5;
-  return `£${rounded.toLocaleString("en-GB")}`;
-}
+import {
+  computeQuoteEstimate,
+  mergeQuoteCalc,
+  quoteOverrideDirty,
+  selectionFingerprint,
+  visibleQuoteLines,
+  type QuoteCalc,
+  type QuoteFactor,
+  type QuoteLineItem,
+} from "@/lib/quote-calc";
 
 export function QuoteBuilder() {
   const [svc, setSvc] = useState<Set<string>>(new Set());
@@ -24,71 +23,55 @@ export function QuoteBuilder() {
   const [size, setSize] = useState("small");
   const [speed, setSpeed] = useState("standard");
   const visual = useVisualEditorOptional();
+  const draft = useLiveDraft();
+  const calc = mergeQuoteCalc(draft.quoteCalc);
   const copy = usePopupCopy("quote");
   const ctaHref = copy("ctaHref", "/contact");
+  const editing = Boolean(visual?.enabled);
+  const [sessionFp, setSessionFp] = useState("");
 
   const toggle = (set: Set<string>, id: string, next: boolean) => {
-    const copy = new Set(set);
-    if (next) copy.add(id);
-    else copy.delete(id);
-    return copy;
+    const nextSet = new Set(set);
+    if (next) nextSet.add(id);
+    else nextSet.delete(id);
+    return nextSet;
   };
 
-  const estimate = useMemo(() => {
-    const sm = quoteSizes.find((s) => s.id === size)?.factor ?? 1;
-    const sp = quoteSpeeds.find((s) => s.id === speed)?.factor ?? 1;
-    let one = 0;
-    let month = 0;
-    const lines: { label: string; value: string }[] = [];
+  const estimate = useMemo(
+    () =>
+      computeQuoteEstimate(
+        calc,
+        { services: svc, extras: ex, size, speed },
+        copy("empty", "Select what you need to see a price"),
+      ),
+    [calc, svc, ex, size, speed, copy],
+  );
 
-    quoteServices.forEach((item) => {
-      if (!svc.has(item.id)) return;
-      const a = item.one * sm * sp;
-      const m = item.month * sm;
-      one += a;
-      month += m;
-      lines.push({
-        label: item.label,
-        value: a ? money(a) : `${money(m)}/mo`,
-      });
-    });
-    quoteExtras.forEach((item) => {
-      if (!ex.has(item.id)) return;
-      const a = item.one * sp;
-      const m = item.month;
-      one += a;
-      month += m;
-      lines.push({
-        label: item.label,
-        value: a ? money(a) : `${money(m)}/mo`,
-      });
-    });
+  const currentSelectionFp = selectionFingerprint(svc, ex, size, speed);
+  const catalogDirty = quoteOverrideDirty(calc);
+  const selectionDirty =
+    calc.totalMode === "custom" && Boolean(sessionFp) && sessionFp !== currentSelectionFp;
 
-    if (!lines.length) {
-      return {
-        total: "£0",
-        sub: copy("empty", "Select what you need to see a price"),
-        lines,
-        query: "",
-      };
-    }
+  useEffect(() => {
+    if (calc.totalMode !== "custom") return;
+    if (!sessionFp) setSessionFp(currentSelectionFp);
+  }, [calc.totalMode, sessionFp, currentSelectionFp]);
 
-    const total = one
-      ? `${money(one)} – ${money(one * 1.15)}`
-      : `${money(month)}/mo`;
-    const sub = one && month
-      ? `Plus ${money(month)} per month ongoing`
-      : one
-        ? "One-off project cost"
-        : "Ongoing monthly, three-month minimum";
-    const query = new URLSearchParams({
-      need: [...svc, ...ex].join(", "),
-      size,
-      speed,
-      estimate: total,
-    }).toString();
-    return { total, sub, lines, query };
-  }, [svc, ex, size, speed, copy]);
+  function patchCalc(next: QuoteCalc) {
+    if (!visual) return;
+    visual.patchDraft({ ...visual.draft, quoteCalc: next });
+    if (next.totalMode === "custom") setSessionFp(currentSelectionFp);
+    if (next.totalMode === "auto") setSessionFp("");
+  }
+
+  const query = estimate.empty
+    ? ""
+    : new URLSearchParams({
+        need: [...svc, ...ex].join(", "),
+        size,
+        speed,
+        estimate: estimate.headline,
+      }).toString();
 
   return (
     <div
@@ -101,13 +84,19 @@ export function QuoteBuilder() {
           sub={<CmsText path="popups.quote.needSub">{copy("needSub")}</CmsText>}
         >
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {quoteServices.map((item) => (
+            {visibleQuoteLines(calc.services).map((item) => (
               <Option
                 key={item.id}
-                title={item.label}
-                hint={item.hint}
+                item={item}
+                editing={editing}
                 checked={svc.has(item.id)}
                 onChange={(v) => setSvc(toggle(svc, item.id, v))}
+                onPatch={(next) =>
+                  patchCalc({
+                    ...calc,
+                    services: calc.services.map((row) => (row.id === item.id ? { ...row, ...next } : row)),
+                  })
+                }
               />
             ))}
           </div>
@@ -117,9 +106,16 @@ export function QuoteBuilder() {
           sub={<CmsText path="popups.quote.sizeSub">{copy("sizeSub")}</CmsText>}
         >
           <Seg
-            items={quoteSizes}
+            items={calc.sizes}
             value={size}
+            editing={editing}
             onChange={setSize}
+            onPatch={(id, next) =>
+              patchCalc({
+                ...calc,
+                sizes: calc.sizes.map((row) => (row.id === id ? { ...row, ...next } : row)),
+              })
+            }
           />
         </Step>
         <Step
@@ -127,13 +123,19 @@ export function QuoteBuilder() {
           sub={<CmsText path="popups.quote.extraSub">{copy("extraSub")}</CmsText>}
         >
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {quoteExtras.map((item) => (
+            {visibleQuoteLines(calc.extras).map((item) => (
               <Option
                 key={item.id}
-                title={item.label}
-                hint={item.hint}
+                item={item}
+                editing={editing}
                 checked={ex.has(item.id)}
                 onChange={(v) => setEx(toggle(ex, item.id, v))}
+                onPatch={(next) =>
+                  patchCalc({
+                    ...calc,
+                    extras: calc.extras.map((row) => (row.id === item.id ? { ...row, ...next } : row)),
+                  })
+                }
               />
             ))}
           </div>
@@ -143,7 +145,18 @@ export function QuoteBuilder() {
           sub={<CmsText path="popups.quote.whenSub">{copy("whenSub")}</CmsText>}
           last
         >
-          <Seg items={quoteSpeeds} value={speed} onChange={setSpeed} />
+          <Seg
+            items={calc.speeds}
+            value={speed}
+            editing={editing}
+            onChange={setSpeed}
+            onPatch={(id, next) =>
+              patchCalc({
+                ...calc,
+                speeds: calc.speeds.map((row) => (row.id === id ? { ...row, ...next } : row)),
+              })
+            }
+          />
         </Step>
       </div>
 
@@ -151,15 +164,29 @@ export function QuoteBuilder() {
         <p className="text-sm text-fg/55">
           <CmsText path="popups.quote.estimateLabel">{copy("estimateLabel")}</CmsText>
         </p>
-        <p className="display mt-2 text-[42px]">{estimate.total}</p>
-        <p className="mt-2 border-b border-line pb-5 text-[14.5px] text-fg/55">
-          {estimate.sub}
-        </p>
+        {estimate.headline ? (
+          <p className="display mt-2 text-[42px]">{estimate.headline}</p>
+        ) : (
+          <p className="mt-2 text-[16px] text-fg/45">No priced items selected.</p>
+        )}
+        <p className="mt-2 border-b border-line pb-5 text-[14.5px] text-fg/55">{estimate.sub}</p>
+        {editing ? (
+          <div className="my-4">
+            <QuoteCalcEditor
+              calc={calc}
+              onChange={patchCalc}
+              autoHeadline={estimate.autoHeadline}
+              catalogDirty={catalogDirty}
+              selectionDirty={selectionDirty}
+              listedServices={draft.servicePagesList ?? []}
+            />
+          </div>
+        ) : null}
         <ul className="my-4 max-h-[240px] overflow-y-auto text-[14.5px]">
           {estimate.lines.length ? (
             estimate.lines.map((line) => (
               <li
-                key={line.label}
+                key={line.id}
                 className="flex justify-between gap-3 border-b border-line py-2 text-fg/70"
               >
                 <span>{line.label}</span>
@@ -174,7 +201,7 @@ export function QuoteBuilder() {
           popupId="quote"
           labelKey="ctaLabel"
           hrefKey="ctaHref"
-          href={withContactQuery(ctaHref, estimate.query)}
+          href={withContactQuery(ctaHref, query)}
           className="btn btn-beam w-full"
         >
           Send this to us
@@ -208,15 +235,17 @@ function Step({
 }
 
 function Option({
-  title,
-  hint,
+  item,
   checked,
   onChange,
+  editing,
+  onPatch,
 }: {
-  title: string;
-  hint: string;
+  item: QuoteLineItem;
   checked: boolean;
   onChange: (v: boolean) => void;
+  editing: boolean;
+  onPatch: (next: Partial<QuoteLineItem>) => void;
 }) {
   return (
     <label
@@ -224,12 +253,9 @@ function Option({
         checked ? "border-beam bg-beam/15" : "border-line bg-fg/4"
       }`}
     >
-      {/* Custom styled checkbox — replaces default white browser box */}
       <span
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
-          checked
-            ? "border-beam bg-beam"
-            : "border-fg/25 bg-fg/5"
+          checked ? "border-beam bg-beam" : "border-fg/25 bg-fg/5"
         }`}
         aria-hidden="true"
       >
@@ -245,9 +271,37 @@ function Option({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span>
-        <span className="block text-[15px] font-semibold leading-tight">{title}</span>
-        <span className="mt-0.5 block text-[13px] text-faint">{hint}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold leading-tight">{item.label}</span>
+        <span className="mt-0.5 block text-[13px] text-faint">{item.hint}</span>
+        {editing ? (
+          <span
+            className="rdw-quote-calc-inline mt-2 flex flex-wrap gap-2"
+            onClick={(event) => event.preventDefault()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <input
+              aria-label={`${item.label} one-off price`}
+              type="number"
+              className="rdw-quote-line-input"
+              placeholder="One-off"
+              value={item.one || ""}
+              onChange={(event) =>
+                onPatch({ one: Number.isFinite(Number(event.target.value)) ? Number(event.target.value) : 0 })
+              }
+            />
+            <input
+              aria-label={`${item.label} monthly price`}
+              type="number"
+              className="rdw-quote-line-input"
+              placeholder="/mo"
+              value={item.month || ""}
+              onChange={(event) =>
+                onPatch({ month: Number.isFinite(Number(event.target.value)) ? Number(event.target.value) : 0 })
+              }
+            />
+          </span>
+        ) : null}
       </span>
     </label>
   );
@@ -257,10 +311,14 @@ function Seg({
   items,
   value,
   onChange,
+  editing,
+  onPatch,
 }: {
-  items: { id: string; label: string }[];
+  items: QuoteFactor[];
   value: string;
   onChange: (id: string) => void;
+  editing: boolean;
+  onPatch: (id: string, next: Partial<QuoteFactor>) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -271,12 +329,26 @@ function Seg({
           aria-pressed={value === item.id}
           onClick={() => onChange(item.id)}
           className={`rounded-[9px] border-[1.5px] px-4 py-2.5 text-[14.5px] ${
-            value === item.id
-              ? "border-beam bg-beam font-semibold text-white"
-              : "border-line bg-fg/4"
+            value === item.id ? "border-beam bg-beam font-semibold text-white" : "border-line bg-fg/4"
           }`}
         >
           {item.label}
+          {editing ? (
+            <span
+              className="mt-1 block font-normal"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <input
+                aria-label={`${item.label} factor`}
+                type="number"
+                step="0.05"
+                className="rdw-quote-line-input w-[72px]"
+                value={item.factor}
+                onChange={(event) => onPatch(item.id, { factor: Number(event.target.value) || 0 })}
+              />
+            </span>
+          ) : null}
         </button>
       ))}
     </div>

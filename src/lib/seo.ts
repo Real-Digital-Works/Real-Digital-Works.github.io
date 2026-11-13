@@ -35,24 +35,25 @@ export function brandedTitle(title: string): NonNullable<Metadata["title"]> {
 export function shareTitle(
   title: string,
   description: string,
-  openGraph?: Metadata["openGraph"],
+  openGraphIn?: Metadata["openGraph"],
 ): Pick<Metadata, "description" | "openGraph" | "twitter"> {
   const trimmedTitle = title.trim();
   const trimmedDescription = metaDescription(description);
+  const openGraph = {
+    type: "website" as const,
+    locale: "en_GB",
+    siteName: site.name,
+    images: [shareImage],
+    ...openGraphIn,
+    title: trimmedTitle,
+    description: trimmedDescription,
+  };
   return {
     description: trimmedDescription,
-    openGraph: {
-      type: "website",
-      locale: "en_GB",
-      siteName: site.name,
-      images: [shareImage],
-      ...openGraph,
-      title: trimmedTitle,
-      description: trimmedDescription,
-    },
+    openGraph,
     twitter: {
       card: "summary_large_image",
-      images: [SITE_IMAGE_PATH],
+      images: openGraph.images ?? [SITE_IMAGE_PATH],
       title: trimmedTitle,
       description: trimmedDescription,
     },

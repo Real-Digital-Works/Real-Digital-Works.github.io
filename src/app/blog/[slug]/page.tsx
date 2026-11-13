@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const title = (post.seoTitle || post.title).trim();
   const description = (post.seoDescription || post.excerpt || post.title).trim();
+  const cover = post.coverImage?.startsWith("https://") ? post.coverImage : undefined;
   return {
     title: brandedTitle(title),
     description,
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: post.publishedAt,
       url: `/blog/${slug}`,
+      ...(cover ? { images: [{ url: cover, alt: post.title }] } : {}),
     }),
   };
 }
@@ -49,7 +51,7 @@ export default async function BlogPostPage({ params }: Props) {
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
-    image: siteImageUrl(),
+    image: post.coverImage?.startsWith("https://") ? post.coverImage : siteImageUrl(),
     datePublished: post.publishedAt,
     mainEntityOfPage: canonicalUrl(`/blog/${slug}`),
     author: { "@type": "Organization", name: site.name, url: origin },
@@ -101,6 +103,15 @@ export default async function BlogPostPage({ params }: Props) {
               year: "numeric",
             })}
           </p>
+          {post.coverImage ? (
+            // Cover may be S3 or a pasted HTTPS URL; <img> avoids next/image host allowlists.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.coverImage}
+              alt=""
+              className="mt-8 max-w-[72ch] w-full rounded-[22px] object-cover"
+            />
+          ) : null}
         </div>
       </section>
 

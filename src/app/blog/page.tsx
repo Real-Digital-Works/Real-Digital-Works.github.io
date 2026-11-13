@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CmsText } from "@/components/visual-editor/CmsText";
+import { BlogIndex } from "@/components/BlogIndex";
 import { site, pageIntros } from "@/lib/content";
 import { getListedLiveBlogs } from "@/lib/live-blogs";
 import { brandedTitle, shareTitle } from "@/lib/seo";
@@ -18,11 +18,19 @@ export const metadata: Metadata = {
 
 export default async function BlogPage() {
   const published = await getListedLiveBlogs();
+  const posts = published.map((post) => ({
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    coverImage: post.coverImage,
+    publishedAt: post.publishedAt,
+    tags: post.tags ?? [],
+  }));
 
   return (
     <>
       <section className="page-intro">
-        <div className="wrap">
+        <div className="wrap md:pl-[88px]">
           <span className="tag on-dark">
             <CmsText path="pageIntros.blog.eyebrow">{pageIntros.blog.eyebrow}</CmsText>
           </span>
@@ -44,44 +52,11 @@ export default async function BlogPage() {
       </section>
 
       <section className="pb-20">
-        <div className="wrap">
-          {published.length === 0 ? (
-            <p className="text-fg/40">No posts yet. Check back soon.</p>
+        <div className="wrap md:pl-[88px]">
+          {posts.length === 0 ? (
+            <p className="text-fg/55">No posts yet. Check back soon.</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {published.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  className="glass group flex flex-col rounded-[22px] p-6 transition hover:border-line"
-                >
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {post.tags?.map((tag) => (
-                      <span key={tag} className="rounded-full border border-line px-2.5 py-0.5 text-[11px] text-fg/50">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-fg group-hover:text-tech transition flex-1">
-                    {post.title}
-                  </h2>
-                  {post.excerpt && (
-                    <p className="mt-2 text-[14.5px] text-fg/52 line-clamp-3">
-                      {post.excerpt}
-                    </p>
-                  )}
-                  <p className="mt-4 text-[12px] text-fg/35">
-                    {post.publishedAt
-                      ? new Date(post.publishedAt).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })
-                      : ""}
-                  </p>
-                </Link>
-              ))}
-            </div>
+            <BlogIndex posts={posts} />
           )}
         </div>
       </section>

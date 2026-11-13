@@ -14,8 +14,10 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
+import { BLOG_IMAGE_ACCEPT, uploadBlogImage } from "@/lib/blog-image-upload";
 
 interface Props {
   content: string;
@@ -24,6 +26,8 @@ interface Props {
   minHeight?: string;
   /** Live-edit allowlist: B/I/U, headings, lists, links. No code or quotes. */
   strict?: boolean;
+  /** When set, toolbar shows Insert image and uploads to S3 under this post slug. */
+  imageSlug?: string;
 }
 
 // ── Toolbar button ─────────────────────────────────────────────────────────
@@ -61,7 +65,12 @@ function Divider() {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function RichTextEditor({ content, onChange, placeholder, minHeight = "240px", strict = false }: Props) {
+export function RichTextEditor({ content, onChange, placeholder, minHeight = "240px", strict = false, imageSlug }: Props) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const canInsertImage = Boolean(imageSlug?.trim());
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -78,6 +87,11 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
       Link.configure({
         openOnClick: false,
         HTMLAttributes: { class: "text-[#60a5fa] underline" },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: { class: "rdw-rte-image" },
       }),
       Placeholder.configure({
         placeholder: placeholder ?? "Start writing…",
@@ -113,6 +127,20 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
       editor.chain().focus().setLink({ href: url }).run();
     }
   }, [editor]);
+
+  const insertImage = useCallback(async (file: File) => {
+    if (!editor || !imageSlug?.trim()) return;
+    setImageError("");
+    setImageBusy(true);
+    try {
+      const url = await uploadBlogImage(file, imageSlug, "inline");
+      editor.chain().focus().setImage({ src: url, alt: file.name.replace(/\.[a-z0-9]+$/i, "") }).run();
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Image upload failed.");
+    } finally {
+      setImageBusy(false);
+    }
+  }, [editor, imageSlug]);
 
   if (!editor) return null;
 
@@ -174,6 +202,31 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
         <Btn active={editor.isActive("link")} onClick={setLink} title="Link">
           🔗
         </Btn>
+        {canInsertImage ? (
+          <>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept={BLOG_IMAGE_ACCEPT}
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void insertImage(file);
+              }}
+            />
+            <Btn
+              active={false}
+              onClick={() => {
+                if (imageBusy) return;
+                imageInputRef.current?.click();
+              }}
+              title={imageBusy ? "Uploading image…" : "Insert image"}
+            >
+              {imageBusy ? "…" : "🖼"}
+            </Btn>
+          </>
+        ) : null}
 
         <Divider />
 
@@ -195,6 +248,7 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
 
       {/* Editor area */}
       <EditorContent editor={editor} />
+      {imageError ? <p className="px-3 py-2 text-[11px] text-red-400/90">{imageError}</p> : null}
     </div>
   );
 }

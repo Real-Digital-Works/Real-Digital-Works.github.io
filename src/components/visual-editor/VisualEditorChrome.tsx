@@ -13,6 +13,8 @@ import {
   resolveCta,
   type PopupField,
 } from "@/lib/cms-ui";
+import { mergeQuoteCalc, quoteOverrideDirty } from "@/lib/quote-calc";
+import { QuoteCalcEditor } from "./QuoteCalcEditor";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { isHtmlCmsPath, sanitizeCmsHtml } from "@/lib/cms-html";
 import { fieldLabel, resolveVisualSeo, VISUAL_PAGES, type VisualSeoTarget } from "@/lib/visual-editor";
@@ -533,6 +535,7 @@ function InspectorAccordion({
 function TextInspector({ path, compact }: { path: string; compact?: boolean }) {
   const ctx = useVisualEditor();
   const rich = isHtmlCmsPath(path);
+  const blogImageSlug = path.match(/^blogPost\.([^.]+)\.content$/)?.[1];
   return (
     <div>
       {compact ? null : (
@@ -557,6 +560,7 @@ function TextInspector({ path, compact }: { path: string; compact?: boolean }) {
           placeholder="Write the page copy…"
           minHeight="280px"
           strict
+          imageSlug={blogImageSlug}
         />
       ) : (
         <label className="rdw-ve-label">
@@ -642,8 +646,10 @@ function NavInspector({ id, compact }: { id: string; compact?: boolean }) {
 }
 
 function PopupInspector({ id, compact }: { id: string; compact?: boolean }) {
+  const ctx = useVisualEditor();
   const def = POPUP_BY_ID[id];
   if (!def) return <p className="rdw-ve-note">Unknown pop-up {id}</p>;
+  const calc = mergeQuoteCalc(ctx.draft.quoteCalc);
   return (
     <div>
       {compact ? null : (
@@ -654,6 +660,16 @@ function PopupInspector({ id, compact }: { id: string; compact?: boolean }) {
       )}
       <p className="rdw-ve-note">{def.hint}</p>
       <PopupFields id={id} fields={def.fields} />
+      {id === "quote" ? (
+        <QuoteCalcEditor
+          calc={calc}
+          onChange={(next) => ctx.patchDraft({ ...ctx.draft, quoteCalc: next })}
+          autoHeadline=""
+          catalogDirty={quoteOverrideDirty(calc)}
+          selectionDirty={false}
+          listedServices={ctx.draft.servicePagesList ?? []}
+        />
+      ) : null}
     </div>
   );
 }
@@ -834,6 +850,40 @@ html[data-rdw-visual] body { padding-top: 96px; }
 }
 .rdw-cms-link:hover { outline-color: rgba(16,185,129,.7); background: rgba(16,185,129,.1); }
 .rdw-cms-link-selected { outline: 2px solid #10B981; background: rgba(16,185,129,.14); }
+.rdw-quote-calc-panel {
+  margin: 0; padding: 12px; border-radius: 14px;
+  border: 1px solid rgba(24,87,236,.35); background: rgba(15,23,42,.72);
+  color: #E2E8F0; font-size: 12px;
+}
+.rdw-quote-calc-kicker { margin: 0 0 8px; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #38BDF8; }
+.rdw-quote-calc-modes { display: flex; gap: 6px; margin-bottom: 8px; }
+.rdw-quote-calc-chip {
+  border-radius: 999px; border: 1px solid rgba(255,255,255,.14);
+  background: transparent; color: #E2E8F0; padding: 5px 10px; font-size: 12px; cursor: pointer;
+}
+.rdw-quote-calc-chip.on { background: #1857EC; border-color: #1857EC; color: #fff; font-weight: 650; }
+.rdw-quote-calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.rdw-quote-calc-grid label, .rdw-quote-calc-add { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 650; }
+.rdw-quote-calc-panel input, .rdw-quote-calc-panel select, .rdw-quote-line-input {
+  width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);
+  background: #1E293B; color: #F8FAFC; padding: 6px 8px; font-size: 12px;
+}
+.rdw-quote-calc-note { margin: 6px 0; color: #94A3B8; line-height: 1.4; font-weight: 500; }
+.rdw-quote-calc-dirty {
+  margin: 8px 0; padding: 8px; border-radius: 10px; background: rgba(245,158,11,.12);
+  border: 1px solid rgba(245,158,11,.4); color: #FDE68A;
+}
+.rdw-quote-calc-dirty-actions, .rdw-quote-calc-lines-head { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.rdw-quote-calc-dirty-actions button, .rdw-quote-calc-lines-head button, .rdw-quote-calc-line button {
+  border-radius: 8px; border: 1px solid rgba(255,255,255,.16); background: #0F172A; color: #F8FAFC;
+  padding: 5px 8px; font-size: 11px; cursor: pointer;
+}
+.rdw-quote-calc-lines { margin-top: 10px; }
+.rdw-quote-calc-lines-head { justify-content: space-between; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; color: #93C5FD; }
+.rdw-quote-calc-line { display: grid; grid-template-columns: 1.3fr .7fr .7fr auto auto; gap: 4px; align-items: center; margin-top: 6px; }
+.rdw-quote-calc-line.dim { opacity: .55; }
+.rdw-quote-calc-hide { display: flex; gap: 4px; align-items: center; font-size: 10px; font-weight: 650; }
+.rdw-quote-line-input { max-width: 92px; }
 @media (prefers-reduced-motion: reduce) {
   .rdw-cms-field, .rdw-ve-chip, .rdw-ve-btn { transition: none; }
 }

@@ -637,6 +637,14 @@ html[data-theme="light"] .hero-tile {
 .prose-editor a    { color: #60a5fa; text-decoration: underline; }
 .prose-editor strong { font-weight: 700; }
 .prose-editor em     { font-style: italic; }
+.prose-editor img,
+.prose-editor .rdw-rte-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.85rem 0;
+  border-radius: 10px;
+}
 .prose-editor .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -660,3 +668,10 @@ html[data-theme="light"] .hero-tile {
 .rdw-content a, .rich-content a    { color: var(--tech, #0d74d1); text-decoration: underline; }
 .rdw-content strong, .rich-content strong { font-weight: 700; }
 .rdw-content em, .rich-content em   { font-style: italic; }
+.rdw-content img, .rich-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem 0;
+  border-radius: 14px;
+}

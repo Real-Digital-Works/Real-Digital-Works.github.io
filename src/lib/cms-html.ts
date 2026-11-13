@@ -5,10 +5,10 @@
 export const CMS_HTML_ERROR =
   "That content isn’t valid. Use the formatting buttons instead of HTML.";
 
-const ALLOWED = new Set(["p", "br", "strong", "em", "u", "a", "h2", "h3", "h4", "ul", "ol", "li", "b", "i"]);
-const VOID = new Set(["br"]);
+const ALLOWED = new Set(["p", "br", "strong", "em", "u", "a", "h2", "h3", "h4", "ul", "ol", "li", "b", "i", "img"]);
+const VOID = new Set(["br", "img"]);
 const RENAME: Record<string, string> = { b: "strong", i: "em" };
-const BLOCKED = /^(script|iframe|style|object|embed|link|meta|form|input|textarea|svg|video|audio|source|img)$/;
+const BLOCKED = /^(script|iframe|style|object|embed|link|meta|form|input|textarea|svg|video|audio|source)$/;
 
 export function isHtmlCmsPath(path: string): boolean {
   if (path === "hero.sub") return true;
@@ -45,6 +45,17 @@ function sanitizeHref(value: string): string | null {
   return null;
 }
 
+function sanitizeImgSrc(value: string): string | null {
+  const src = value.trim();
+  if (!src || /^javascript:/i.test(src) || /^data:/i.test(src)) return null;
+  if (/^https:\/\//i.test(src) || src.startsWith("/")) return src;
+  return null;
+}
+
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 function attr(name: string, attrs: string): string | null {
   const match = attrs.match(new RegExp(`(?:^|\\s)${name}\\s*=\\s*("([^"]*)"|'([^']*)'|[^\\s>]+)`, "i"));
   if (!match) return null;
@@ -68,12 +79,20 @@ function sanitizeTree(dirty: string): string {
 
   for (const token of tokens) {
     if (!token) continue;
-    const openMatch = token.match(/^<([a-zA-Z0-9]+)(\s[^>]*)?>$/);
+    const openMatch = token.match(/^<([a-zA-Z0-9]+)(\s[^>]*)?\/?>$/);
     const closeMatch = token.match(/^<\/([a-zA-Z0-9]+)\s*>$/);
     if (openMatch) {
       const rawTag = openMatch[1].toLowerCase();
       if (BLOCKED.test(rawTag) || !ALLOWED.has(rawTag)) continue;
       const tag = RENAME[rawTag] ?? rawTag;
+      if (tag === "img") {
+        const src = sanitizeImgSrc(attr("src", openMatch[2] ?? "") ?? "");
+        if (!src) continue;
+        const altRaw = attr("alt", openMatch[2] ?? "") ?? "";
+        const alt = escapeAttr(altRaw.slice(0, 200));
+        out += `<img src="${escapeAttr(src)}" alt="${alt}">`;
+        continue;
+      }
       if (VOID.has(tag)) {
         out += "<br>";
         continue;

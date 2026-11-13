@@ -22,7 +22,10 @@ function normalizeLiveBlog(slug: string, data: Record<string, unknown>): BlogPos
     title: typeof data.title === "string" ? data.title : "",
     excerpt: typeof data.excerpt === "string" ? data.excerpt : "",
     content: typeof data.content === "string" ? data.content : "",
-    coverImage: typeof data.coverImage === "string" ? data.coverImage : undefined,
+    coverImage:
+      typeof data.coverImage === "string" && data.coverImage.trim()
+        ? data.coverImage.trim()
+        : undefined,
     publishedAt: toIsoDate(data.publishedAt) || new Date().toISOString().split("T")[0],
     status: data.status === "published" ? "published" : "draft",
     tags: Array.isArray(data.tags)

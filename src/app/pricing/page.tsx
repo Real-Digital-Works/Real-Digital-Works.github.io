@@ -64,7 +64,7 @@ export default function PricingPage() {
               Or start from a fixed website package.
             </h2>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {packages.map((tier) => (
+              {packages.map((tier, i) => (
                 <article
                   key={tier.name}
                   className={`flex flex-col rounded-3xl p-8 ${
@@ -73,20 +73,22 @@ export default function PricingPage() {
                       : "glass"
                   }`}
                 >
-                  <h3 className="text-[21px] font-semibold">{tier.name}</h3>
+                  <h3 className="text-[21px] font-semibold">
+                    <CmsText path={`packages.${i}.name`}>{tier.name}</CmsText>
+                  </h3>
                   <span
                     className={`display mt-3 text-[40px] ${
                       tier.featured ? "text-tech" : ""
                     }`}
                   >
-                    {tier.amount}
+                    <CmsText path={`packages.${i}.amount`}>{tier.amount}</CmsText>
                   </span>
                   <span
                     className={`mb-6 text-sm ${
                       tier.featured ? "text-fg/50" : "text-faint"
                     }`}
                   >
-                    {tier.per}
+                    <CmsText path={`packages.${i}.per`}>{tier.per}</CmsText>
                   </span>
                   <ul className="mb-8 flex-1 space-y-2">
                     {tier.items.map((item) => (

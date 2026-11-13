@@ -15,6 +15,7 @@ import {
   mergeWorkPage,
   mergeWorkSeo,
 } from "@/lib/content";
+import { mergeQuoteCalc } from "@/lib/quote-calc";
 import { CMS_HTML_ERROR, isHtmlCmsPath, sanitizeCmsHtml } from "@/lib/cms-html";
 import { mergeCmsMaps } from "@/lib/cms-ui";
 import {
@@ -440,6 +441,7 @@ export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown>
       DEFAULT_FOOTER_COPY,
       (d.footerCopy as Content["footerCopy"]) ?? seed.footerCopy,
     ),
+    quoteCalc: mergeQuoteCalc((d.quoteCalc as Content["quoteCalc"]) ?? seed.quoteCalc),
   };
 }
 
@@ -468,6 +470,7 @@ export function visualSavePayload(draft: Content) {
     pageIntros: draft.pageIntros ?? mergePageIntros(null),
     homeSections: draft.homeSections ?? DEFAULT_HOME_SECTIONS,
     footerCopy: draft.footerCopy ?? DEFAULT_FOOTER_COPY,
+    quoteCalc: mergeQuoteCalc(draft.quoteCalc),
   };
 }
 
@@ -592,6 +595,17 @@ export function fieldLabel(path: string): string {
   const processMatch = path.match(/^process\.(\d+)\.(title|body)$/);
   if (processMatch) {
     return `Step ${Number(processMatch[1]) + 1} ${processMatch[2] === "title" ? "title" : "body"}`;
+  }
+  if (path.startsWith("quoteCalc.")) {
+    const key = path.slice("quoteCalc.".length);
+    const labels: Record<string, string> = {
+      currency: "Currency",
+      prefix: "Price prefix",
+      suffix: "Price suffix",
+      totalMode: "Estimate mode",
+      customTotal: "Custom total",
+    };
+    return labels[key] ?? pretty(key);
   }
   if (path.startsWith("hero.")) {
     const key = path.slice(5);

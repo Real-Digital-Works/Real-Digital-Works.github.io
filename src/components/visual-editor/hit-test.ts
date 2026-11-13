@@ -1,4 +1,5 @@
-const CHROME = ".rdw-ve-inspector, .rdw-ve-bar, .rdw-ve-drawer-root, .rdw-ve-status, .rdw-ve-drawer";
+const CHROME =
+  ".rdw-ve-inspector, .rdw-ve-bar, .rdw-ve-drawer-root, .rdw-ve-status, .rdw-ve-drawer, .rdw-quote-calc-panel, .rdw-quote-calc-inline";
 
 export type CmsHit =
   | { kind: "text"; id: string; el: HTMLElement; html: boolean }

@@ -90,6 +90,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { NavEditor, type NavPageOption } from "@/components/NavEditor";
 import { ServiceEditor } from "@/components/ServiceEditor";
 import { AdminThemeToggle } from "@/components/AdminTheme";
+import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { startLiveEdit } from "@/lib/visual-editor";
 import { WorkImageField } from "@/components/WorkImageField";
 import { BlogCoverField } from "@/components/BlogCoverField";
@@ -1277,10 +1278,17 @@ export default function AdminDashboard() {
           />
         ) : null}
         {/* Top bar */}
-        <header className="flex items-center justify-between border-b border-white/8 px-6 py-3">
-          <div className="flex items-center gap-3">
-            {/* Mobile tab label */}
-            <span className="text-sm font-medium text-white lg:hidden">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/8 bg-[var(--admin-bg)] px-4 py-3 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <AdminMobileNav
+              tabs={tabs}
+              currentId={tab}
+              onSelectTab={setTab}
+              onLiveEdit={startLiveEdit}
+              onSignOut={() => void signOut(auth())}
+              email={user?.email ?? null}
+            />
+            <span className="truncate text-sm font-medium text-white lg:hidden">
               {tabs.find((t) => t.id === tab)?.label}
             </span>
             <StatusBadge status={status} />

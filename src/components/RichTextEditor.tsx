@@ -67,6 +67,7 @@ function Divider() {
 
 export function RichTextEditor({ content, onChange, placeholder, minHeight = "240px", strict = false, imageSlug }: Props) {
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const imageSelectionRef = useRef<{ from: number; to: number } | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState("");
   const canInsertImage = Boolean(imageSlug?.trim());
@@ -130,11 +131,17 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
 
   const insertImage = useCallback(async (file: File) => {
     if (!editor || !imageSlug?.trim()) return;
+    const selection = imageSelectionRef.current;
     setImageError("");
     setImageBusy(true);
     try {
       const url = await uploadBlogImage(file, imageSlug, "inline");
-      editor.chain().focus().setImage({ src: url, alt: file.name.replace(/\.[a-z0-9]+$/i, "") }).run();
+      const alt = file.name.replace(/\.[a-z0-9]+$/i, "");
+      const chain = editor.chain().focus();
+      if (selection) {
+        chain.setTextSelection(selection);
+      }
+      chain.setImage({ src: url, alt }).run();
     } catch (err) {
       setImageError(err instanceof Error ? err.message : "Image upload failed.");
     } finally {
@@ -218,12 +225,15 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
             <Btn
               active={false}
               onClick={() => {
-                if (imageBusy) return;
+                if (imageBusy || !editor) return;
+                const { from, to } = editor.state.selection;
+                imageSelectionRef.current = { from, to };
+                editor.chain().focus().setTextSelection({ from, to }).run();
                 imageInputRef.current?.click();
               }}
-              title={imageBusy ? "Uploading image…" : "Insert image"}
+              title={imageBusy ? "Uploading image…" : "Insert image in post"}
             >
-              {imageBusy ? "…" : "🖼"}
+              {imageBusy ? "…" : "🖼 Image"}
             </Btn>
           </>
         ) : null}
@@ -248,6 +258,12 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
 
       {/* Editor area */}
       <EditorContent editor={editor} />
+      {canInsertImage ? (
+        <p className="px-3 py-2 text-[11px] text-white/35">
+          Place the cursor in the article, then use <span className="text-white/55">🖼 Image</span> to
+          insert a photo there. High-res files are compressed automatically.
+        </p>
+      ) : null}
       {imageError ? <p className="px-3 py-2 text-[11px] text-red-400/90">{imageError}</p> : null}
     </div>
   );

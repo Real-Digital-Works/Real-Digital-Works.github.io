@@ -1,7 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-export const BLOG_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
+export const BLOG_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 export const BLOG_IMAGE_KINDS = ["cover", "inline"] as const;
 export type BlogImageKind = (typeof BLOG_IMAGE_KINDS)[number];
 

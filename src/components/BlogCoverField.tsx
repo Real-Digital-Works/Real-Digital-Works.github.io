@@ -42,7 +42,8 @@ export function BlogCoverField({
       </label>
       <p className="text-[11px] text-white/30">
         Upload JPG, PNG, WebP, or GIF (max {Math.round(BLOG_IMAGE_MAX_BYTES / (1024 * 1024))}
-        MB). Stored on S3 as the post card and hero. Or paste an HTTPS URL.
+        MB). Photos are resized to ~2K and compressed (WebP when smaller); GIFs stay as
+        uploaded. Stored on S3 as the post card and hero. Or paste an HTTPS URL.
       </p>
       {value ? (
         <div

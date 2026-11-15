@@ -1908,6 +1908,10 @@ export default function AdminDashboard() {
 
                     <Card className="space-y-3">
                       <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">Content</label>
+                      <p className="text-[11px] text-white/30">
+                        Write headings and paragraphs, click where the photo should go, then toolbar{" "}
+                        <span className="text-white/50">🖼 Image</span> — Insert image in post.
+                      </p>
                       <RichTextEditor
                         content={editingBlog.content}
                         onChange={(html) => setEditingBlog((p) => p ? { ...p, content: html } : p)}

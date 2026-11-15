@@ -72,9 +72,14 @@ export default async function WorkDetailPage({ params }: Props) {
           <p className="mt-2 text-fg/50">
             <CmsText path={`project.${slug}.client`}>{project.client}</CmsText>
           </p>
-          <p className="mt-4 max-w-[58ch] text-[16.5px] text-fg/68">
-            <CmsText path={`project.${slug}.summary`}>{project.summary}</CmsText>
-          </p>
+          <CmsText
+            path={`project.${slug}.summary`}
+            as="div"
+            className="mt-4 max-w-[58ch] text-[16.5px] text-fg/68 [&_p]:m-0"
+            html
+          >
+            {project.summary}
+          </CmsText>
           <div className="mt-6 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
@@ -87,7 +92,7 @@ export default async function WorkDetailPage({ params }: Props) {
           </div>
         </div>
       </section>
-      <section className="py-20">
+      <section className="py-14 md:py-20">
         <div className="wrap grid gap-12 md:grid-cols-3">
           <article>
             <h2 className="text-sm font-semibold tracking-[0.14em] text-beam uppercase">

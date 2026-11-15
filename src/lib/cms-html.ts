@@ -13,6 +13,7 @@ const BLOCKED = /^(script|iframe|style|object|embed|link|meta|form|input|textare
 export function isHtmlCmsPath(path: string): boolean {
   if (path === "hero.sub") return true;
   if (/(^|\.)(body|detail|content|problem|work|outcome)$/.test(path)) return true;
+  if (/^project\.[^.]+\.summary$/.test(path)) return true;
   if (/(^|\.)faq\.\d+\.a$/.test(path)) return true;
   return false;
 }
@@ -38,11 +39,49 @@ export function sanitizeCmsHtml(input: string): { html: string; valid: boolean; 
   }
 }
 
+function decodeAttr(value: string): string {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
 function sanitizeHref(value: string): string | null {
-  const href = value.trim();
-  if (!href || /^javascript:/i.test(href) || /^data:/i.test(href)) return null;
+  let href = decodeAttr(value).trim();
+  if (!href || /^javascript:/i.test(href) || /^data:/i.test(href) || /^vbscript:/i.test(href)) {
+    return null;
+  }
+  if (/^www\./i.test(href)) href = `https://${href}`;
   if (/^(https?:|mailto:|tel:|\/|#)/i.test(href)) return href;
   return null;
+}
+
+function cmsAnchor(href: string): string {
+  return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer">`;
+}
+
+/** Wrap bare http(s) URLs in text nodes; leave existing <a> contents alone. */
+function linkifyPlainHttp(html: string): string {
+  const parts = html.split(/(<[^>]+>)/g);
+  let inAnchor = 0;
+  return parts
+    .map((part) => {
+      const openA = part.match(/^<a\b/i);
+      const closeA = part.match(/^<\/a\b/i);
+      if (openA) inAnchor += 1;
+      if (closeA) inAnchor = Math.max(0, inAnchor - 1);
+      if (inAnchor || part.startsWith("<")) return part;
+      return part.replace(/https?:\/\/[^\s<]+/gi, (raw) => {
+        const trail = raw.match(/[),.;:]+$/)?.[0] ?? "";
+        const url = trail ? raw.slice(0, -trail.length) : raw;
+        const href = sanitizeHref(url);
+        if (!href) return raw;
+        return `${cmsAnchor(href)}${url}</a>${trail}`;
+      });
+    })
+    .join("");
 }
 
 function sanitizeImgSrc(value: string): string | null {
@@ -100,10 +139,7 @@ function sanitizeTree(dirty: string): string {
       if (tag === "a") {
         const href = sanitizeHref(attr("href", openMatch[2] ?? "") ?? "");
         if (!href) continue;
-        const extra = /target\s*=\s*['_"]?_blank/i.test(openMatch[2] ?? "")
-          ? ` target="_blank" rel="noreferrer"`
-          : "";
-        out += `<a href="${href.replace(/"/g, "&quot;")}"${extra}>`;
+        out += cmsAnchor(href);
         open.push("a");
         continue;
       }
@@ -129,5 +165,5 @@ function sanitizeTree(dirty: string): string {
     const last = open.pop();
     if (last) out += `</${last}>`;
   }
-  return out;
+  return linkifyPlainHttp(out);
 }

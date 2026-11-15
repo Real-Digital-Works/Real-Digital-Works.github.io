@@ -483,7 +483,12 @@ export function validateDraftHtml(draft: Content): string | null {
     paths.push(`legal.${key}.body`);
   }
   for (const project of draft.projects ?? []) {
-    paths.push(`project.${project.slug}.problem`, `project.${project.slug}.work`, `project.${project.slug}.outcome`);
+    paths.push(
+      `project.${project.slug}.summary`,
+      `project.${project.slug}.problem`,
+      `project.${project.slug}.work`,
+      `project.${project.slug}.outcome`,
+    );
   }
   for (const row of draft.servicePagesList ?? []) {
     paths.push(`svc.${row.slug}.detail`);

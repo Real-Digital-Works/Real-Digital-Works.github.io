@@ -87,7 +87,11 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-[#60a5fa] underline" },
+        HTMLAttributes: {
+          class: "text-[#60a5fa] underline",
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
       }),
       Image.configure({
         inline: false,
@@ -125,7 +129,7 @@ export function RichTextEditor({ content, onChange, placeholder, minHeight = "24
     if (url === "") {
       editor.chain().focus().unsetLink().run();
     } else {
-      editor.chain().focus().setLink({ href: url }).run();
+      editor.chain().focus().setLink({ href: url, target: "_blank", rel: "noopener noreferrer" }).run();
     }
   }, [editor]);
 

@@ -410,11 +410,13 @@ export function HomeView() {
           </div>
           <div className="work-stage grid gap-3 md:grid-cols-2">
             {featured && (
-              <Link
-                href={`/work/${featured.slug}`}
-                className="glass group overflow-hidden rounded-[24px] md:col-span-2"
-              >
-                <div className="grid md:grid-cols-[1.2fr_0.8fr]">
+              <article className="glass group relative overflow-hidden rounded-[24px] md:col-span-2">
+                <Link
+                  href={`/work/${featured.slug}`}
+                  className="absolute inset-0 z-[1]"
+                  aria-label={featured.title}
+                />
+                <div className="pointer-events-none relative z-[2] grid md:grid-cols-[1.2fr_0.8fr]">
                   <div
                     className="min-h-[220px] bg-cover bg-center md:min-h-[340px]"
                     style={
@@ -435,48 +437,64 @@ export function HomeView() {
                       <h3 className="mt-3 text-[clamp(26px,3vw,40px)] font-semibold tracking-[-0.04em] group-hover:text-tech">
                         <CmsText path={`project.${featured.slug}.title`}>{featured.title}</CmsText>
                       </h3>
-                      <p className="mt-3 max-w-[42ch] text-[16px] leading-relaxed text-fg/68">
-                        <CmsText path={`project.${featured.slug}.summary`}>{featured.summary}</CmsText>
-                      </p>
+                      <CmsText
+                        path={`project.${featured.slug}.summary`}
+                        as="div"
+                        className="mt-3 max-w-[42ch] text-[16px] leading-relaxed text-fg/68 [&_p]:m-0"
+                        html
+                      >
+                        {featured.summary}
+                      </CmsText>
                     </div>
                     <p className="mt-8 text-[12px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
                       <CmsText path="homeSections.openCase">{home.openCase}</CmsText>
                     </p>
                   </div>
                 </div>
-              </Link>
+              </article>
             )}
             {featuredProjects.slice(1).map((project) => (
-              <Link
+              <article
                 key={project.slug}
-                href={`/work/${project.slug}`}
-                className="glass group flex flex-col overflow-hidden rounded-[22px]"
+                className="glass group relative flex flex-col overflow-hidden rounded-[22px]"
               >
-                <div
-                  className="min-h-[160px] bg-cover bg-center"
-                  style={
-                    project.image
-                      ? { backgroundImage: `url(${project.image})` }
-                      : {
-                          background: `linear-gradient(145deg, ${project.accent}, #1a2230 78%)`,
-                        }
-                  }
+                <Link
+                  href={`/work/${project.slug}`}
+                  className="absolute inset-0 z-[1]"
+                  aria-label={project.title}
                 />
-                <div className="flex flex-1 flex-col p-6 md:p-7">
-                  <p className="font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">
-                    {projectMetaLine(project)}
-                  </p>
-                  <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.04em] group-hover:text-tech">
-                    <CmsText path={`project.${project.slug}.title`}>{project.title}</CmsText>
-                  </h3>
-                  <p className="mt-2 line-clamp-2 text-[14.5px] leading-relaxed text-fg/55">
-                    <CmsText path={`project.${project.slug}.summary`}>{project.summary}</CmsText>
-                  </p>
-                  <p className="mt-auto pt-5 text-[11px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
-                    <CmsText path="homeSections.openCase">{home.openCase}</CmsText>
-                  </p>
+                <div className="pointer-events-none relative z-[2] flex flex-1 flex-col">
+                  <div
+                    className="min-h-[160px] bg-cover bg-center"
+                    style={
+                      project.image
+                        ? { backgroundImage: `url(${project.image})` }
+                        : {
+                            background: `linear-gradient(145deg, ${project.accent}, #1a2230 78%)`,
+                          }
+                    }
+                  />
+                  <div className="flex flex-1 flex-col p-6 md:p-7">
+                    <p className="font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">
+                      {projectMetaLine(project)}
+                    </p>
+                    <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.04em] group-hover:text-tech">
+                      <CmsText path={`project.${project.slug}.title`}>{project.title}</CmsText>
+                    </h3>
+                    <CmsText
+                      path={`project.${project.slug}.summary`}
+                      as="div"
+                      className="mt-2 line-clamp-2 text-[14.5px] leading-relaxed text-fg/55 [&_p]:m-0"
+                      html
+                    >
+                      {project.summary}
+                    </CmsText>
+                    <p className="mt-auto pt-5 text-[11px] font-semibold tracking-[0.16em] text-cyan uppercase group-hover:text-fg">
+                      <CmsText path="homeSections.openCase">{home.openCase}</CmsText>
+                    </p>
+                  </div>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         </div>

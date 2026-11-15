@@ -215,7 +215,8 @@ html[data-theme="light"] .tag.on-dark {
     transform 0.2s ease;
 }
 
-a.glass:hover {
+a.glass:hover,
+.glass.group:hover {
   background: var(--glass-hover);
   border-color: rgba(26, 152, 251, 0.42);
 }
@@ -668,7 +669,13 @@ html[data-theme="light"] .hero-tile {
 .rdw-content blockquote, .rich-content blockquote { border-left: 3px solid var(--beam, #1857EC); padding-left: 1.25rem; margin: 1.25rem 0; font-style: italic; opacity: 0.8; }
 .rdw-content pre, .rich-content pre  { background: rgba(0,0,0,.25); border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 0.88em; overflow-x: auto; }
 .rdw-content code, .rich-content code { background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 4px; padding: 0.1em 0.4em; font-size: 0.88em; }
-.rdw-content a, .rich-content a    { color: var(--tech, #0d74d1); text-decoration: underline; }
+.rdw-content a, .rich-content a    {
+  position: relative;
+  z-index: 2;
+  color: var(--tech, #0d74d1);
+  text-decoration: underline;
+  pointer-events: auto;
+}
 .rdw-content strong, .rich-content strong { font-weight: 700; }
 .rdw-content em, .rich-content em   { font-style: italic; }
 .rdw-content img, .rich-content img {

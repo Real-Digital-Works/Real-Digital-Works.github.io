@@ -61,6 +61,17 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), payment=()",
   },
+  // Isolates browsing context. same-origin is safe here: admin auth is
+  // email/password (no Firebase/Google/Stripe window.open OAuth popups).
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Stops other origins from no-cors loading our HTML/JS. Does not block
+  // this site loading Cloudinary/S3/Turnstile (those are their CORP).
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+  // COEP omitted: require-corp would block Cloudinary, S3 images, Turnstile,
+  // and Firebase unless every third-party sent CORP. unsafe-none is a no-op.
+  // X-XSS-Protection omitted — deprecated; scanners treat absence as OK.
+  // Server: Vercel is set by the CDN. next.config / vercel.json cannot unset
+  // it; a fake Server header is ignored. Treat the leak finding as platform-owned.
   { key: "X-DNS-Prefetch-Control", value: "on" },
 ];
 

@@ -43,13 +43,17 @@ export default function WorkPage() {
       <section className="pb-20">
         <div className="wrap space-y-3">
           {workProjects.map((project) => (
-            <Link
+            <article
               key={project.slug}
-              href={`/work/${project.slug}`}
-              className="glass group grid overflow-hidden rounded-[22px] md:grid-cols-[240px_1fr]"
+              className="glass group relative grid overflow-hidden rounded-[22px] md:grid-cols-[240px_1fr]"
             >
+              <Link
+                href={`/work/${project.slug}`}
+                className="absolute inset-0 z-[1]"
+                aria-label={project.title}
+              />
               <div
-                className="min-h-[140px] bg-cover bg-center"
+                className="pointer-events-none relative z-[2] min-h-[140px] bg-cover bg-center"
                 style={
                   project.image
                     ? { backgroundImage: `url(${project.image})` }
@@ -58,18 +62,23 @@ export default function WorkPage() {
                       }
                 }
               />
-              <div className="p-6 md:p-8">
+              <div className="pointer-events-none relative z-[2] p-6 md:p-8">
                 <p className="font-mono text-[11px] tracking-[0.16em] text-cyan uppercase">
                   {project.status} · {project.kind}
                 </p>
                 <h2 className="mt-2 text-[26px] font-semibold tracking-[-0.04em] group-hover:text-tech">
                   <CmsText path={`project.${project.slug}.title`}>{project.title}</CmsText>
                 </h2>
-                <p className="mt-2 max-w-[54ch] text-[15px] text-fg/52">
-                  <CmsText path={`project.${project.slug}.summary`}>{project.summary}</CmsText>
-                </p>
+                <CmsText
+                  path={`project.${project.slug}.summary`}
+                  as="div"
+                  className="mt-2 max-w-[54ch] text-[15px] text-fg/52 [&_p]:m-0"
+                  html
+                >
+                  {project.summary}
+                </CmsText>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </section>

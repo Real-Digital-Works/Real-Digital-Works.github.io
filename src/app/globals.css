@@ -73,6 +73,9 @@ body {
   font-size: 17px;
   line-height: 1.62;
   -webkit-font-smoothing: antialiased;
+}
+
+main {
   overflow-x: clip;
 }
 

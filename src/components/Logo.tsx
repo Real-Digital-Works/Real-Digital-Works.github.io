@@ -22,14 +22,14 @@ export function Logo({ className = "", variant = "nav" }: LogoProps) {
   }
 
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <span className="inline-flex rounded-lg bg-white px-1.5 py-1">
+    <span className={`inline-flex max-w-full items-center gap-2.5 ${className}`}>
+      <span className="inline-flex shrink-0 rounded-lg bg-white px-1.5 py-1 ring-1 ring-black/10">
         <Image
           src="/brand/logo-mark.png"
           alt=""
           width={915}
           height={373}
-          className="h-7 w-auto sm:h-8"
+          className="h-7 w-auto max-w-none sm:h-8"
           priority
         />
       </span>

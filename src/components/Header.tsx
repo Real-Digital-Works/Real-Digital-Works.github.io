@@ -94,14 +94,19 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 backdrop-blur-2xl ${
+      className={`sticky top-0 z-[70] pt-[env(safe-area-inset-top)] backdrop-blur-2xl isolate overflow-visible ${
         stuck || open || megaOpen
           ? "border-b border-line bg-[var(--header)]"
           : "border-b border-transparent bg-[var(--header)]"
       }`}
     >
-      <div className="wrap flex h-16 items-center gap-0.5">
-        <CmsLink ctaId="header.logo" href="/" className="mr-auto inline-flex" preserveChildren>
+      <div className="wrap flex h-16 min-h-16 items-center gap-0.5 overflow-visible">
+        <CmsLink
+          ctaId="header.logo"
+          href="/"
+          className="relative z-10 mr-auto inline-flex shrink-0 items-center"
+          preserveChildren
+        >
           <Logo />
         </CmsLink>
 
@@ -247,7 +252,7 @@ export function Header() {
         >
           ⌘K
         </button>
-        <CmsLink ctaId="header.brief" href="/contact" className="btn btn-beam ml-2 hidden sm:inline-flex">
+        <CmsLink ctaId="header.brief" href="/contact" className="btn btn-beam ml-2 !hidden sm:!inline-flex">
           Start a brief
         </CmsLink>
         <button

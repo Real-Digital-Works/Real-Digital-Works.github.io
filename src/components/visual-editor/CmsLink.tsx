@@ -122,18 +122,20 @@ export function CmsLink({
   }
 
   const extra = target === "_blank" ? { target, rel: rel ?? "noreferrer" } : { target, rel };
+  const content = preserveChildren ? children : label;
+  const a11y = preserveChildren && label ? { "aria-label": label } : {};
 
   if (!isInternalHref(dest)) {
     return (
-      <a href={dest} className={className} onClick={onClick} {...extra}>
-        {label}
+      <a href={dest} className={className} onClick={onClick} {...extra} {...a11y}>
+        {content}
       </a>
     );
   }
 
   return (
-    <Link href={dest} className={className} onClick={onClick} {...extra}>
-      {label}
+    <Link href={dest} className={className} onClick={onClick} {...extra} {...a11y}>
+      {content}
     </Link>
   );
 }

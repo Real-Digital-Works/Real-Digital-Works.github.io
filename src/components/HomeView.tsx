@@ -80,9 +80,12 @@ export function HomeView() {
         },
       });
 
-      const pinEl = pin.current;
-      const trackEl = track.current;
-      if (pinEl && trackEl) {
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 768px)", () => {
+        const pinEl = pin.current;
+        const trackEl = track.current;
+        if (!pinEl || !trackEl) return;
+
         const cards = gsap.utils.toArray<HTMLElement>(".offer-card");
 
         const focusCards = () => {
@@ -131,7 +134,7 @@ export function HomeView() {
         });
 
         focusCards();
-      }
+      });
 
       gsap.fromTo(
         ".desk-block",
@@ -323,7 +326,7 @@ export function HomeView() {
       </section>
 
       {/* Mobile vertical stack — replaces GSAP horizontal scroll on small screens */}
-      <section className={`border-t border-line py-12 ${homeServices.length > 0 ? "md:hidden" : "hidden"}`}>
+      <section className={`border-t border-line py-8 ${homeServices.length > 0 ? "md:hidden" : "hidden"}`}>
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
             <CmsText path="homeSections.offerMobileEyebrow">{home.offerMobileEyebrow}</CmsText>
@@ -360,7 +363,7 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="desk-block relative z-10 border-t border-line py-20 md:py-24">
+      <section className="desk-block relative z-10 border-t border-line py-14 md:py-16">
         <div className="wrap grid items-start gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
           <div>
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
@@ -386,7 +389,7 @@ export function HomeView() {
       </section>
 
       {featuredProjects.length > 0 && (
-      <section className="work-block relative z-10 pb-20 md:pb-24">
+      <section className="work-block relative z-10 pb-14 md:pb-16">
         <div className="wrap">
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
@@ -480,7 +483,7 @@ export function HomeView() {
       </section>
       )}
 
-      <section className="ship-block border-y border-line py-20 md:py-24">
+      <section className="ship-block border-y border-line py-14 md:py-16">
         <div className="wrap">
           <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">
             <CmsText path="homeSections.processEyebrow">{home.processEyebrow}</CmsText>
@@ -511,7 +514,7 @@ export function HomeView() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24">
+      <section className="py-14 md:py-16">
         <div className="wrap grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
             <p className="font-mono text-[11px] tracking-[0.2em] text-tech uppercase">

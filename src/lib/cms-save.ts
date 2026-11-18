@@ -15,6 +15,32 @@ import {
 } from "@/lib/cms-revision";
 import { logFirestoreIssue } from "@/lib/firestore-errors";
 
+function isPlainRecord(value: object): value is Record<string, unknown> {
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Firestore rejects `undefined` (including nested fields). Omit those keys.
+ * Keeps `null`, empty strings, `0`, and `false`. Leaves FieldValue / Timestamp
+ * instances untouched — do not JSON.parse(JSON.stringify()) the payload.
+ */
+export function omitUndefinedDeep<T>(value: T): T {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item !== undefined)
+      .map((item) => omitUndefinedDeep(item)) as T;
+  }
+  if (!isPlainRecord(value)) return value;
+  const next: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value)) {
+    if (nested === undefined) continue;
+    next[key] = omitUndefinedDeep(nested);
+  }
+  return next as T;
+}
+
 /** Live document path used by the admin dashboard and the visual editor. */
 export function cmsContentDoc() {
   return doc(db(), CMS_CONTENT_COLLECTION, CMS_CONTENT_DOC_ID);
@@ -51,15 +77,17 @@ export async function saveLiveCmsContent(options: {
     }
     const nextRevision =
       (typeof existing.revision === "number" ? existing.revision : 0) + 1;
-    const incomingRest = { ...incoming };
+    const incomingRest = omitUndefinedDeep({ ...incoming });
     delete incomingRest.revision;
     delete incomingRest.updatedAt;
-    const nextPayload = {
+    // Merge defined fields onto the live doc (restore still replaces). Never
+    // spread raw `undefined` — that both fails the write and can drop keys.
+    const nextPayload = omitUndefinedDeep({
       ...(replace ? {} : existing),
       ...incomingRest,
       revision: nextRevision,
       updatedAt: serverTimestamp(),
-    };
+    });
     tx.set(liveRef, nextPayload);
     return {
       nextPayload,
@@ -68,13 +96,16 @@ export async function saveLiveCmsContent(options: {
   });
 
   try {
-    await addDoc(cmsVersionsCollection(firestore), {
-      createdAt: serverTimestamp(),
-      createdBy: options.createdBy ?? { uid: null, email: null },
-      source: options.source ?? "save",
-      ...(options.note ? { note: options.note } : {}),
-      content: nextPayload,
-    });
+    await addDoc(
+      cmsVersionsCollection(firestore),
+      omitUndefinedDeep({
+        createdAt: serverTimestamp(),
+        createdBy: options.createdBy ?? { uid: null, email: null },
+        source: options.source ?? "save",
+        ...(options.note ? { note: options.note } : {}),
+        content: nextPayload,
+      }),
+    );
     return { liveSaved: true, versionSaved: true, revision };
   } catch (error) {
     logFirestoreIssue("cms/content/versions snapshot", error);

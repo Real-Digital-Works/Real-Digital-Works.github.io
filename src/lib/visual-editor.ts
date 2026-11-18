@@ -16,6 +16,7 @@ import {
   mergeWorkSeo,
 } from "@/lib/content";
 import { mergeQuoteCalc } from "@/lib/quote-calc";
+import { omitUndefinedDeep } from "@/lib/cms-save";
 import { CMS_HTML_ERROR, isHtmlCmsPath, sanitizeCmsHtml } from "@/lib/cms-html";
 import { mergeCmsMaps } from "@/lib/cms-ui";
 import {
@@ -447,7 +448,7 @@ export function hydrateVisualDraft(seed: Content, live?: Record<string, unknown>
 
 export function visualSavePayload(draft: Content) {
   const list = draft.servicePagesList ?? [];
-  return {
+  return omitUndefinedDeep({
     site: draft.site,
     seo: draft.seo,
     hero: draft.hero,
@@ -471,7 +472,7 @@ export function visualSavePayload(draft: Content) {
     homeSections: draft.homeSections ?? DEFAULT_HOME_SECTIONS,
     footerCopy: draft.footerCopy ?? DEFAULT_FOOTER_COPY,
     quoteCalc: mergeQuoteCalc(draft.quoteCalc),
-  };
+  });
 }
 
 export function validateDraftHtml(draft: Content): string | null {

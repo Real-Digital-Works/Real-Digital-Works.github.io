@@ -125,17 +125,19 @@ function normalizeLine(raw: unknown, fallback?: QuoteLineItem): QuoteLineItem | 
   const row = raw as Record<string, unknown>;
   const id = asString(row.id, fallback?.id ?? "").trim();
   if (!id) return fallback ?? null;
+  const hidden = typeof row.hidden === "boolean" ? row.hidden : fallback?.hidden;
+  const discountPercent =
+    row.discountPercent == null && fallback?.discountPercent == null
+      ? undefined
+      : clampPercent(row.discountPercent ?? fallback?.discountPercent ?? 0);
   return {
     id,
     label: asString(row.label, fallback?.label ?? id),
     hint: asString(row.hint, fallback?.hint ?? ""),
     one: asNumber(row.one, fallback?.one ?? 0),
     month: asNumber(row.month, fallback?.month ?? 0),
-    hidden: typeof row.hidden === "boolean" ? row.hidden : fallback?.hidden,
-    discountPercent:
-      row.discountPercent == null && fallback?.discountPercent == null
-        ? undefined
-        : clampPercent(row.discountPercent ?? fallback?.discountPercent ?? 0),
+    ...(typeof hidden === "boolean" ? { hidden } : {}),
+    ...(discountPercent !== undefined ? { discountPercent } : {}),
   };
 }
 
